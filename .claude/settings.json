@@ -1,0 +1,30 @@
+{
+  "enabledMcpjsonServers": ["fullstack-guidelines"],
+  "permissions": {
+    "allow": [
+      "mcp__fullstack-guidelines__get_metadata",
+      "mcp__fullstack-guidelines__get_guideline",
+      "mcp__fullstack-guidelines__list_guidelines",
+      "mcp__fullstack-guidelines__search_guidelines",
+      "mcp__fullstack-guidelines__get_example",
+      "mcp__fullstack-guidelines__list_examples",
+      "mcp__fullstack-guidelines__get_all_context",
+      "mcp__fullstack-guidelines__get_compliance_workflow",
+      "mcp__fullstack-guidelines__verify_compliance",
+      "mcp__fullstack-guidelines__validate_project_structure",
+      "mcp__fullstack-guidelines__validate_hardcoded_secrets",
+      "mcp__fullstack-guidelines__validate_log_calls",
+      "mcp__fullstack-guidelines__validate_sensitive_logging",
+      "mcp__fullstack-guidelines__validate_supply_chain",
+      "mcp__fullstack-guidelines__validate_test_names",
+      "mcp__fullstack-guidelines__validate_migration",
+      "mcp__fullstack-guidelines__validate_import_directions",
+      "mcp__fullstack-guidelines__validate_coverage_distribution",
+      "mcp__fullstack-guidelines__validate_env_completeness",
+      "mcp__fullstack-guidelines__validate_commit_messages",
+      "mcp__fullstack-guidelines__generate_compliance_table",
+      "mcp__fullstack-guidelines__validate_compliance_table",
+      "mcp__fullstack-guidelines__health_check"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "fullstack-guidelines": {
+      "type": "http",
+      "url": "https://fullstack-agent-guidelines.vercel.app/mcp"
+    }
+  }
+}
