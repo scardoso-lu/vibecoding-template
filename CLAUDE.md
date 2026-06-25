@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack
 
-- **Backend**: Python / FastAPI — Clean Architecture / DDD
-- **Frontend**: Next.js 15 — App Router, Server Components, Server Actions, daisyUI
+- **Backend**: Python / FastAPI - Clean Architecture / DDD
+- **Frontend**: Next.js 15 - App Router, Server Components, Server Actions, daisyUI
 - **Migrations**: Alembic
 - **Python package manager**: uv
 
 ## Two rules, no exceptions
 
-**1. Consult the guidelines before writing any code.**
-The `fullstack-guidelines` MCP server is connected and is the authoritative source for every architectural pattern. Call `get_metadata()` first, fetch the relevant guideline, read its "Use when" line, then write code. Cite the slugs in every commit.
+**1. Use guidelines through feature-slice memory.**
+The `fullstack-guidelines` MCP server is the source of truth for what code should look like, but MCP results are expensive because they stay in context. The orchestrator owns guideline discovery for each feature slice: fetch the complete set of specific slugs needed for the slice once, summarize the applicable rules into `.claude/feature-memory/<slice>.md`, and pass that file to downstream agents. Developer, tester, and QA agents read the feature memory first and must not refetch guideline text themselves.
 
 **2. Route every request through the agent system.**
 Do not implement features directly. Invoke the right agent for the work.
@@ -21,15 +21,39 @@ Do not implement features directly. Invoke the right agent for the work.
 
 | Agent | Responsibility |
 |---|---|
-| `orchestrator` | Scopes the request, resolves guideline slugs, routes to the right agent |
-| `backend-developer` | FastAPI / Python / DB / migrations / async / config |
-| `frontend-developer` | Next.js / components / forms / Server Actions / RBAC UI |
-| `tester` | DoD compliance, automated test execution, structure validation |
+| `orchestrator` | Scopes the request, resolves guideline slugs, writes feature memory, routes to the right agent |
+| `backend-developer` | FastAPI / Python / DB / migrations / async / config; no MCP access |
+| `frontend-developer` | Next.js / components / forms / Server Actions / RBAC UI; no MCP access |
+| `tester` | Writes and runs focused backend/frontend tests for the feature slice |
 | `qa` | Code review, E2E coverage audit, MCP validators, merge decision |
 
-**Default flow**: `orchestrator` → `backend-developer` and/or `frontend-developer` → `tester` → `qa`
+**Routing is conditional**: `orchestrator` invokes only the agents needed for the slice. Backend-only work skips frontend. Frontend-only work skips backend. Docs/config-only and trivial non-behavior changes can go straight to QA.
 
-Start every feature by invoking the `orchestrator`. Agents never communicate directly with each other — the main thread is the hub.
+The orchestrator has two modes and must use exactly one per response:
+
+- Plan Mode: create/update feature memory and Agent Plan.
+- Route Mode: emit one tiny role-specific handoff from an existing plan.
+
+Start every feature by invoking the `orchestrator`. Agents never communicate directly with each other; the main thread is the hub.
+
+## MCP budget rules
+
+- Prefer existing local context: `.claude/feature-memory/<slice>.md`, repository files, tests, and prior agent handoffs.
+- The orchestrator may call `get_metadata()` once per feature slice only when the needed slugs are not already known from existing feature memory or `.claude/guideline-routing.md`.
+- Fetch only the specific guidelines required by the current slice. Never call broad context tools such as `get_all_context` for normal feature work.
+- When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.claude/feature-memory/<slice>.md` or sends a richer handoff to the subagent.
+- If a downstream agent would need to guess, infer from general knowledge, or proceed best-effort, it must stop and ask the orchestrator for targeted context for the existing slice.
+- Each subagent may request targeted orchestrator context once per slice. If still blocked after one update, it returns `ESCALATE` or `BLOCKED`; the orchestrator must improve the plan instead of starting repeated context loops.
+- Validator tools are QA-only final-gate tools. QA may run only validators explicitly allowed in the feature memory `QA Handoff` or orchestrator `Agent Plan`; do not run the full validator suite by default. Allowed validators must be exact MCP tool names, such as `validate_hardcoded_secrets` or `verify_compliance`.
+- Keep feature memory compact: active slice memory under 150 lines, each role handoff under 25 lines, guideline summaries as rules only.
+- Keep only three detailed QA-approved active slice memories. Before QA-approved slice 4, 7, 10, and so on, the orchestrator compacts the previous three QA-approved slices into one review-only historical summary under `.claude/feature-memory/history/`. Blocked, in-progress, unreviewed, and QA-rejected slices stay active and detailed.
+- Use conditional routing. Invoke only the agents needed for the slice; do not run the full backend -> frontend -> tester -> qa flow unless the slice is fullstack.
+- Plan before routing. The orchestrator must not mix Plan Mode and Route Mode in the same response.
+- Handoffs must be tiny: feature memory path, role-specific section, changed file list, and exact task.
+- Every slice memory must include `Status`, `Do Not Touch`, and `QA Handoff -> Allowed validators`. Empty allowed validators means QA runs no MCP validators.
+- Commit messages may cite only slugs already present in feature memory. Agents must not expand commit slugs with fresh guideline work.
+- If QA wants an unlisted validator, it must ask the orchestrator to update `Allowed validators` before running it.
+- Minimal Slice Mode is mandatory for docs, config-only, copy, one-file non-behavior changes, and dependency-free fixes.
 
 ## Development commands
 
@@ -50,4 +74,4 @@ Start every feature by invoking the `orchestrator`. Agents never communicate dir
 
 ## Environment
 
-Variables go in `.env` (gitignored). Document required keys in `.env.example`. See guideline `backend/24-configuration-layers`.
+Variables go in `.env` (gitignored). Document required keys in `.env.example`. For config changes, the orchestrator should add the relevant MCP-backed configuration rule to feature memory before routing.
