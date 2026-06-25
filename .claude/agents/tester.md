@@ -117,4 +117,4 @@ Return one of three verdicts to the orchestrator:
 - **FAIL** — list each failing criterion, its location (file:line where applicable), and the remediation required. Do not attempt fixes yourself.
 - **ESCALATE** — a required check cannot be performed because a prerequisite is missing (no test file exists, migration is irreversible, endpoint is unimplemented). State exactly what is missing and which agent should address it.
 
-Never communicate directly with backend-developer or frontend-developer. Route all results through the orchestrator.
+Never communicate directly with backend-developer, frontend-developer, or qa. Route all results through the orchestrator.

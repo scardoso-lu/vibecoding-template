@@ -97,4 +97,4 @@ Never collapse layers. A use case must not import from a router; a domain entity
   backend/19-audit-on-write.
   ```
 - If you disagree with a guideline, state the deviation explicitly in the PR description — never silently diverge.
-- Report completed work to the orchestrator. Do not route directly to frontend-developer or tester.
+- Report completed work to the orchestrator. Do not route directly to frontend-developer, tester, or qa.

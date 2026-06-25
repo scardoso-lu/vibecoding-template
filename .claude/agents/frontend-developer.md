@@ -88,4 +88,4 @@ Never add `"use client"` without consulting `frontend/02-server-vs-client`.
   frontend/14-loading-error-empty-states.
   ```
 - If you disagree with a guideline, state the deviation explicitly in the PR description — never silently diverge.
-- Report completed work to the orchestrator. Do not route directly to backend-developer or tester.
+- Report completed work to the orchestrator. Do not route directly to backend-developer, tester, or qa.
