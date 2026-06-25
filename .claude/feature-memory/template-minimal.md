@@ -8,12 +8,6 @@
 ## Request
 <Original user request or precise summary.>
 
-## Agent Plan
-- Backend: no, reason
-- Frontend: no, reason
-- Tester: no, tests expected
-- QA: yes, validators allowed
-
 ## Do Not Touch
 - Files/directories:
 - Behaviors:
@@ -21,12 +15,10 @@
 
 ## Acceptance Criteria
 - [ ] <observable behavior>
-- [ ] <testable requirement>
 
 ## QA Handoff
 - Review focus:
 - Blocking risks:
-- E2E coverage required:
 - Allowed validators:
-  - `<validator tool name>` - <why it applies>
+  - `<validator tool name>` — <why it applies>
   - Empty means QA runs no MCP validators.
