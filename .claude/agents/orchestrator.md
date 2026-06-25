@@ -27,57 +27,7 @@ Do not mix modes. Plan first, route second.
 
 ## Feature Memory Structure
 
-Every feature uses a directory. Agents are separated by role. Feature memory describes **what to build**, never how to build it — sub-agents write the actual code. Keep files declarative: entity names, field lists, endpoint signatures, business rules, and anti-patterns to avoid. Omit implementation code blocks unless they are minimal base examples (≤10 lines) that illustrate a structural pattern the agent must follow exactly.
-
-```
-.claude/feature-memory/<slice>/
-  00-shared/                   # only for fullstack features; omit for backend-only or frontend-only
-    api-contract.md            # every endpoint both stacks must agree on
-    cross-stack.md             # error envelope, pagination shape, TypeScript↔Python type mappings
-
-  backend/
-    rules.md                   # all backend MCP rules — written once, read by every backend invocation
-    task-foundation.md         # base infrastructure: Base, IdMixin, session, exceptions, migration scaffold
-    task-<domain>.md           # one file per domain: entity + repo + use cases + routes
-
-  frontend/
-    rules.md                   # all frontend MCP rules
-    task.md                    # pages, services, server actions
-    components.md              # component breakdown, props, daisyUI classes, state decisions
-
-  tests/
-    rules.md                   # testing MCP rules
-    task.md                    # test file list, case descriptions, fixture notes
-
-  qa/
-    rules.md                   # QA MCP rules
-    checklist.md               # review focus, blocking risks, E2E coverage, allowed validators
-```
-
-### What belongs in `00-shared/`
-
-Only content **multiple agents must agree on** — if one agent gets it wrong, another agent's work breaks.
-
-- `api-contract.md` — backend implements it, frontend consumes it; both must match exactly.
-- `cross-stack.md` — error envelopes, pagination shapes, TypeScript ↔ Python type mappings both stacks must use identically.
-- Guidelines → **never** in shared. Backend rules go into `backend/rules.md`; frontend rules go into `frontend/rules.md`. An agent never receives another role's rules.
-- Domain model details (entity fields, FK relationships, business rules) → **never** in shared. They go in the relevant backend `task-<domain>.md`. The frontend only needs the TypeScript shapes from `cross-stack.md`.
-
-### `backend/rules.md`
-
-All backend MCP rules for this feature, written once. Every backend invocation reads this same file. Contains only backend slugs — never frontend or testing rules.
-
-### `backend/task-foundation.md` and `backend/task-<domain>.md`
-
-Each task file covers exactly one implementation scope. The backend-developer is invoked once per task file, reading `backend/rules.md` + the specific task file. Content: directory tree, file list, domain model (entities, fields, enums, business rules), which API endpoints this task owns, commands, and stop condition. Do not write implementation code. If a structural pattern is non-obvious, include one minimal base example (≤10 lines) and an anti-patterns block listing what NOT to do.
-
-### `frontend/rules.md` and `frontend/task.md`
-
-Frontend rules from MCP slugs relevant only to the frontend. `task.md` covers all pages, services, and server actions — list them by name, props/signature, and behavior, not by implementation. `components.md` covers component breakdown when the feature has more than three components: component name, props interface, daisyUI classes to use, and state decisions. No JSX or TypeScript implementation bodies.
-
-### `tests/` and `qa/`
-
-Testing slugs in `tests/rules.md`; test file list and case descriptions in `tests/task.md`. QA rules in `qa/rules.md`; blocking risks, E2E coverage, and allowed MCP validator names in `qa/checklist.md`.
+Read `.claude/templates/template-full.md` before writing any feature memory files. It defines the directory layout, format for every file, content rules, and anti-patterns. Follow it exactly.
 
 ---
 
@@ -99,6 +49,8 @@ Call `get_guideline(slug=...)` for every slug in the list. No exceptions. Never 
 Skip this step entirely for backend-only or frontend-only features.
 
 ### Step 4 — Write per-role files
+
+Follow `.claude/templates/template-full.md` for the format and content rules of every file you write.
 
 - `backend/rules.md` — all backend MCP rules, extracted from `get_guideline()` responses, imperative format.
 - `backend/task-foundation.md` — always the first backend task; covers shared base infrastructure.
@@ -130,7 +82,7 @@ Every fourth QA-approved feature: move the three oldest QA-approved feature dire
 
 ### Minimal Slice Mode
 
-Docs, config-only, copy changes, one-file non-behavior fixes: use `.claude/feature-memory/template-minimal.md`. Do not create a feature directory or per-role subdirectories.
+Docs, config-only, copy changes, one-file non-behavior fixes: use `.claude/templates/template-minimal.md`. Do not create a feature directory or per-role subdirectories.
 
 ---
 

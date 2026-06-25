@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Two rules, no exceptions
 
 **1. Use guidelines through feature-slice memory.**
-The `fullstack-guidelines` MCP server is the source of truth for what code should look like, but MCP results are expensive because they stay in context. The orchestrator owns guideline discovery for each feature slice: fetch the complete set of specific slugs needed for the slice once, summarize the applicable rules into `.claude/feature-memory/<slice>.md`, and pass that file to downstream agents. Developer, tester, and QA agents read the feature memory first and must not refetch guideline text themselves.
+The `fullstack-guidelines` MCP server is the source of truth for what code should look like, but MCP results are expensive because they stay in context. The orchestrator owns guideline discovery for each feature slice: fetch the complete set of specific slugs needed for the slice once, write the applicable rules into `.claude/feature-memory/<slice>/` (per-role files), and pass the relevant file to each downstream agent. Developer, tester, and QA agents read the feature memory first and must not refetch guideline text themselves.
 
 **2. Route every request through the agent system.**
 Do not implement features directly. Invoke the right agent for the work.
@@ -38,10 +38,10 @@ Start every feature by invoking the `orchestrator`. Agents never communicate dir
 
 ## MCP budget rules
 
-- Prefer existing local context: `.claude/feature-memory/<slice>.md`, repository files, tests, and prior agent handoffs.
+- Prefer existing local context: `.claude/feature-memory/<slice>/`, repository files, tests, and prior agent handoffs.
 - The orchestrator may call `get_metadata()` once per feature slice only when the needed slugs are not already known from existing feature memory or `.claude/guideline-routing.md`.
 - Fetch only the specific guidelines required by the current slice. Never call broad context tools such as `get_all_context` for normal feature work.
-- When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.claude/feature-memory/<slice>.md` or sends a richer handoff to the subagent.
+- When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.claude/feature-memory/<slice>/` or sends a richer handoff to the subagent.
 - If a downstream agent would need to guess, infer from general knowledge, or proceed best-effort, it must stop and ask the orchestrator for targeted context for the existing slice.
 - Each subagent may request targeted orchestrator context once per slice. If still blocked after one update, it returns `ESCALATE` or `BLOCKED`; the orchestrator must improve the plan instead of starting repeated context loops.
 - Validator tools are QA-only final-gate tools. QA may run only validators explicitly allowed in the feature memory `QA Handoff` or orchestrator `Agent Plan`; do not run the full validator suite by default. Allowed validators must be exact MCP tool names, such as `validate_hardcoded_secrets` or `verify_compliance`.

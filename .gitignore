@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Runtime-generated feature memory (orchestrator writes these; tracked templates live in .claude/templates/)
+.claude/feature-memory/
