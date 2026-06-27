@@ -10,6 +10,7 @@ every clone inherits them.
 | `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, and `git push --force`. |
 | `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to review-only `feature-memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Also confines the **e2e-explorer** to writing under `feature-memory/<slice>/e2e/`. |
 | `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the orchestrator may call the guidelines server**; downstream roles are denied and told to ask the orchestrator. |
+| `notify-stop.sh` | `Stop` | — | Speaks "Claude stopped" when a turn finishes. Audible only on a machine with a TTS backend (your local session); a silent no-op in remote/CI sessions. |
 
 ## How blocking works
 
@@ -52,6 +53,21 @@ makes the invariant explicit and enforced rather than merely requested.
 When extending these guards, keep rules either universal or correctly gated on
 `agent_type`; do not assume identity is present for main-thread calls (there `agent_type`
 is empty — treat that as "not a restricted subagent").
+
+## Stop notification (voice)
+
+`notify-stop.sh` speaks a short phrase ("Claude stopped") when the main agent finishes a turn,
+so you get an audible cue without watching the terminal. It picks a text-to-speech backend by OS:
+`say` on macOS, `spd-say` / `espeak-ng` / `espeak` on Linux, and PowerShell's
+`System.Speech.Synthesis.SpeechSynthesizer` on Windows. With **no backend present it exits 0
+silently** — so although it is registered in the committed `settings.json`, it makes noise only on
+a machine that actually has speech + audio (your local session), and is a harmless no-op in remote
+containers and CI.
+
+It is invoked as `bash "$CLAUDE_PROJECT_DIR/.claude/hooks/notify-stop.sh"` so it works on Windows
+under Git Bash. On native Windows without Git Bash, point the command at a PowerShell `.ps1`
+equivalent instead. Override the phrase by passing an argument, e.g. `notify-stop.sh "done"`; check
+which backend would be used with `NOTIFY_STOP_DEBUG=1`.
 
 ## SessionStart behaviour
 
