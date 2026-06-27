@@ -57,3 +57,17 @@ Fetch targeted MCP guideline details when a rule is unclear. Do not copy full gu
 | Component / hook design | `frontend/10-solid-dry-kiss` |
 | Adding new npm package | `frontend/08-supply-chain`, `architecture/01-technology-selection` |
 | Docker / Node.js setup | `frontend/12-project-setup` |
+
+## Infra / Cross-Cutting Slug Map
+
+| Task | Required slugs |
+|---|---|
+| Monorepo foundation / both app roots | `infra/01-docker-compose`, `infra/04-makefile-as-gate`, `backend/17-project-setup`, `frontend/12-project-setup`, `backend/01-project-structure`, `frontend/01-project-structure`, `architecture/01-technology-selection` |
+| Docker Compose (run both stacks) | `infra/01-docker-compose` |
+| Makefile / command surface / CI gate | `infra/04-makefile-as-gate` |
+| Testing inside Docker | `infra/02-testing-in-docker` |
+| Tracing / metrics / OTel | `infra/03-opentelemetry` |
+| Definition of Done / merge gate | `agile/02-definition-of-done`, `agile/05-dod-backend`, `agile/06-dod-frontend`, `agile/07-dod-security` |
+| Code review (QA judgment) | `qa/01-code-review` |
+| E2E-per-feature requirement (QA) | `qa/02-e2e-per-feature` |
+| Conventional commits / PRs | `agile/03-conventional-commits`, `agile/04-pull-requests` |

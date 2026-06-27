@@ -12,7 +12,7 @@ This file provides guidance to Codex when working with code in this repository.
 ## Four rules, no exceptions
 
 **1. Use guidelines through feature-slice memory.**
-The `fullstack-guidelines` MCP server is the source of truth for what code should look like, but MCP results are expensive because they stay in context. The orchestrator owns guideline discovery for each feature slice: fetch the complete set of specific slugs needed for the slice once, write the applicable rules into `.codex/feature-memory/<slice>/` (per-role files), and pass the relevant file to each downstream agent. Developer and QA agents read the feature memory first and must not refetch guideline text themselves.
+The `fullstack-guidelines` MCP server is the source of truth for what code should look like, but MCP results are expensive because they stay in context. The orchestrator owns guideline discovery for each feature slice: fetch the complete set of specific slugs needed for the slice once, write `.codex/feature-memory/<slice>/slice.md` and `.codex/feature-memory/<slice>/rules.md`, and pass those files to each downstream agent. Developer and QA agents read the feature memory first and must not refetch guideline text themselves.
 
 **2. Route every request through the agent system.**
 Do not implement features directly. Invoke the right agent for the work.
@@ -37,9 +37,16 @@ Only the main thread and `orchestrator` may read root guidance, agent configurat
 
 **Foundation is cross-cutting**: repo folders, root manifests, bootstrap scripts, workspace config,
 and app-root scaffolds are monorepo foundation work, not backend-only work. The orchestrator must
-plan these as one fullstack foundation slice with shared repo-structure memory, then route backend
-and frontend foundation tasks from the same structure contract so both agents know the expected
-monorepo shape.
+plan these inside one fullstack feature memory, then route backend and frontend foundation tasks
+from the same `slice.md` structure contract so both agents know the expected monorepo shape.
+
+**Slice by user outcome, not implementation layer**: a feature slice is the smallest coherent user
+request that can be planned, implemented, explored, and reviewed together. Do not split a normal
+MVP-style request into separate scaffold, auth, endpoint, CRUD, page, and test slices just because
+different layers or files are involved. For example, "create a nutrition app to track weight and a
+food plan" is one fullstack app slice with foundation plus related CRUD tasks in the same feature
+memory, unless the user explicitly asks for phased delivery or a hard dependency makes one part
+impossible to specify safely.
 
 ## Deterministic gates (hooks + `validate-tools`)
 
@@ -53,8 +60,8 @@ Because of this, QA reviews judgment only (does the design hold, do the tests co
 
 The orchestrator has two modes and must use exactly one per response:
 
-- Plan Mode (primary): create/update feature memory and the Agent Plan. The Agent Plan table is the full execution sequence — each row names the agent, files to read, do-not-touch scope, and stop condition.
-- Route Mode (exception): emit one tiny role-specific handoff. Used only when the orchestrator is re-invoked to resolve an `ESCALATE`/`BLOCKED` return or to fan out an E2E `block:`/`question:` fix — not for normal happy-path steps.
+- Plan Mode (primary): create/update `slice.md`, `rules.md`, and the Agent Plan. The Agent Plan table is the full execution sequence — each row names the agent, files to read, do-not-touch scope, and stop condition.
+- Route Mode (exception): emit one tiny targeted handoff. Used only when the orchestrator is re-invoked to resolve an `ESCALATE`/`BLOCKED` return or to fan out an E2E `block:`/`question:` fix — not for normal happy-path steps.
 
 Start every feature by invoking the `orchestrator`. The main thread is the hub: it drives the Agent Plan table row by row, invoking each agent directly, and returns to the orchestrator only for escalations and E2E-bug fan-out. Agents never communicate directly with each other.
 
@@ -62,6 +69,7 @@ Start every feature by invoking the `orchestrator`. The main thread is the hub: 
 
 - Prefer existing local context: `.codex/feature-memory/<slice>/`, repository files, tests, and prior agent handoffs.
 - The orchestrator may call `get_metadata()` once per feature slice only when the needed slugs are not already known from existing feature memory or `.codex/guideline-routing.md`.
+- The orchestrator reads `.codex/templates/template-routing.md` first, then only the category templates needed for the slice. Do not load or recreate a monolithic full template.
 - Fetch only the specific guidelines required by the current slice. Never call broad context tools such as `get_all_context` for normal feature work.
 - When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.codex/feature-memory/<slice>/` or sends a richer handoff to the subagent.
 - If a downstream agent would need to guess, infer from general knowledge, or proceed best-effort, it must stop and ask the orchestrator for targeted context for the existing slice.
@@ -70,11 +78,13 @@ Start every feature by invoking the `orchestrator`. The main thread is the hub: 
 - Correctness beats compactness. Do not omit provenance, required rules, or blocking uncertainty to satisfy a token budget. Keep handoffs concise, but full feature memory may exceed 150 lines when needed to preserve MCP-backed decisions.
 - Keep only three detailed QA-approved active slice memories. Before QA-approved slice 4, 7, 10, and so on, the orchestrator compacts the previous three QA-approved slices into one review-only historical summary under `.codex/feature-memory/history/`. Blocked, in-progress, unreviewed, and QA-rejected slices stay active and detailed.
 - Use conditional routing. Invoke only the agents needed for the slice; do not run the full backend -> frontend -> e2e-explorer -> qa flow unless the slice is fullstack and user-facing.
+- Keep one feature memory per coherent user outcome. Use `slice.md` Agent Plan rows for foundation, backend, frontend, E2E, and QA work; do not create new feature slices or role-specific markdown files for those implementation phases.
+- Split a user request into multiple feature memories only when the user asks for phases, the work contains independent product outcomes that can ship separately, a compliance/security gate must land before dependent behavior, or the requested scope is too large to review as one QA unit. Record the reason for every split in the Agent Plan.
 - The `e2e-explorer` never browses MCP and never edits application code. When it returns `E2E_BUGS_FOUND`, the orchestrator routes each fix to the suspected owner, then re-invokes the explorer to confirm. A user-facing slice is not done while `block:` findings remain in `e2e/report.md`.
 - Plan before routing. The orchestrator must not mix Plan Mode and Route Mode in the same response.
-- Handoffs must be tiny: feature memory path, role-specific section, changed file list, and exact task.
+- Handoffs must be tiny: `slice.md`, `rules.md`, changed file list, and exact task.
 - Handoffs must also list every agent-infrastructure file a non-orchestrator subagent may read. If a file is not listed, the subagent treats it as blocked.
-- Every task file must include task provenance: each concrete file path, directory-tree choice, dependency, command, acceptance criterion, and test case must map to a rule in that role's `rules.md` by slug. If the orchestrator cannot cite the slug, it must mark the task `BLOCKED` and ask for targeted MCP context instead of routing it.
+- `slice.md` must include task provenance: each concrete file path, directory-tree choice, dependency, command, acceptance criterion, and test case must map to a rule in `rules.md` by slug. If the orchestrator cannot cite the slug, it must mark the slice `BLOCKED` and ask for targeted MCP context instead of routing it.
 - Every slice memory must include `Status` and `Do Not Touch`. The QA Handoff carries review focus and blocking risks only — no validator list.
 - Commit messages may cite only slugs already present in feature memory. Agents must not expand commit slugs with fresh guideline work.
 - Minimal Slice Mode is mandatory for docs, config-only, copy, one-file non-behavior changes, and dependency-free fixes.

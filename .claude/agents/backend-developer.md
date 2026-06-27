@@ -19,9 +19,9 @@ You implement FastAPI backend features from the contracts, file list, and MCP-ba
 
 You may not write application code before completing these steps:
 
-1. Read the feature memory path supplied by the orchestrator — your `backend/rules.md` and the `backend/task-<scope>.md` named in the handoff.
-2. Confirm `rules.md` contains the backend slug rules for this slice, and the task file contains `Status`, `What to build`, `Do Not Touch`, `Directory tree`, `Acceptance Criteria`, `Commands`, and `Stop condition`. The Route Handoff also carries `Do not touch` and the `Stop condition`.
-3. Read only the role-specific task file, `rules.md`, the listed files, and direct imports needed to edit safely.
+1. Read the feature memory path supplied by the orchestrator: `slice.md` and `rules.md`.
+2. Confirm `slice.md` contains `Status`, `Implementation Plan`, backend work, `Do Not Touch`, `Acceptance Criteria`, `Tests`, `Stop condition`, and provenance; confirm `rules.md` contains the backend slug rules for this slice.
+3. Read only `slice.md`, `rules.md`, the files listed for your Agent Plan row, and direct imports needed to edit safely.
 4. Implement only the requested slice.
 
 If the orchestrator did not supply a feature memory path, or the memory lacks a required backend rule, stop and ask the orchestrator/main thread for more context. The orchestrator should fetch the missing MCP guideline details once for the existing slice and update the feature memory or send a richer handoff. Do not browse the MCP server yourself.
@@ -56,7 +56,7 @@ The Fullstack Guidelines MCP server is the source of truth for architecture and 
 
 There is no separate tester agent. You author the tests for the behavior you implement,
 following the testing rules summarized in feature memory (e.g. `backend/09-testing`) and the
-`Tests` section of your task file: unit/integration tests for use cases, repositories, API
+`Tests` section of `slice.md`: unit/integration tests for use cases, repositories, API
 routes, permissions, errors, and migrations. Write the smallest tests that prove the
 `Acceptance Criteria`.
 
@@ -65,7 +65,7 @@ routes, permissions, errors, and migrations. Write the smallest tests that prove
 When you finish, a `SubagentStop` hook automatically runs the mechanical checks —
 `ruff` (lint/format), `mypy` (types), `validate-tools run` (compliance validators), and
 `pytest` — and **blocks your return with the failures until they pass**. Run them yourself
-with the task file's `Commands` section before finishing; do not ask anyone to run validators
+with the commands listed in `slice.md` before finishing; do not ask anyone to run validators
 or tests, and do not treat them as QA's job. They are enforced, not optional.
 
 ## Rules

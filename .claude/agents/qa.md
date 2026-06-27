@@ -32,12 +32,13 @@ them fail. So:
 
 ## Mandatory First Step
 
-Read the feature memory path supplied by the orchestrator — your `qa/rules.md` and
-`qa/checklist.md`. Do not call guideline discovery tools.
+Read the feature memory path supplied by the orchestrator: `slice.md` and `rules.md`. Do not call
+guideline discovery tools.
 
-- **Full slice:** if `qa/checklist.md` lacks `Status`, the `QA Handoff` block (`Review focus` /
-  `Blocking risks`), `Acceptance criteria`, or `Do Not Touch`, or if `qa/rules.md` lacks the slug
-  rules for this slice, return `BLOCKED` and ask the orchestrator for more context.
+- **Full slice:** if `slice.md` lacks `Status`, the `QA Handoff` block (`Review focus` /
+  `Blocking risks`), `Acceptance criteria`, `Implementation Plan`, provenance, or `Do Not Touch`,
+  or if `rules.md` lacks the QA slug rules for this slice, return `BLOCKED` and ask the
+  orchestrator for more context.
 - **Minimal slice** (docs / config-only / copy / one-file non-behavior change): a single
   `template-minimal.md`-based file with no `qa/` subdirectory. Return `BLOCKED` only if it lacks
   `Status`, `Do Not Touch`, `Acceptance Criteria`, or the `QA Handoff` block.
@@ -64,17 +65,17 @@ You may request targeted orchestrator context once per slice. If still insuffici
 ## Review Sequence
 
 1. Read the feature memory, PR description or change summary, and diff.
-2. Confirm the diff matches the request, contracts, the slugs in `qa/rules.md`, and the
+2. Confirm the diff matches the request, contracts, the slugs in `rules.md`, and the
    acceptance criteria.
 3. Confirm the diff respects `Do Not Touch`.
 4. Review architecture in order: domain, application, infrastructure, API, frontend, tests —
    judging design and layer boundaries, not mechanical lint. Confirm the slice has *meaningful*
    tests for its acceptance criteria (the hook proves they pass; you judge whether they cover the
    behavior that matters).
-5. Check cross-cutting hard rules from `qa/rules.md` and the `QA Handoff` block. If an obviously
+5. Check cross-cutting hard rules from `rules.md` and the `QA Handoff` block. If an obviously
    relevant rule category is missing, return `BLOCKED` and ask the orchestrator to update the
    slice from MCP.
-6. Spot-check rule provenance: every block in the role `rules.md` files must carry a
+6. Spot-check rule provenance: every block in `rules.md` must carry a
    `Source: get_guideline("<slug>")` line. A rule with no source slug is unverifiable — file it as
    a `question:` finding.
 7. Check E2E coverage for every new user-facing flow. If the slice was user-facing, read
@@ -96,8 +97,8 @@ Return one verdict to the orchestrator:
 
 - `APPROVED`: acceptance criteria are implemented with meaningful tests, the deterministic gate is
   green, no blocking findings remain, and required E2E coverage exists. You own the terminal
-  state: set `qa/checklist.md` `State:` to `QA APPROVED` with the verdict date.
-- `BLOCKED`: set `qa/checklist.md` `State:` to `QA BLOCKED`, then list every blocking finding with
+  state: set `slice.md` `State:` to `QA APPROVED` with the verdict date.
+- `BLOCKED`: set `slice.md` `State:` to `QA BLOCKED`, then list every blocking finding with
   severity, file/line when available, violated rule, required fix, and responsible agent.
 
 Never communicate directly with backend-developer or frontend-developer. All findings route

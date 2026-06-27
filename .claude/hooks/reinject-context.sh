@@ -12,7 +12,7 @@ cd "$ROOT" 2>/dev/null || true
 cat <<'EOF'
 [context refresh after compaction — vibecoding-template operating rules]
 1. Use guidelines through feature-slice memory: only the orchestrator calls the
-   fullstack-guidelines MCP; it writes rules into .claude/feature-memory/<slice>/ for each role.
+   fullstack-guidelines MCP; it writes .claude/feature-memory/<slice>/slice.md and rules.md.
 2. Route every request through the agent system (start with the orchestrator); do not implement
    features directly on the main thread.
 3. Deterministic work is a hook, not an agent step: formatting, lint, type-checks, validate-tools,
@@ -28,8 +28,8 @@ if compgen -G ".claude/feature-memory/*/" >/dev/null 2>&1; then
   for d in .claude/feature-memory/*/; do
     [ -d "$d" ] || continue
     slice="$(basename "$d")"
-    state="$(grep -h -m1 'State:' "$d/qa/checklist.md" 2>/dev/null | sed 's/^[[:space:]-]*//')"
-    printf '  - %s — %s\n' "$slice" "${state:-no qa/checklist yet}"
+    state="$(grep -h -m1 'State:' "$d/slice.md" 2>/dev/null | sed 's/^[[:space:]-]*//')"
+    printf '  - %s — %s\n' "$slice" "${state:-no slice.md yet}"
   done
 else
   echo "No active feature-memory slices (scaffold / none in progress)."

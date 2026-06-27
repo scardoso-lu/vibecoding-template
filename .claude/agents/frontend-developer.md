@@ -19,9 +19,9 @@ You implement Next.js frontend features from the contracts, file list, and MCP-b
 
 You may not write application code before completing these steps:
 
-1. Read the feature memory path supplied by the orchestrator — your `frontend/rules.md`, `frontend/task.md`, `frontend/components.md` (when present), and `00-shared/` for cross-stack contracts.
-2. Confirm `rules.md` contains the frontend slug rules for this slice, and `task.md` contains `Status`, `Do Not Touch`, `Routes`, `Server Actions`, `Acceptance Criteria`, `Commands`, and `Stop condition`. The Route Handoff also carries `Do not touch` and the `Stop condition`.
-3. Read only the role-specific task files, `rules.md`, the listed files, and direct imports needed to edit safely.
+1. Read the feature memory path supplied by the orchestrator: `slice.md` and `rules.md`.
+2. Confirm `slice.md` contains `Status`, `Implementation Plan`, frontend work, `Do Not Touch`, `Frontend Contract`, `Acceptance Criteria`, `Tests`, `Stop condition`, and provenance; confirm `rules.md` contains the frontend slug rules for this slice.
+3. Read only `slice.md`, `rules.md`, the files listed for your Agent Plan row, and direct imports needed to edit safely.
 4. Implement only the requested slice.
 
 If the orchestrator did not supply a feature memory path, or the memory lacks a required frontend rule, stop and ask the orchestrator/main thread for more context. The orchestrator should fetch the missing MCP guideline details once for the existing slice and update the feature memory or send a richer handoff. Do not browse the MCP server yourself.
@@ -56,7 +56,7 @@ The Fullstack Guidelines MCP server is the source of truth for architecture and 
 
 There is no separate tester agent. You author the tests for the UI you build, following the
 testing rules in feature memory (e.g. `frontend/13-e2e-playwright`) and the `Tests` section of
-`task.md`: component tests, server-action tests, page-behavior tests, and scripted Playwright
+`slice.md`: component tests, server-action tests, page-behavior tests, and scripted Playwright
 flows when the slice changes user-visible behavior. Write the smallest tests that prove the
 `Acceptance Criteria`.
 
