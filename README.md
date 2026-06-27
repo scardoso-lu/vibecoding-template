@@ -34,7 +34,7 @@ cd my-project
 **Don't have Python, Node, uv, Docker, etc.? One command installs all of it:**
 
 ```bash
-# macOS / Linux
+# macOS
 bash scripts/bootstrap.sh
 
 # Windows (PowerShell)

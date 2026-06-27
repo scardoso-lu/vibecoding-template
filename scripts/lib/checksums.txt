@@ -8,12 +8,10 @@
 # install an unverified direct download.
 #
 # WHERE HASHES COME FROM (never invent them):
-#   - Node.js: NOT listed here. Linux verifies the tarball against Node's own
-#     GPG-signed SHASUMS256.txt fetched at install time — a stronger, signed source.
-#   - Docker (Linux): NOT listed here. Installed from Docker's official apt repo,
-#     verified by apt against Docker's pinned GPG key.
-#   - winget / Homebrew packages: NOT listed here. The package manager verifies
-#     publisher signatures + manifest hashes itself.
+#   - Homebrew (macOS) / winget (Windows) packages: NOT listed here. The package
+#     manager verifies publisher signatures + manifest hashes itself.
+#   - uv: NOT listed here. Astral's official installer verifies the downloaded
+#     binary's checksum itself; we pin the version.
 #
 # So this file is only needed if you ADD a raw download to the scripts. Until then
 # it holds placeholders. A placeholder (the PLACEHOLDER_* token) makes the script
@@ -27,7 +25,3 @@
 # Example (Docker Desktop for Windows, if you switch from winget to a direct .exe):
 # Source: https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
 PLACEHOLDER_DO_NOT_INSTALL  docker-desktop-windows.exe
-
-# Example (Docker Desktop for macOS arm64, if you switch from Homebrew):
-# Source: https://desktop.docker.com/mac/main/arm64/Docker.dmg
-PLACEHOLDER_DO_NOT_INSTALL  docker-desktop-macos-arm64.dmg

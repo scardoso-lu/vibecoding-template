@@ -5,7 +5,7 @@ to install any of it.**
 
 | You're on | Run this |
 |---|---|
-| **macOS / Linux** | `bash scripts/bootstrap.sh` |
+| **macOS** | `bash scripts/bootstrap.sh` |
 | **Windows** | `powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1` |
 
 Add `--check` (bash) or `-Check` (PowerShell) to just report what's installed
@@ -18,10 +18,11 @@ environment take effect.
 
 - **uv** — Python package manager (also installs **Python 3.12**)
 - **Node.js** (LTS) + **pnpm** (via Corepack)
-- **Docker** — Docker Desktop on Windows/macOS, Docker Engine on Linux
+- **Docker Desktop**
 - **Chromium** + the system libraries **Playwright** needs (for the
   `e2e-explorer` agent and frontend E2E tests)
-- A base package manager if missing — **Homebrew** on macOS
+- A base package manager if missing — **Homebrew** (macOS); **winget** is used
+  on Windows and must already be present (ships with Windows 10/11)
 
 ## The supply-chain guarantees
 
@@ -30,15 +31,16 @@ Two protections are wired in, using the package managers' own built-in features
 
 ### 1. Everything is hash/signature verified — fail closed
 
-- Toolchain installs go through **signed package managers** — winget (macOS:
-  Homebrew; Linux: apt). They verify publisher signatures and package hashes
-  themselves. Versions are pinned in [`lib/versions.env`](lib/versions.env).
-- The **Node.js** runtime on Linux is verified with **SHA-256 against Node's own
-  GPG-signed `SHASUMS256.txt`** — a real, signed checksum, never a value we typed
-  in by hand.
-- Any other **direct download** is checked against
-  [`lib/checksums.txt`](lib/checksums.txt). If an entry is **missing or a
-  placeholder, the script aborts** rather than installing something unverified.
+- Toolchain installs go through **signed package managers** — **Homebrew** on
+  macOS, **winget** on Windows. They verify publisher signatures and package
+  hashes against their own manifests. Versions are pinned in
+  [`lib/versions.env`](lib/versions.env).
+- **uv** is installed with Astral's official installer, which verifies the
+  downloaded binary's checksum itself; the version is pinned.
+- Any **direct download** you add later is checked against
+  [`lib/checksums.txt`](lib/checksums.txt) via the `verify_sha256` /
+  `Assert-Sha256` helper. If an entry is **missing or a placeholder, the script
+  aborts** rather than installing something unverified.
 
 > We never invent hashes. If you add a raw download to a script, populate its
 > entry in `checksums.txt` from the vendor's published checksum (see that file's
