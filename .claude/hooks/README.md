@@ -10,6 +10,9 @@ every clone inherits them.
 | `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, and `git push --force`. |
 | `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to review-only `feature-memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Also confines the **e2e-explorer** to writing under `feature-memory/<slice>/e2e/`. |
 | `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the orchestrator may call the guidelines server**; downstream roles are denied and told to ask the orchestrator. |
+| `auto-format.sh` | `PostToolUse` | `Edit\|Write\|MultiEdit` | Formats the file Claude just wrote (`ruff` for `.py`, locally-installed `prettier` for JS/TS/JSON/CSS/YAML). No-op when the tool isn't installed; never triggers a network install. |
+| `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs the developer's static checks (`ruff`/`mypy` or `tsc --noEmit`) when it finishes; blocks the stop with the errors so it fixes them before returning. |
+| `notify-attention.sh` | `Notification` | — | Desktop alert when Claude is waiting for input/permission (`osascript`/`notify-send`/PowerShell). No-op where no notifier exists. |
 | `notify-stop.sh` | `Stop` | — | Speaks "Claude stopped" when a turn finishes. Audible only on a machine with a TTS backend (your local session); a silent no-op in remote/CI sessions. |
 
 ## How blocking works
@@ -69,6 +72,62 @@ under Git Bash. On native Windows without Git Bash, point the command at a Power
 equivalent instead. Override the phrase by passing an argument, e.g. `notify-stop.sh "done"`; check
 which backend would be used with `NOTIFY_STOP_DEBUG=1`.
 
+## Deterministic verification (PostToolUse + SubagentStop)
+
+Two hooks move work out of "the agent should remember to do this" and into "this always
+happens":
+
+- **`auto-format.sh` (`PostToolUse`)** runs after every `Edit`/`Write`. It formats the exact
+  file Claude wrote using whatever formatter is installed locally — `ruff format` + `ruff check
+  --fix` for Python, a locally-installed `prettier` for JS/TS/JSON/CSS/YAML. It deliberately
+  resolves `prettier` from `node_modules/.bin` or `PATH` only, never via `npx` (which would fetch
+  it over the network), and is a silent no-op when nothing is installed. `PostToolUse` can't block
+  (the edit already happened) — this just keeps style consistent without asking each agent to run a
+  formatter.
+
+- **`verify-subagent.sh` (`SubagentStop`, matcher `backend-developer|frontend-developer`)** turns
+  the "run the Commands section before returning" instruction into a hard gate. When a developer
+  subagent finishes, it runs the fast static checks (`ruff check` / `mypy src` for backend,
+  `tsc --noEmit` for frontend) and, on failure, returns `{"decision":"block","reason":…}` so the
+  subagent keeps working and fixes the errors before it can hand back. It is **fail-safe** (no
+  manifest or tool → allow, so it's a no-op on the scaffold) and **loop-safe** (honors
+  `stop_hook_active`, and Claude Code caps consecutive Stop-blocks at 8).
+
+## Hooks vs subagents — can a subagent be removed?
+
+Short answer: **no agent is removed, because hooks and subagents do different kinds of work.**
+
+- **Deterministic, rule-based steps** belong in hooks, and now are: formatting, linting,
+  type-checking, path/secrets guards, MCP scoping, dependency bootstrap, and the developer
+  verification gate. These no longer depend on an LLM choosing to run them.
+- **Judgment and authoring steps** still need a model and stay in subagents: writing backend/
+  frontend code, *writing* tests, exploratory E2E, architecture review, and the merge decision.
+  A hook can run `pytest`; it cannot decide which tests to write or whether the design is sound.
+
+So hooks don't delete the `tester`, `e2e-explorer`, or `qa` — they offload the mechanical
+verification those agents used to do by hand, letting the agents focus on judgment.
+
+**Opt-in: an LLM-backed Stop gate.** If you want a stronger, still-fairly-deterministic finish
+condition, Claude Code supports `type: "prompt"` and `type: "agent"` hooks that call a model to
+evaluate a condition. For example, an agent-based `Stop` hook can run the suite and refuse to let
+the main session stop until tests pass:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [ { "type": "agent",
+                     "prompt": "Run the project's test suite (see CLAUDE.md). If anything fails, return {\"ok\": false, \"reason\": \"<what failed>\"}.",
+                     "timeout": 120 } ] }
+    ]
+  }
+}
+```
+
+This is **not enabled by default** — agent hooks are experimental, cost tokens on every turn, and
+overlap with the `qa` gate. Add it deliberately if a lighter loop (e.g. skipping a dedicated
+tester pass on small slices) is worth the tradeoff for your team.
+
 ## SessionStart behaviour
 
 `session-start.sh` runs **synchronously** (dependencies are guaranteed before the agent
@@ -87,9 +146,14 @@ echo '{"tool_input":{"command":"npx playwright install"}}'                 | .cl
 echo '{"tool_input":{"file_path":".env"}}'                                 | .claude/hooks/guard-edits.sh
 echo '{"agent_type":"e2e-explorer","tool_input":{"file_path":"src/x.ts"}}' | .claude/hooks/guard-edits.sh
 echo '{"agent_type":"backend-developer"}'                                  | .claude/hooks/guard-mcp.sh
+echo '{"tool_input":{"file_path":"'"$PWD"'/x.py"}}'                         | .claude/hooks/auto-format.sh
+echo '{"agent_type":"backend-developer","stop_hook_active":false}'         | .claude/hooks/verify-subagent.sh
+echo '{}'                                                                  | .claude/hooks/notify-attention.sh
 CLAUDE_CODE_REMOTE=true .claude/hooks/session-start.sh
 ```
 
-A `permissionDecision: "deny"` JSON object = blocked; no output = allowed.
+For `PreToolUse` guards, a `permissionDecision: "deny"` JSON object = blocked and no output =
+allowed. For `verify-subagent.sh`, a `{"decision":"block"}` object = the developer must keep
+working and no output = allowed to finish.
 
 Reference: https://code.claude.com/docs/en/hooks
