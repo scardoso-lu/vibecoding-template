@@ -32,10 +32,10 @@ Do not implement features directly. Invoke the right agent for the work.
 
 The orchestrator has two modes and must use exactly one per response:
 
-- Plan Mode: create/update feature memory and Agent Plan.
-- Route Mode: emit one tiny role-specific handoff from an existing plan.
+- Plan Mode (primary): create/update feature memory and the Agent Plan. The Agent Plan table is the full execution sequence — each row names the agent, files to read, do-not-touch scope, and stop condition.
+- Route Mode (exception): emit one tiny role-specific handoff. Used only when the orchestrator is re-invoked to resolve an `ESCALATE`/`BLOCKED` return or to fan out an E2E `block:`/`question:` fix — not for normal happy-path steps.
 
-Start every feature by invoking the `orchestrator`. Agents never communicate directly with each other; the main thread is the hub.
+Start every feature by invoking the `orchestrator`. The main thread is the hub: it drives the Agent Plan table row by row, invoking each agent directly, and returns to the orchestrator only for escalations and E2E-bug fan-out. Agents never communicate directly with each other.
 
 ## MCP budget rules
 
