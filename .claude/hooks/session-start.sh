@@ -30,6 +30,13 @@ if [ -f "pyproject.toml" ]; then
   fi
 fi
 
+# Validators: the deterministic gate (verify-subagent.sh) runs `validate-tools run`.
+# Make the CLI available so the gate enforces compliance instead of skipping it.
+if command -v uv >/dev/null 2>&1 && ! command -v validate-tools >/dev/null 2>&1; then
+  log "installing validate-tools (used by the SubagentStop gate)"
+  uv tool install validate-tools || log "WARN: 'uv tool install validate-tools' failed; gate will skip validators"
+fi
+
 # Frontend: pnpm-managed Node project.
 if [ -f "package.json" ]; then
   if command -v pnpm >/dev/null 2>&1; then

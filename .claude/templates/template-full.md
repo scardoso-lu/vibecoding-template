@@ -11,18 +11,18 @@ The orchestrator reads this file at the start of Plan Mode and follows every sec
     cross-stack.md             # error envelope, pagination shape, TypeScript↔Python type mappings
 
   backend/
-    rules.md                   # all backend MCP rules — written once, read by every backend invocation
+    rules.md                   # all backend MCP rules (incl. testing) — read by every backend invocation
     task-foundation.md         # base infrastructure: Base, IdMixin, session, exceptions, migration scaffold
-    task-<domain>.md           # one file per domain: entity + repo + use cases + routes
+    task-<domain>.md           # one file per domain: entity + repo + use cases + routes + Tests
 
   frontend/
-    rules.md                   # all frontend MCP rules
-    task.md                    # pages, services, server actions
+    rules.md                   # all frontend MCP rules (incl. testing)
+    task.md                    # pages, services, server actions + Tests
     components.md              # only when the feature has more than three components
 
-  tests/
-    rules.md                   # testing MCP rules
-    task.md                    # test file list, case descriptions, fixture notes
+  # No tests/ directory and no tester role. Each developer authors the tests for its slice
+  # (see the Tests section in each task file). Lint, types, validate-tools, and the suite run
+  # automatically as the SubagentStop gate hook, not as memory-driven agent steps.
 
   e2e/                         # user-facing slices only — omit for backend-only or non-behavior changes
     rules.md                   # exploratory E2E MCP rules
@@ -32,7 +32,7 @@ The orchestrator reads this file at the start of Plan Mode and follows every sec
 
   qa/
     rules.md                   # QA MCP rules
-    checklist.md               # review focus, blocking risks, E2E coverage, allowed validators
+    checklist.md               # review focus, blocking risks, E2E coverage (no validator list — hooks run them)
 ```
 
 ---
@@ -181,11 +181,17 @@ Base infrastructure shared by all domains.
 ## Acceptance Criteria
 - [ ] <observable outcome from this domain's scope>
 
+## Tests
+> The developer authors these (no tester role). Describe cases only — no test code.
+- `tests/unit/use_cases/test_<usecase>.py` — happy path + each error case
+- `tests/integration/routes/test_<resource>_routes.py` — each method → status code + scenario
+
 ## Commands
 <see CLAUDE.md — lint, type-check, test>
 
 ## Stop condition
-<what "done" looks like>
+<what "done" looks like. The SubagentStop gate runs ruff/mypy/validate-tools/pytest and blocks
+the return until green — so "done" means all of those pass.>
 ```
 
 ---
@@ -240,11 +246,17 @@ Backend complete. API contract: `00-shared/api-contract.md`. Types: `00-shared/c
 ## Acceptance Criteria
 - [ ] <observable outcome in the UI>
 
+## Tests
+> The developer authors these (no tester role). Describe cases only — no test code.
+- Component / server-action / page-behavior tests for the acceptance criteria
+- Scripted Playwright flow(s) when the slice changes user-visible behavior
+
 ## Commands
-<see CLAUDE.md — type-check>
+<see CLAUDE.md — type-check, test>
 
 ## Stop condition
-<what "done" looks like>
+<what "done" looks like. The SubagentStop gate runs tsc/validate-tools/tests and blocks the
+return until green.>
 ```
 
 ### `frontend/components.md`
@@ -265,49 +277,13 @@ Backend complete. API contract: `00-shared/api-contract.md`. Types: `00-shared/c
 
 ---
 
-## `tests/`
+## Tests (no separate role)
 
-> `rules.md` contains testing MCP slugs only. `task.md` lists test cases by description — no implementation code.
-
-### `tests/rules.md`
-
-```md
-# <slice> — Testing Rules
-
-All rules extracted from `get_guideline()` MCP calls.
-
-## `<slug>`
-Source: get_guideline("<slug>") — fetched this session
-
-- Always …
-- Never …
-- Must …
-```
-
-### `tests/task.md`
-
-```md
-# <slice> — Tests
-
-## Status
-- State: active | TESTS PASS | TESTS FAIL   # orchestrator sets this from the tester verdict: TESTS_ADDED_PASS → TESTS PASS, TESTS_ADDED_FAIL → TESTS FAIL
-- Last run: —
-
-## Unit tests
-`tests/unit/use_cases/test_<usecase>.py`
-- happy path: <what the use case returns on success>
-- <error case>: <which exception is raised and why>
-
-## Integration tests
-`tests/integration/routes/test_<resource>_routes.py`
-- <HTTP method> → <status code>: <scenario>
-
-## Commands
-<see CLAUDE.md — test>
-
-## Stop condition
-<what "done" looks like>
-```
+There is no `tests/` directory and no tester agent. Testing guideline rules go in each developer's
+`rules.md` (e.g. `backend/09-testing`, `frontend/13-e2e-playwright`), and the cases to cover go in
+the `Tests` section of each `task.md`. The developer authors and runs them; the SubagentStop gate
+hook (`.claude/hooks/verify-subagent.sh`) runs lint, types, `validate-tools`, and the suite on
+finish and blocks the return until green.
 
 ---
 
@@ -364,7 +340,7 @@ Every listed flow exercised; findings logged to `report.md` with reproducible st
 
 ## `qa/`
 
-> `rules.md` contains QA MCP slugs. `checklist.md` must list every allowed validator by exact `validate-tools` CLI command. QA is the final gate — nothing merges without `State: QA APPROVED`.
+> `rules.md` contains QA MCP slugs. `checklist.md` carries review focus and blocking risks — **no validator list** (validators run as the SubagentStop gate hook, not as a QA step). QA is the final judgment gate — nothing merges without a green gate and `State: QA APPROVED`.
 
 ### `qa/rules.md`
 
@@ -396,13 +372,14 @@ Source: get_guideline("<slug>") — fetched this session
 ### Review focus
 - <what to check — layer boundaries, response_model, migration safety, actor re-verification, etc.>
 - Rule provenance: every block in the role `rules.md` files carries a `Source: get_guideline("<slug>")` line.
+- Test adequacy: do the developer's tests actually cover the acceptance criteria? (The hook proves
+  they pass; QA judges whether they cover the behavior that matters.)
 
 ### Blocking risks
 - <risk: what breaks if this is wrong>
 
-### Allowed validators
-- `validate-tools <command>` — <why it applies>
-- Empty means QA runs no validators.
+> No validator list. Lint, types, `validate-tools`, and the suite run automatically as the
+> SubagentStop gate hook before QA ever sees the slice — QA judges design, not mechanical checks.
 
 ## E2E coverage required
 - [ ] <flow>

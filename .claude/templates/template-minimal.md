@@ -19,6 +19,6 @@
 ## QA Handoff
 - Review focus:
 - Blocking risks:
-- Allowed validators:
-  - `validate-tools <command>` — <why it applies>
-  - Empty means QA runs no validators.
+
+> No validator list: `validate-tools` and other deterministic checks run as hooks, not as a QA
+> step. QA makes the judgment call only.

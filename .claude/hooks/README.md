@@ -43,7 +43,7 @@ The guards read `agent_type` to enforce role-scoped contracts that used to live 
 the agent prompts:
 
 - **MCP is orchestrator-only** (`guard-mcp.sh`): calls to `mcp__fullstack-guidelines__*`
-  from `backend-developer` / `frontend-developer` / `tester` / `e2e-explorer` / `qa` are
+  from `backend-developer` / `frontend-developer` / `e2e-explorer` / `qa` are
   denied. The orchestrator (and the main thread, which has no `agent_type`) pass through.
 - **e2e-explorer write scope** (`guard-edits.sh`): when `agent_type` is `e2e-explorer`,
   writes are allowed only under `.claude/feature-memory/<slice>/e2e/`; anything else is
@@ -93,24 +93,26 @@ happens":
   manifest or tool → allow, so it's a no-op on the scaffold) and **loop-safe** (honors
   `stop_hook_active`, and Claude Code caps consecutive Stop-blocks at 8).
 
-## Hooks vs subagents — can a subagent be removed?
+## Hooks vs subagents — the division of labor
 
-Short answer: **no agent is removed, because hooks and subagents do different kinds of work.**
+The principle (CLAUDE.md rule 3): **if a step can be made deterministic, it is a hook and is
+deleted from the agents.** Applied here:
 
-- **Deterministic, rule-based steps** belong in hooks, and now are: formatting, linting,
-  type-checking, path/secrets guards, MCP scoping, dependency bootstrap, and the developer
-  verification gate. These no longer depend on an LLM choosing to run them.
-- **Judgment and authoring steps** still need a model and stay in subagents: writing backend/
-  frontend code, *writing* tests, exploratory E2E, architecture review, and the merge decision.
-  A hook can run `pytest`; it cannot decide which tests to write or whether the design is sound.
+- **Deterministic, rule-based steps → hooks:** formatting, linting, type-checking,
+  `validate-tools` compliance, running the test suite, path/secrets guards, MCP scoping, and
+  dependency bootstrap. These no longer depend on an LLM choosing to run them.
+- **Judgment and authoring steps → subagents:** writing backend/frontend code *and its tests*,
+  exploratory E2E, architecture review, and the merge decision. A hook can run `pytest`; it cannot
+  decide which tests to write or whether the design is sound.
 
-So hooks don't delete the `tester`, `e2e-explorer`, or `qa` — they offload the mechanical
-verification those agents used to do by hand, letting the agents focus on judgment.
+This split is why the **`tester` agent was removed** (developers author tests; the SubagentStop
+gate runs them) and the **`qa` agent was slimmed to judgment only** (it no longer runs
+`validate-tools` — the gate does). The agents that remain — orchestrator, the two developers,
+e2e-explorer, qa — each do something a script cannot.
 
-**Opt-in: an LLM-backed Stop gate.** If you want a stronger, still-fairly-deterministic finish
-condition, Claude Code supports `type: "prompt"` and `type: "agent"` hooks that call a model to
-evaluate a condition. For example, an agent-based `Stop` hook can run the suite and refuse to let
-the main session stop until tests pass:
+**Opt-in: an LLM-backed Stop gate.** For an even stronger finish condition, Claude Code supports
+`type: "prompt"` and `type: "agent"` hooks that call a model. For example, an agent-based `Stop`
+hook can run the suite and refuse to let the main session stop until tests pass:
 
 ```json
 {
@@ -124,9 +126,9 @@ the main session stop until tests pass:
 }
 ```
 
-This is **not enabled by default** — agent hooks are experimental, cost tokens on every turn, and
-overlap with the `qa` gate. Add it deliberately if a lighter loop (e.g. skipping a dedicated
-tester pass on small slices) is worth the tradeoff for your team.
+Not enabled by default — agent hooks are experimental, cost tokens on every turn, and overlap with
+the developer SubagentStop gate. Add it deliberately if you want a model-checked finish on top of
+the deterministic one.
 
 ## SessionStart behaviour
 
