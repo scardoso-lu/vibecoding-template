@@ -13,6 +13,9 @@ every clone inherits them.
 | `auto-format.sh` | `PostToolUse` | `Edit\|Write\|MultiEdit` | Formats the file Claude just wrote (`ruff` for `.py`, locally-installed `prettier` for JS/TS/JSON/CSS/YAML). No-op when the tool isn't installed; never triggers a network install. |
 | `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs the developer's static checks (`ruff`/`mypy` or `tsc --noEmit`) when it finishes; blocks the stop with the errors so it fixes them before returning. |
 | `notify-attention.sh` | `Notification` | — | Desktop alert when Claude is waiting for input/permission (`osascript`/`notify-send`/PowerShell). No-op where no notifier exists. |
+| `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys / AWS keys and blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
+| `format-changed.sh` | `Stop` | — | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
+| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 3 CLAUDE.md rules + the deterministic-gate model + the active feature-memory slice states. |
 | `notify-stop.sh` | `Stop` | — | Speaks "Claude stopped" when a turn finishes. Audible only on a machine with a TTS backend (your local session); a silent no-op in remote/CI sessions. |
 
 ## How blocking works
@@ -72,6 +75,29 @@ under Git Bash. On native Windows without Git Bash, point the command at a Power
 equivalent instead. Override the phrase by passing an argument, e.g. `notify-stop.sh "done"`; check
 which backend would be used with `NOTIFY_STOP_DEBUG=1`.
 
+## Closing the Bash gap, compaction, and commit secrets
+
+Three hooks cover paths the per-edit hooks miss:
+
+- **`format-changed.sh` (`Stop`)** — `auto-format.sh` only fires on `Edit`/`Write`, so files written
+  through `Bash` (Alembic `--autogenerate` migrations, codegen, scaffolding) never get formatted.
+  Once per turn this scans `git status --porcelain` and routes each changed/untracked file back
+  through `auto-format.sh`, so there is one source of truth for the ruff/prettier mapping. Never
+  blocks; loop-safe via `stop_hook_active`; a no-op when no formatter is installed.
+
+- **`reinject-context.sh` (`SessionStart`, matcher `compact`)** — compaction can drop the operating
+  rules. Anything it prints to stdout is added back to context, so it restates the three CLAUDE.md
+  rules, the "deterministic work is a hook" model, and lists the active feature-memory slices with
+  their QA `State`. It summarizes; it does not dump CLAUDE.md.
+
+- **`guard-commit.sh` (`PreToolUse` Bash, `if: Bash(git commit *)`)** — the `SubagentStop` gate only
+  covers developer subagents, so a main-thread `git commit` is otherwise unchecked. This scans the
+  **staged diff only** (added lines) for structural secret material — private-key blocks,
+  `AKIA…` AWS key ids, AWS secret access keys — and denies the commit on a match. It deliberately
+  does **not** use a generic `password|secret|token` regex or a whole-repo `validate-tools secrets`
+  scan: both would flag this repo's own security tooling and block its commits. Whole-tree secret
+  scanning already runs in the `SubagentStop` gate via `validate-tools run`.
+
 ## Deterministic verification (PostToolUse + SubagentStop)
 
 Two hooks move work out of "the agent should remember to do this" and into "this always
@@ -86,12 +112,12 @@ happens":
   formatter.
 
 - **`verify-subagent.sh` (`SubagentStop`, matcher `backend-developer|frontend-developer`)** turns
-  the "run the Commands section before returning" instruction into a hard gate. When a developer
-  subagent finishes, it runs the fast static checks (`ruff check` / `mypy src` for backend,
-  `tsc --noEmit` for frontend) and, on failure, returns `{"decision":"block","reason":…}` so the
-  subagent keeps working and fixes the errors before it can hand back. It is **fail-safe** (no
-  manifest or tool → allow, so it's a no-op on the scaffold) and **loop-safe** (honors
-  `stop_hook_active`, and Claude Code caps consecutive Stop-blocks at 8).
+  the "run the checks before returning" instruction into a hard gate. When a developer subagent
+  finishes, it runs the full deterministic set — `ruff`/`mypy` (or `tsc --noEmit`), `validate-tools
+  run`, and the test suite (`pytest` / `pnpm test`) — and, on failure, returns
+  `{"decision":"block","reason":…}` so the subagent keeps working and fixes the errors before it can
+  hand back. It is **fail-safe** (no manifest or tool → allow, so it's a no-op on the scaffold) and
+  **loop-safe** (honors `stop_hook_active`, and Claude Code caps consecutive Stop-blocks at 8).
 
 ## Hooks vs subagents — the division of labor
 
