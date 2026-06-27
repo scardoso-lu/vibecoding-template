@@ -23,7 +23,12 @@ Both must clear before a PR merges.
 
 ## Mandatory First Step
 
-Read the feature memory path supplied by the orchestrator — your `qa/rules.md` and `qa/checklist.md` — then read the tester verdict. Do not call guideline discovery tools. If `qa/checklist.md` lacks `Status`, the `QA Handoff` block (`Review focus` / `Blocking risks` / `Allowed validators`), `Acceptance criteria`, or `Do Not Touch`, or if `qa/rules.md` lacks the slug rules for this slice, return `BLOCKED` and ask the orchestrator for more context. The orchestrator should update the feature memory or send a richer handoff after a targeted MCP fetch.
+Read the feature memory path supplied by the orchestrator, then read the tester verdict. Do not call guideline discovery tools. The required inputs depend on the slice mode:
+
+- **Full slice:** read `qa/rules.md` and `qa/checklist.md`. Return `BLOCKED` if `qa/checklist.md` lacks `Status`, the `QA Handoff` block (`Review focus` / `Blocking risks` / `Allowed validators`), `Acceptance criteria`, or `Do Not Touch`, or if `qa/rules.md` lacks the slug rules for this slice.
+- **Minimal slice** (docs / config-only / copy / one-file non-behavior change): the orchestrator supplies a single `template-minimal.md`-based memory file with no `qa/` subdirectory and no per-slug `rules.md`. Return `BLOCKED` only if that file lacks `Status`, `Do Not Touch`, `Acceptance Criteria`, or the `QA Handoff` block with `Allowed validators`. Do not require `qa/rules.md`, `qa/checklist.md`, or slug rules — those are intentionally skipped for this workflow.
+
+When blocked, ask the orchestrator for more context. The orchestrator should update the feature memory or send a richer handoff after a targeted MCP fetch.
 
 Before running any validator, ensure the CLI is installed:
 
@@ -80,7 +85,7 @@ If you think an unlisted validator is required, do not run it. Return `BLOCKED` 
 3. Confirm the diff respects `Do Not Touch`.
 4. Review architecture in order: domain, application, infrastructure, API, frontend, tests.
 5. Check cross-cutting hard rules from `qa/rules.md`, the `QA Handoff` block, and allowed validators. If an obviously relevant rule category is missing, return `BLOCKED` and ask the orchestrator to update the existing slice from MCP.
-5a. Spot-check rule provenance: every block in the role `rules.md` files must carry a `Source: get_guideline("<slug>")` line. A rule with no source slug is unverifiable — file it as a `question:` finding asking the orchestrator to re-fetch or remove it.
+5a. Spot-check rule provenance (full slices only — minimal slices carry no role `rules.md`): every block in the role `rules.md` files must carry a `Source: get_guideline("<slug>")` line. A rule with no source slug is unverifiable — file it as a `question:` finding asking the orchestrator to re-fetch or remove it.
 6. Check E2E coverage for every new user-facing flow or rendered variant. If the slice was user-facing, read `e2e/report.md`: any unresolved `block:` finding is a blocking review finding.
 7. Run only validators from the allowed list in the handoff via `validate-tools <command> [paths]`.
 8. Run `validate-tools run` only when `validate-tools run` is listed in `Allowed validators` and local review evidence is already collected.
