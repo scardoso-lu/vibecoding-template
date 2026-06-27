@@ -17,9 +17,6 @@ The `fullstack-guidelines` MCP server is the source of truth for what code shoul
 **2. Route every request through the agent system.**
 Do not implement features directly. Invoke the right agent for the work.
 
-**3. Deterministic work is a hook, not an agent step.**
-Anything a script can decide — formatting, linting, type-checking, `validate-tools` compliance, running the test suite, path/secrets guards, MCP scoping — runs automatically in `.claude/hooks/`, never as something an agent is asked to remember. Agents exist only for what needs a model: authoring code and tests, exploratory testing, and judgment review. If a step can be made deterministic, move it to a hook and delete it from the agents.
-
 ## Agents
 
 | Agent | Responsibility |
@@ -29,8 +26,6 @@ Anything a script can decide — formatting, linting, type-checking, `validate-t
 | `frontend-developer` | Next.js / components / forms / Server Actions / RBAC UI **and the slice's tests**; no MCP access |
 | `e2e-explorer` | Drives the running app in a real browser, explores user-facing flows, logs bugs as structured findings; never edits code |
 | `qa` | Judgment-only merge review: architecture/contract compliance, Do-Not-Touch, E2E adequacy, merge decision |
-
-There is **no `tester` agent** and QA does **not** run validators — see "Deterministic gates" below. Each developer authors and runs the tests for its own slice.
 
 **Routing is conditional**: `orchestrator` invokes only the agents needed for the slice. Backend-only work skips frontend. Frontend-only work skips backend. The `e2e-explorer` runs only on user-facing slices (it needs a UI to drive). Docs/config-only and trivial non-behavior changes can go straight to QA.
 
@@ -59,7 +54,7 @@ Start every feature by invoking the `orchestrator`. The main thread is the hub: 
 - When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.claude/feature-memory/<slice>/` or sends a richer handoff to the subagent.
 - If a downstream agent would need to guess, infer from general knowledge, or proceed best-effort, it must stop and ask the orchestrator for targeted context for the existing slice.
 - Each subagent may request targeted orchestrator context once per slice. If still blocked after one update, it returns `ESCALATE` or `BLOCKED`; the orchestrator must improve the plan instead of starting repeated context loops.
-- `validate-tools` validators are **not an agent step**. They run inside the `verify-subagent.sh` hook when a developer finishes. Do not write an allowed-validators list in feature memory, do not route a tester, and do not ask QA to run validators.
+- `validate-tools` validators are **not an agent step**. They run inside the `verify-subagent.sh` hook when a developer finishes. Do not write an allowed-validators list in feature memory, do not ask QA to run validators.
 - Keep feature memory compact: active slice memory under 150 lines, each role handoff under 25 lines, guideline summaries as rules only.
 - Keep only three detailed QA-approved active slice memories. Before QA-approved slice 4, 7, 10, and so on, the orchestrator compacts the previous three QA-approved slices into one review-only historical summary under `.claude/feature-memory/history/`. Blocked, in-progress, unreviewed, and QA-rejected slices stay active and detailed.
 - Use conditional routing. Invoke only the agents needed for the slice; do not run the full backend -> frontend -> e2e-explorer -> qa flow unless the slice is fullstack and user-facing.
