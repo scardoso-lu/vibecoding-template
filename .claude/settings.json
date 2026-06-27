@@ -37,6 +37,15 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-edits.sh"
           }
         ]
+      },
+      {
+        "matcher": "mcp__fullstack-guidelines__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/guard-mcp.sh"
+          }
+        ]
       }
     ]
   }

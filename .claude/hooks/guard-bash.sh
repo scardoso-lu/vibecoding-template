@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # PreToolUse guard for Bash — blocks operations this project forbids or that are
-# plainly destructive. Exit code 2 blocks the tool call and feeds the reason on
-# stderr back to the agent. Fails open (exit 0) if jq is unavailable so the guard
-# can never brick a session.
+# plainly destructive. Emits the documented PreToolUse deny decision as JSON.
+# Fails open (exit 0, no decision) if jq is unavailable so it never bricks a session.
 set -uo pipefail
 
 command -v jq >/dev/null 2>&1 || exit 0
@@ -12,8 +11,9 @@ CMD="$(printf '%s' "$INPUT" | jq -r '.tool_input.command // ""')"
 [ -z "$CMD" ] && exit 0
 
 deny() {
-  printf 'Blocked by .claude/hooks/guard-bash.sh: %s\n' "$1" >&2
-  exit 2
+  jq -n --arg r "$1" \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
+  exit 0
 }
 
 # Project rule: Chromium + Playwright are pre-installed at $PLAYWRIGHT_BROWSERS_PATH.

@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
 # PreToolUse guard for Edit / Write / MultiEdit — protects files that must not be
-# hand-edited. Exit code 2 blocks the tool call and returns the reason to the agent.
-# Fails open (exit 0) if jq is unavailable.
+# hand-edited, and enforces the e2e-explorer's write scope using the subagent
+# identity (agent_type) the hook receives. Emits the PreToolUse deny decision as
+# JSON. Fails open (exit 0) if jq is unavailable.
 set -uo pipefail
 
 command -v jq >/dev/null 2>&1 || exit 0
 
 INPUT="$(cat)"
 FP="$(printf '%s' "$INPUT" | jq -r '.tool_input.file_path // ""')"
+AGENT="$(printf '%s' "$INPUT" | jq -r '.agent_type // ""')"
 [ -z "$FP" ] && exit 0
 
 deny() {
-  printf 'Blocked by .claude/hooks/guard-edits.sh: %s\n' "$1" >&2
-  exit 2
+  jq -n --arg r "$1" \
+    '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$r}}'
+  exit 0
 }
 
 # Compacted, QA-approved historical slices are review-only — never edited as active
@@ -30,5 +33,16 @@ case "$base" in
   .env|.env.*)
     deny "editing a secrets file ('$base') is blocked. Put real values in .env by hand; document required keys in .env.example." ;;
 esac
+
+# Role scope: the e2e-explorer may write only under .claude/feature-memory/<slice>/e2e/
+# (its report and artifacts). Code/test/config fixes route through the orchestrator.
+if [ "$AGENT" = "e2e-explorer" ]; then
+  case "$FP" in
+    */.claude/feature-memory/*/e2e/*|.claude/feature-memory/*/e2e/*)
+      : ;;  # allowed
+    *)
+      deny "the e2e-explorer may write only under .claude/feature-memory/<slice>/e2e/. Log the defect and route the fix through the orchestrator instead of editing '$FP'." ;;
+  esac
+fi
 
 exit 0
