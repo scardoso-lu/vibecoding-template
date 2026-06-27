@@ -14,9 +14,32 @@ without changing anything. Re-running is safe — every step is idempotent.
 When it finishes, **open a new terminal** so the updated `PATH` and the cooldown
 environment take effect.
 
+## Make the clone your own repo (`init-project`)
+
+A fresh clone still points `origin` at the template's GitHub repo, so your first
+push would fail or go to the wrong place. **Run this once, before you push any
+code:**
+
+| You're on | Run this |
+|---|---|
+| **macOS** | `bash scripts/init-project.sh` |
+| **Windows** | `powershell -ExecutionPolicy Bypass -File scripts\init-project.ps1` |
+
+It interactively:
+
+1. asks your project name,
+2. connects to **your** GitHub repo — creates it with the GitHub CLI (`gh`) if
+   you're signed in (`gh auth login`), otherwise points at a repo URL you paste,
+3. optionally wipes the template's git history for a clean start,
+4. rewrites the template references in `README.md`, and
+5. makes the first commit and pushes.
+
+After that, `git push` works normally and the project is fully detached from the
+template.
+
 ## What gets installed
 
-- **Git**
+- **Git** + **GitHub CLI** (`gh`)
 - **uv** — Python package manager (also installs **Python 3.12**)
 - **Node.js** (LTS) + **pnpm** (via Corepack)
 - **Docker Desktop**

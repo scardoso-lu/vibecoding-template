@@ -65,6 +65,8 @@ Start every feature by invoking the `orchestrator`. Agents never communicate dir
 |---|---|
 | Bootstrap full toolchain (macOS) | `bash scripts/bootstrap.sh` |
 | Bootstrap full toolchain (Windows) | `powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1` |
+| Connect clone to your own repo (macOS) | `bash scripts/init-project.sh` |
+| Connect clone to your own repo (Windows) | `powershell -ExecutionPolicy Bypass -File scripts\init-project.ps1` |
 | Install deps (backend) | `uv sync` |
 | Install validators (QA) | `uv tool install validate-tools` |
 | Install deps (frontend) | `pnpm install` |
