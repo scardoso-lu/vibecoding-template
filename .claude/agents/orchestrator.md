@@ -126,6 +126,6 @@ Emit one handoff per response. Do not fetch MCP or modify files in Route Mode.
 - Agents read their own role files. They read `00-shared/` only for cross-cutting contracts. They never browse MCP themselves.
 - If an agent escalates for missing context, fetch the missing guideline, update the relevant `rules.md`, and route again. Each agent gets one escalation per feature.
 - `00-shared/` is only created for fullstack features. Backend-only and frontend-only features have no shared directory.
-- QA `checklist.md` must list every allowed validator by exact MCP tool name. QA may not run unlisted validators without asking you first.
+- QA `checklist.md` must list every allowed validator by exact `validate-tools` CLI command. QA may not run unlisted validators without asking you first.
 - QA is always the final gate. Nothing merges without `State: QA APPROVED` in `qa/checklist.md`.
 - Never communicate directly with developer, tester, or qa agents — all routing goes through the main thread.

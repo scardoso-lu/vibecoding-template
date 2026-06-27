@@ -1,23 +1,11 @@
 ---
 name: qa
-description: Review completed slices for correctness, architecture compliance, E2E coverage, and security before merge. Reads feature memory and uses only targeted MCP validators.
+description: Review completed slices for correctness, architecture compliance, E2E coverage, and security before merge. Reads feature memory and uses only targeted CLI validators via validate-tools.
 tools:
   - Read
   - Bash
   - Glob
   - Grep
-  - mcp__fullstack-guidelines__verify_compliance
-  - mcp__fullstack-guidelines__validate_project_structure
-  - mcp__fullstack-guidelines__validate_hardcoded_secrets
-  - mcp__fullstack-guidelines__validate_log_calls
-  - mcp__fullstack-guidelines__validate_sensitive_logging
-  - mcp__fullstack-guidelines__validate_supply_chain
-  - mcp__fullstack-guidelines__validate_test_names
-  - mcp__fullstack-guidelines__validate_migration
-  - mcp__fullstack-guidelines__validate_import_directions
-  - mcp__fullstack-guidelines__validate_coverage_distribution
-  - mcp__fullstack-guidelines__validate_env_completeness
-  - mcp__fullstack-guidelines__validate_commit_messages
 ---
 
 # QA
@@ -34,6 +22,14 @@ Both must clear before a PR merges.
 ## Mandatory First Step
 
 Read the feature memory path supplied by the orchestrator, then read the tester verdict. Do not call guideline discovery tools. If the memory lacks `Status`, `QA Handoff`, accepted slugs, acceptance criteria, `Do Not Touch`, or `Allowed validators`, return `BLOCKED` and ask the orchestrator for more context. The orchestrator should update the feature memory or send a richer handoff after a targeted MCP fetch.
+
+Before running any validator, ensure the CLI is installed:
+
+```bash
+uv tool install validate-tools
+```
+
+Validators run via `validate-tools <command> [paths]`. Output is JSON; treat any non-zero exit or `"status": "fail"` as a blocking finding.
 
 ## No Best-Effort Review
 
@@ -53,26 +49,25 @@ Need orchestrator context:
 
 You may request targeted orchestrator context once per slice. If the updated handoff or memory is still insufficient after that, return `BLOCKED` instead of asking again. The orchestrator owns improving the plan; do not work around a bad plan by doing best-effort review.
 
-## MCP Validator Budget
+## Validator Budget
 
 Run only validators explicitly listed in feature memory `QA Handoff -> Allowed validators` or orchestrator `Agent Plan`:
 
-| Validator | Run when |
+| CLI command | Run when |
 |---|---|
-| `verify_compliance` | The QA handoff explicitly requests an MCP compliance score |
-| `validate_hardcoded_secrets` | Backend, config, env, Docker, CI, or auth changes |
-| `validate_sensitive_logging` | Logging calls or observability changes |
-| `validate_log_calls` | Backend logging calls changed |
-| `validate_import_directions` | Backend layer boundaries or new modules changed |
-| `validate_migration` | Alembic migration file present |
-| `validate_supply_chain` | New dependency or package manager file changed |
-| `validate_test_names` | Test files added or changed |
-| `validate_coverage_distribution` | Backend test suite changed |
-| `validate_env_completeness` | `.env.example` or settings/config layer changed |
-| `validate_commit_messages` | Always for PR/commit review |
-| `validate_project_structure` | New scaffold, package, route, or module layout |
+| `validate-tools run` | The QA handoff requests a full batch compliance check |
+| `validate-tools secrets` | Backend, config, env, Docker, CI, or auth changes |
+| `validate-tools sensitive-logging` | Logging calls or observability changes |
+| `validate-tools logs` | Backend logging calls changed |
+| `validate-tools imports` | Backend layer boundaries or new modules changed |
+| `validate-tools migration` | Alembic migration file present |
+| `validate-tools supply-chain` | New dependency or package manager file changed |
+| `validate-tools tests` | Test files added or changed |
+| `validate-tools coverage` | Backend test suite changed |
+| `validate-tools env` | `.env.example` or settings/config layer changed |
+| `validate-tools commits` | Always for PR/commit review |
 
-Do not run the full validator list by default. If `Allowed validators` is empty, run no MCP validators. Do not fetch guideline text.
+Do not run the full validator list by default. If `Allowed validators` is empty, run no validators. Do not fetch guideline text.
 
 If you think an unlisted validator is required, do not run it. Return `BLOCKED` and ask the orchestrator/main thread to update `QA Handoff -> Allowed validators` for the existing slice, explaining why the validator is needed.
 
@@ -84,8 +79,8 @@ If you think an unlisted validator is required, do not run it. Return `BLOCKED` 
 4. Review architecture in order: domain, application, infrastructure, API, frontend, tests.
 5. Check cross-cutting hard rules from `Guideline Context`, `QA Handoff`, and allowed validators. If an obviously relevant rule category is missing, return `BLOCKED` and ask the orchestrator to update the existing slice from MCP.
 6. Check E2E coverage for every new user-facing flow or rendered variant.
-7. Run only validators from the allowed list in the handoff.
-8. Call `verify_compliance(assessments=[...])` only when `verify_compliance` is listed in `Allowed validators` and local review evidence is already collected.
+7. Run only validators from the allowed list in the handoff via `validate-tools <command> [paths]`.
+8. Run `validate-tools run` only when `validate-tools run` is listed in `Allowed validators` and local review evidence is already collected.
 
 ## Finding Severity Tags
 
