@@ -23,13 +23,17 @@ if printf '%s' "$CMD" | grep -Eq '(^|[^[:alnum:]])playwright[[:space:]]+install'
 fi
 
 # Catastrophic recursive force-deletes of a root / home / cwd target.
+# Quotes are stripped first so quoted spellings ("$HOME", "$PWD", "/") match too.
+CMD_NOQUOTE="$(printf '%s' "$CMD" | tr -d "\"'")"
 has_rmrf() {
   printf '%s' "$1" | grep -Eq 'rm[[:space:]]+-[a-zA-Z]*r[a-zA-Z]*f|rm[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*r|rm[[:space:]]+-[rf][[:space:]]+-[rf]'
 }
 hits_root() {
-  printf '%s' "$1" | grep -Eq '[[:space:]](/|~|\$HOME|/\*)([[:space:]]|$)'
+  # A target that is the whole root, home, or cwd — bare, with an optional single
+  # trailing slash, at a word boundary. Subdir targets like ./build or ~/x are allowed.
+  printf '%s' "$1" | grep -Eq '[[:space:]](/|\.|~|\$HOME|\$\{HOME\}|\$PWD|\$\{PWD\}|/\*)/?([[:space:]]|$)'
 }
-if has_rmrf "$CMD" && hits_root "$CMD"; then
+if has_rmrf "$CMD_NOQUOTE" && hits_root "$CMD_NOQUOTE"; then
   deny "refusing a recursive force-delete targeting a root/home/cwd path."
 fi
 
