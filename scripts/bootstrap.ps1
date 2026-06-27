@@ -52,7 +52,7 @@ $CooldownDays    = [int]$V['DEPENDENCY_COOLDOWN_DAYS']
 $CooldownMinutes = $CooldownDays * 24 * 60
 $CooldownCutoff  = (Get-Date).ToUniversalTime().AddDays(-$CooldownDays).ToString('yyyy-MM-ddT00:00:00Z')
 
-# There are no raw binary downloads here — winget and the uv installer verify
+# There are no raw binary downloads here - winget and the uv installer verify
 # their own payloads. If you ADD a raw download, verify its SHA-256 against the
 # vendor's published checksum with Get-FileHash before using it (fail closed).
 
@@ -105,10 +105,10 @@ if (-not (Have node))   { Winget-Install -Id 'OpenJS.NodeJS.LTS' -Version $V['NO
 Refresh-Path
 
 # --------------------------------------------------------------------------
-# 3. uv (official installer — verifies the downloaded binary's checksum)
+# 3. uv (official installer - verifies the downloaded binary's checksum)
 # --------------------------------------------------------------------------
 if (-not (Have uv)) {
-  Write-Step "Installing uv $($V['UV_VERSION'])…"
+  Write-Step "Installing uv $($V['UV_VERSION'])..."
   $tmp = Join-Path $env:TEMP 'uv-install.ps1'
   Invoke-WebRequest -UseBasicParsing "https://astral.sh/uv/$($V['UV_VERSION'])/install.ps1" -OutFile $tmp
   & powershell -ExecutionPolicy Bypass -File $tmp
@@ -117,14 +117,14 @@ if (-not (Have uv)) {
 } else { Write-Ok "uv present ($(uv --version))" }
 if (-not (Have uv)) { Die "uv not on PATH after install. Open a new terminal and re-run." }
 
-Write-Step "Installing Python $($V['PYTHON_VERSION']) via uv…"
+Write-Step "Installing Python $($V['PYTHON_VERSION']) via uv..."
 uv python install $V['PYTHON_VERSION']
 
 # --------------------------------------------------------------------------
 # 4. pnpm via Corepack
 # --------------------------------------------------------------------------
 if (Have corepack) {
-  Write-Step "Enabling pnpm $($V['PNPM_VERSION']) via Corepack…"
+  Write-Step "Enabling pnpm $($V['PNPM_VERSION']) via Corepack..."
   corepack enable
   corepack prepare "pnpm@$($V['PNPM_VERSION'])" --activate
 } elseif (-not (Have pnpm)) {
@@ -143,7 +143,7 @@ if (-not (Have docker)) {
 # --------------------------------------------------------------------------
 # 6. Supply-chain cooldown config
 # --------------------------------------------------------------------------
-Write-Step "Configuring dependency cooldown (${CooldownDays} days)…"
+Write-Step "Configuring dependency cooldown (${CooldownDays} days)..."
 
 # pnpm: persistent, rolling. minimumReleaseAge is in MINUTES.
 $PnpmWs = Join-Path $RepoRoot 'pnpm-workspace.yaml'
@@ -174,19 +174,19 @@ $env:UV_EXCLUDE_NEWER = $CooldownCutoff   # active for the rest of this run
 # 7. Project deps + Chromium (respecting the cooldown)
 # --------------------------------------------------------------------------
 if (Test-Path (Join-Path $RepoRoot 'pyproject.toml')) {
-  Write-Step "Installing backend deps with uv (cutoff $env:UV_EXCLUDE_NEWER)…"
+  Write-Step "Installing backend deps with uv (cutoff $env:UV_EXCLUDE_NEWER)..."
   Push-Location $RepoRoot; try { uv sync } finally { Pop-Location }
-} else { Write-Warn2 "No pyproject.toml yet — skipping 'uv sync'." }
+} else { Write-Warn2 "No pyproject.toml yet - skipping 'uv sync'." }
 
 if (Test-Path (Join-Path $RepoRoot 'package.json')) {
-  Write-Step 'Installing frontend deps with pnpm (cooldown enforced)…'
+  Write-Step 'Installing frontend deps with pnpm (cooldown enforced)...'
   Push-Location $RepoRoot
   try {
     pnpm install
-    Write-Step "Installing Playwright $($V['PLAYWRIGHT_BROWSER']) + libs…"
+    Write-Step "Installing Playwright $($V['PLAYWRIGHT_BROWSER']) + libs..."
     pnpm exec playwright install --with-deps $V['PLAYWRIGHT_BROWSER']
   } finally { Pop-Location }
-} else { Write-Warn2 'No package.json yet — skipping pnpm install + Playwright.' }
+} else { Write-Warn2 'No package.json yet - skipping pnpm install + Playwright.' }
 
 # --------------------------------------------------------------------------
 Write-Host ''

@@ -82,7 +82,7 @@ if (-not (Confirm2 'Proceed?')) { Die 'Aborted. Nothing changed.' }
 
 # 4. Apply
 if ($Fresh) {
-  Write-Step 'Resetting git history…'
+  Write-Step 'Resetting git history...'
   Remove-Item -Recurse -Force .git
   git init -q -b main | Out-Null
   $Branch = 'main'
@@ -97,7 +97,7 @@ if ($NewSlug -and (Test-Path README.md) -and (Select-String -Path README.md -Pat
   Write-Ok "updated README.md references -> $NewSlug"
 }
 
-Write-Step 'Staging and committing…'
+Write-Step 'Staging and committing...'
 git add -A
 git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
@@ -109,12 +109,12 @@ if ($LASTEXITCODE -ne 0) {
 
 # 5. Connect + push
 if ($UseGh) {
-  Write-Step "Creating $NewSlug on GitHub and pushing…"
+  Write-Step "Creating $NewSlug on GitHub and pushing..."
   gh repo create $NewSlug "--$Visibility" --source=. --remote=origin --push
 } else {
   git remote remove origin 2>$null
   git remote add origin $RepoUrl
-  Write-Step "Pushing to $RepoUrl ($Branch)…"
+  Write-Step "Pushing to $RepoUrl ($Branch)..."
   git push -u origin $Branch
 }
 
