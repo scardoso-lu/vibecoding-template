@@ -300,6 +300,10 @@ All rules extracted from `get_guideline()` MCP calls.
 ```md
 # <slice> — E2E Exploration
 
+## Status
+- State: active | E2E CLEAN | E2E BUGS FOUND
+- Last run: —
+
 ## Launch
 - Backend: <command + health/ready URL to poll>
 - Frontend: <command + base URL>
