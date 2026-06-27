@@ -29,10 +29,30 @@ Python / FastAPI backend / Next.js 15 frontend / daisyUI / Alembic migrations
 ```bash
 git clone https://github.com/scardoso-lu/vibecoding-template my-project
 cd my-project
+```
+
+**Don't have Python, Node, uv, Docker, etc.? One command installs all of it:**
+
+```bash
+# macOS
+bash scripts/bootstrap.sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
+```
+
+This installs the entire toolchain — uv, Python, Node, pnpm, Docker, and
+Chromium + libs for browser tests — with two supply-chain protections baked in:
+every download is signature/hash verified (fail-closed), and no dependency
+younger than 2 weeks is ever installed. See [`scripts/README.md`](scripts/README.md).
+
+Then start building:
+
+```bash
 claude .
 ```
 
-Then describe a feature and let the agents build it.
+Describe a feature and let the agents build it.
 
 ## License
 

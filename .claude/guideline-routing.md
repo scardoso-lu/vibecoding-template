@@ -46,6 +46,7 @@ Fetch targeted MCP guideline details when a rule is unclear. Do not copy full gu
 | Performance / slow page | `frontend/18-performance` |
 | Component tests | `frontend/17-component-testing` |
 | E2E tests | `frontend/13-e2e-playwright` |
+| Exploratory E2E (e2e-explorer) | `frontend/13-e2e-playwright`, `frontend/14-loading-error-empty-states`, `frontend/19-rbac-permissions` |
 | Project structure / new feature scaffold | `frontend/01-project-structure`, `frontend/20-feature-discipline` |
 | Refactor / cleanup | `frontend/11-rework-clean` |
 | OWASP / XSS / security | `frontend/07-owasp-top10` |

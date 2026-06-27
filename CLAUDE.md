@@ -25,9 +25,10 @@ Do not implement features directly. Invoke the right agent for the work.
 | `backend-developer` | FastAPI / Python / DB / migrations / async / config; no MCP access |
 | `frontend-developer` | Next.js / components / forms / Server Actions / RBAC UI; no MCP access |
 | `tester` | Writes and runs focused backend/frontend tests for the feature slice |
+| `e2e-explorer` | Drives the running app in a real browser, explores user-facing flows, logs bugs as structured findings; never edits code |
 | `qa` | Code review, E2E coverage audit, `validate-tools` CLI validators, merge decision |
 
-**Routing is conditional**: `orchestrator` invokes only the agents needed for the slice. Backend-only work skips frontend. Frontend-only work skips backend. Docs/config-only and trivial non-behavior changes can go straight to QA.
+**Routing is conditional**: `orchestrator` invokes only the agents needed for the slice. Backend-only work skips frontend. Frontend-only work skips backend. The `e2e-explorer` runs only on user-facing slices (it needs a UI to drive). Docs/config-only and trivial non-behavior changes can go straight to QA.
 
 The orchestrator has two modes and must use exactly one per response:
 
@@ -47,7 +48,8 @@ Start every feature by invoking the `orchestrator`. Agents never communicate dir
 - Validators are QA-only final-gate tools, run via `validate-tools <command>`. QA may run only validators explicitly allowed in the feature memory `QA Handoff` or orchestrator `Agent Plan`; do not run the full validator suite by default. Allowed validators must be exact CLI commands, such as `validate-tools secrets` or `validate-tools run`.
 - Keep feature memory compact: active slice memory under 150 lines, each role handoff under 25 lines, guideline summaries as rules only.
 - Keep only three detailed QA-approved active slice memories. Before QA-approved slice 4, 7, 10, and so on, the orchestrator compacts the previous three QA-approved slices into one review-only historical summary under `.claude/feature-memory/history/`. Blocked, in-progress, unreviewed, and QA-rejected slices stay active and detailed.
-- Use conditional routing. Invoke only the agents needed for the slice; do not run the full backend -> frontend -> tester -> qa flow unless the slice is fullstack.
+- Use conditional routing. Invoke only the agents needed for the slice; do not run the full backend -> frontend -> tester -> e2e-explorer -> qa flow unless the slice is fullstack and user-facing.
+- The `e2e-explorer` never browses MCP and never edits application code. When it returns `E2E_BUGS_FOUND`, the orchestrator routes each fix to the suspected owner, then re-invokes the explorer to confirm. A user-facing slice is not done while `block:` findings remain in `e2e/report.md`.
 - Plan before routing. The orchestrator must not mix Plan Mode and Route Mode in the same response.
 - Handoffs must be tiny: feature memory path, role-specific section, changed file list, and exact task.
 - Every slice memory must include `Status`, `Do Not Touch`, and `QA Handoff -> Allowed validators`. Empty allowed validators means QA runs no MCP validators.
@@ -61,6 +63,8 @@ Start every feature by invoking the `orchestrator`. Agents never communicate dir
 
 | Task | Command |
 |---|---|
+| Bootstrap full toolchain (macOS) | `bash scripts/bootstrap.sh` |
+| Bootstrap full toolchain (Windows) | `powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1` |
 | Install deps (backend) | `uv sync` |
 | Install validators (QA) | `uv tool install validate-tools` |
 | Install deps (frontend) | `pnpm install` |

@@ -15,7 +15,8 @@ You review completed slices for correctness, architecture compliance, E2E covera
 ## Distinction From Tester
 
 - Tester writes and runs focused tests for the feature slice.
-- QA validates DoD evidence, audits behavior and architecture, checks E2E coverage, runs targeted MCP validators, and makes the merge decision.
+- e2e-explorer drives the running app and logs exploratory bug findings to `e2e/report.md`; it does not decide merges.
+- QA validates DoD evidence, audits behavior and architecture, checks E2E coverage (including the explorer's `e2e/report.md`), runs targeted MCP validators, and makes the merge decision.
 
 Both must clear before a PR merges.
 
@@ -78,7 +79,7 @@ If you think an unlisted validator is required, do not run it. Return `BLOCKED` 
 3. Confirm the diff respects `Do Not Touch`.
 4. Review architecture in order: domain, application, infrastructure, API, frontend, tests.
 5. Check cross-cutting hard rules from `Guideline Context`, `QA Handoff`, and allowed validators. If an obviously relevant rule category is missing, return `BLOCKED` and ask the orchestrator to update the existing slice from MCP.
-6. Check E2E coverage for every new user-facing flow or rendered variant.
+6. Check E2E coverage for every new user-facing flow or rendered variant. If the slice was user-facing, read `e2e/report.md`: any unresolved `block:` finding is a blocking review finding.
 7. Run only validators from the allowed list in the handoff via `validate-tools <command> [paths]`.
 8. Run `validate-tools run` only when `validate-tools run` is listed in `Allowed validators` and local review evidence is already collected.
 

@@ -24,6 +24,12 @@ The orchestrator reads this file at the start of Plan Mode and follows every sec
     rules.md                   # testing MCP rules
     task.md                    # test file list, case descriptions, fixture notes
 
+  e2e/                         # user-facing slices only — omit for backend-only or non-behavior changes
+    rules.md                   # exploratory E2E MCP rules
+    task.md                    # flows to explore, acceptance criteria, app launch + seed/credential notes
+    report.md                  # written by e2e-explorer — structured bug findings (not authored by orchestrator)
+    artifacts/                 # written by e2e-explorer — screenshots, console/network captures
+
   qa/
     rules.md                   # QA MCP rules
     checklist.md               # review focus, blocking risks, E2E coverage, allowed validators
@@ -267,6 +273,52 @@ All rules extracted from `get_guideline()` MCP calls.
 
 ## Stop condition
 <what "done" looks like>
+```
+
+---
+
+## `e2e/`
+
+> Only for slices that change user-facing behavior — the explorer needs a UI to drive. `rules.md` contains exploratory-E2E MCP slugs only (e.g. `frontend/13-e2e-playwright`, `frontend/14-loading-error-empty-states`, `frontend/19-rbac-permissions`). `task.md` tells the explorer which flows to walk, what "correct" looks like, and exactly how to launch the app and reach a usable state. The explorer writes `report.md` and `artifacts/` itself — the orchestrator does not author them.
+
+### `e2e/rules.md`
+
+```md
+# <slice> — E2E Exploration Rules
+
+All rules extracted from `get_guideline()` MCP calls.
+
+## `<slug>`
+
+- Always …
+- Never …
+- Must …
+```
+
+### `e2e/task.md`
+
+```md
+# <slice> — E2E Exploration
+
+## Launch
+- Backend: <command + health/ready URL to poll>
+- Frontend: <command + base URL>
+- Seed data / credentials: <how to reach a usable, authenticated state — never invent these>
+
+## Flows to explore
+- <flow>: <happy path + which edges to probe — empty, invalid input, double-submit, refresh mid-flow, unauthorized, loading/error/empty rendering, RBAC-hidden UI>
+
+## Acceptance criteria (observable in the browser)
+- [ ] <observable outcome>
+
+## Commands
+<see CLAUDE.md — run backend, run frontend>
+
+## Do Not Touch
+- <files or behaviors the explorer must not change>
+
+## Stop condition
+Every listed flow exercised; findings logged to `report.md` with reproducible steps and evidence.
 ```
 
 ---
