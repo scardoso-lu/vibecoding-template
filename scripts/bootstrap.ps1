@@ -11,8 +11,10 @@
   Security model:
     - Toolchain is installed with winget, which verifies publisher signatures and
       the SHA-256 in each Microsoft-curated manifest. Versions are pinned.
-    - Any direct download is SHA-256 verified, fail-closed, against
-      scripts/lib/checksums.txt. The script aborts on a missing/placeholder hash.
+    - uv is installed with Astral's official installer, which verifies the
+      downloaded binary's checksum itself.
+    - There are no raw binary downloads. If you ADD one, verify its SHA-256
+      against the vendor's published checksum (Get-FileHash) before using it.
 
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
@@ -30,7 +32,6 @@ Set-StrictMode -Version Latest
 $ScriptDir     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot      = Split-Path -Parent $ScriptDir
 $LibDir        = Join-Path $ScriptDir 'lib'
-$ChecksumsFile = Join-Path $LibDir 'checksums.txt'
 
 function Write-Step($m) { Write-Host "==> $m" -ForegroundColor Blue }
 function Write-Ok($m)   { Write-Host " ok $m"  -ForegroundColor Green }
@@ -51,24 +52,9 @@ $CooldownDays    = [int]$V['DEPENDENCY_COOLDOWN_DAYS']
 $CooldownMinutes = $CooldownDays * 24 * 60
 $CooldownCutoff  = (Get-Date).ToUniversalTime().AddDays(-$CooldownDays).ToString('yyyy-MM-ddT00:00:00Z')
 
-# Assert-Sha256 -Path file -Name logical-name  (fail closed against checksums.txt)
-function Assert-Sha256 {
-  param([string]$Path, [string]$Name)
-  if (-not (Test-Path $ChecksumsFile)) { Die "Missing checksum manifest: $ChecksumsFile" }
-  $expected = $null
-  foreach ($l in Get-Content $ChecksumsFile) {
-    $t = $l.Trim()
-    if ($t -and -not $t.StartsWith('#')) {
-      $parts = $t -split '\s+', 2
-      if ($parts.Count -eq 2 -and $parts[1].Trim() -eq $Name) { $expected = $parts[0].Trim() }
-    }
-  }
-  if (-not $expected) { Die "No checksum entry for '$Name' in checksums.txt. Refusing to install unverified." }
-  if ($expected -like 'PLACEHOLDER_*') { Die "Checksum for '$Name' is a placeholder. Fill it in (see scripts/README.md) before installing." }
-  $actual = (Get-FileHash -Algorithm SHA256 -Path $Path).Hash.ToLower()
-  if ($actual -ne $expected.ToLower()) { Die "SHA-256 mismatch for '$Name'.`n  expected: $expected`n  actual:   $actual" }
-  Write-Ok "verified $Name (sha256)"
-}
+# There are no raw binary downloads here — winget and the uv installer verify
+# their own payloads. If you ADD a raw download, verify its SHA-256 against the
+# vendor's published checksum with Get-FileHash before using it (fail closed).
 
 function Report-Versions {
   Write-Step 'Installed toolchain:'

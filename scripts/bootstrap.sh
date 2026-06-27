@@ -14,8 +14,8 @@
 #     against the SHA-256 pinned in its manifest.
 #   - uv is installed with Astral's official installer, which verifies the
 #     downloaded binary's checksum itself; the version is pinned.
-#   - Any direct download you add later must go through verify_sha256 (below),
-#     which fails closed against scripts/lib/checksums.txt.
+#   - There are no raw binary downloads here. If you ADD one, verify its SHA-256
+#     against the vendor's published checksum before using it (fail closed).
 #
 # Usage:
 #   bash scripts/bootstrap.sh            # install everything
@@ -31,7 +31,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LIB_DIR="$SCRIPT_DIR/lib"
-CHECKSUMS_FILE="$LIB_DIR/checksums.txt"
 CHECK_ONLY=0
 [[ "${1:-}" == "--check" ]] && CHECK_ONLY=1
 
@@ -55,20 +54,6 @@ cooldown_date_rfc3339() {
 }
 COOLDOWN_RFC3339="$(cooldown_date_rfc3339)"
 COOLDOWN_MINUTES=$(( DEPENDENCY_COOLDOWN_DAYS * 24 * 60 ))
-
-# verify_sha256 <file> <logical-name-in-checksums.txt> — fail closed.
-# Homebrew + the uv installer verify their own downloads, so nothing in this
-# script calls this today. Use it for any RAW download you add later.
-verify_sha256() {
-  local file="$1" name="$2" expected actual
-  [[ -f "$CHECKSUMS_FILE" ]] || die "Missing checksum manifest: $CHECKSUMS_FILE"
-  expected="$(awk -v n="$name" '$2==n {print $1}' "$CHECKSUMS_FILE" | head -n1)"
-  [[ -n "$expected" ]] || die "No checksum entry for '$name' in $CHECKSUMS_FILE. Refusing to install unverified."
-  [[ "$expected" == PLACEHOLDER_* ]] && die "Checksum for '$name' is a placeholder. Fill it in (see scripts/README.md) before installing."
-  actual="$(shasum -a 256 "$file" | awk '{print $1}')"
-  [[ "$actual" == "$expected" ]] || die "SHA-256 mismatch for '$name'.\n  expected: $expected\n  actual:   $actual"
-  ok "verified $name (sha256)"
-}
 
 report_versions() {
   log "Installed toolchain:"

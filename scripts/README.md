@@ -38,14 +38,9 @@ Two protections are wired in, using the package managers' own built-in features
   [`lib/versions.env`](lib/versions.env).
 - **uv** is installed with Astral's official installer, which verifies the
   downloaded binary's checksum itself; the version is pinned.
-- Any **direct download** you add later is checked against
-  [`lib/checksums.txt`](lib/checksums.txt) via the `verify_sha256` /
-  `Assert-Sha256` helper. If an entry is **missing or a placeholder, the script
-  aborts** rather than installing something unverified.
-
-> We never invent hashes. If you add a raw download to a script, populate its
-> entry in `checksums.txt` from the vendor's published checksum (see that file's
-> header for the safe procedure), then commit it.
+- There are **no raw binary downloads** in the scripts, so there is nothing to
+  hand-verify. If you ever add one, verify its SHA-256 against the vendor's
+  published checksum (`shasum -a 256` / `Get-FileHash`) and abort on mismatch.
 
 ### 2. No dependency younger than 2 weeks (rolling cooldown)
 
@@ -67,9 +62,8 @@ Change the window in one place — `DEPENDENCY_COOLDOWN_DAYS` in
 ## Updating pinned versions
 
 1. Edit the version in [`lib/versions.env`](lib/versions.env).
-2. If that tool is a **direct download** with a `checksums.txt` entry, refresh its
-   hash from the official source (procedure in that file's header) and commit.
-3. Re-run the bootstrap.
+2. Re-run the bootstrap. The package manager (Homebrew / winget) or the uv
+   installer verifies the new version's integrity for you.
 
 ## Bypassing the cooldown for one package (rare)
 
