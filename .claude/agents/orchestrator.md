@@ -57,6 +57,7 @@ Follow `.claude/templates/template-full.md` for the format and content rules of 
 - `backend/task-<domain>.md` — one file per domain; split whenever a single invocation would cover more than one full domain (entity + repo + use cases + routes).
 - `frontend/rules.md`, `frontend/task.md`, `frontend/components.md` — frontend agent reads all three.
 - `tests/rules.md`, `tests/task.md` — tester reads both.
+- `e2e/rules.md`, `e2e/task.md` — e2e-explorer reads both. Create only when the slice changes user-facing behavior.
 - `qa/rules.md`, `qa/checklist.md` — QA reads both.
 
 ### Step 5 — Emit the Agent Plan
@@ -71,7 +72,8 @@ Follow `.claude/templates/template-full.md` for the format and content rules of 
 | 3 | backend-developer | `backend/rules.md` + `backend/task-<domain2>.md` |
 | N | frontend-developer | `frontend/rules.md` + `frontend/task.md` + `frontend/components.md` + `00-shared/` |
 | N+1 | tester | `tests/rules.md` + `tests/task.md` |
-| N+2 | qa | `qa/rules.md` + `qa/checklist.md` |
+| N+2 | e2e-explorer | `e2e/rules.md` + `e2e/task.md` (user-facing slices only) |
+| N+3 | qa | `qa/rules.md` + `qa/checklist.md` |
 
 Execution order: sequential. Each invocation depends on the previous.
 ```
@@ -109,8 +111,8 @@ Emit one handoff per response. Do not fetch MCP or modify files in Route Mode.
 | Request touches | Route to |
 |---|---|
 | Backend behavior only | backend-developer(s) → tester → qa |
-| Frontend behavior only | frontend-developer → tester → qa |
-| Backend + frontend | backend-developer(s) → frontend-developer → tester → qa |
+| Frontend behavior only | frontend-developer → tester → e2e-explorer → qa |
+| Backend + frontend | backend-developer(s) → frontend-developer → tester → e2e-explorer → qa |
 | Tests only | tester → qa |
 | Review / compliance / security / PR hygiene | qa |
 | Docs / config-only / no behavior change | qa |
@@ -127,5 +129,7 @@ Emit one handoff per response. Do not fetch MCP or modify files in Route Mode.
 - If an agent escalates for missing context, fetch the missing guideline, update the relevant `rules.md`, and route again. Each agent gets one escalation per feature.
 - `00-shared/` is only created for fullstack features. Backend-only and frontend-only features have no shared directory.
 - QA `checklist.md` must list every allowed validator by exact `validate-tools` CLI command. QA may not run unlisted validators without asking you first.
+- e2e-explorer runs on user-facing slices only (it needs a UI to drive); skip it for backend-only or non-behavior changes. It never browses MCP, never edits application code, and never runs validators.
+- When e2e-explorer returns `E2E_BUGS_FOUND`, route each `block:`/`question:` finding to the suspected owner (backend-developer or frontend-developer), then re-invoke e2e-explorer to confirm the fix. The slice is not done while `block:` findings remain in `e2e/report.md`.
 - QA is always the final gate. Nothing merges without `State: QA APPROVED` in `qa/checklist.md`.
 - Never communicate directly with developer, tester, or qa agents — all routing goes through the main thread.

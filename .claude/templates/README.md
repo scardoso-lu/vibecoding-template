@@ -1,6 +1,6 @@
 # Feature Memory Templates
 
-Feature memory lives under `.claude/feature-memory/<slice>/` (gitignored — runtime only). The orchestrator writes it in Plan Mode; sub-agents read it, never write it.
+Feature memory lives under `.claude/feature-memory/<slice>/` (gitignored — runtime only). The orchestrator writes it in Plan Mode; sub-agents read it, never write it — the one exception is `e2e-explorer`, which writes its own findings to `e2e/report.md` and `e2e/artifacts/`.
 
 ## Templates
 
