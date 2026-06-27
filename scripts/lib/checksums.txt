@@ -1,0 +1,33 @@
+# SHA-256 manifest for DIRECT downloads only (things not installed via a signed
+# package manager). Format, one per line:
+#
+#   <sha256-hex>  <logical-name>
+#
+# The bootstrap scripts call verify_sha256 / Assert-Sha256 against this file and
+# ABORT (fail closed) if a name is missing or the hash does not match. They never
+# install an unverified direct download.
+#
+# WHERE HASHES COME FROM (never invent them):
+#   - Node.js: NOT listed here. Linux verifies the tarball against Node's own
+#     GPG-signed SHASUMS256.txt fetched at install time — a stronger, signed source.
+#   - Docker (Linux): NOT listed here. Installed from Docker's official apt repo,
+#     verified by apt against Docker's pinned GPG key.
+#   - winget / Homebrew packages: NOT listed here. The package manager verifies
+#     publisher signatures + manifest hashes itself.
+#
+# So this file is only needed if you ADD a raw download to the scripts. Until then
+# it holds placeholders. A placeholder (the PLACEHOLDER_* token) makes the script
+# abort with instructions — it will not silently install something unverified.
+#
+# To populate an entry safely: download the file over HTTPS from the official
+# source on a trusted machine, run `sha256sum <file>` (or `Get-FileHash -Algorithm
+# SHA256`), confirm the value against the vendor's published checksum, then paste
+# it here and commit. Document the source URL in the comment above the entry.
+
+# Example (Docker Desktop for Windows, if you switch from winget to a direct .exe):
+# Source: https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
+PLACEHOLDER_DO_NOT_INSTALL  docker-desktop-windows.exe
+
+# Example (Docker Desktop for macOS arm64, if you switch from Homebrew):
+# Source: https://desktop.docker.com/mac/main/arm64/Docker.dmg
+PLACEHOLDER_DO_NOT_INSTALL  docker-desktop-macos-arm64.dmg
