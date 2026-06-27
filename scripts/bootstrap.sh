@@ -2,8 +2,8 @@
 #
 # bootstrap.sh — install the full toolchain for this project on macOS.
 #
-# Installs via Homebrew: Node.js, Docker Desktop, plus uv (official installer) and
-# Python, pnpm (Corepack), and the Chromium browser + libs Playwright needs.
+# Installs via Homebrew: Git, Node.js, Docker Desktop, plus uv (official installer)
+# and Python, pnpm (Corepack), and the Chromium browser + libs Playwright needs.
 # Then it turns on the supply-chain cooldown (no dependency younger than 2 weeks)
 # for uv & pnpm.
 #
@@ -72,7 +72,7 @@ verify_sha256() {
 
 report_versions() {
   log "Installed toolchain:"
-  for t in brew uv python3 node pnpm docker; do
+  for t in brew git uv python3 node pnpm docker; do
     if have "$t"; then printf "   %-8s %s\n" "$t" "$("$t" --version 2>&1 | head -n1)"
     else printf "   %-8s ${c_red}missing${c_reset}\n" "$t"; fi
   done
@@ -98,7 +98,15 @@ have brew || die "Homebrew not on PATH after install. Open a new terminal and re
 ok "Homebrew present ($(brew --version | head -n1))"
 
 # --------------------------------------------------------------------------
-# 2. uv (also gives us Python)
+# 2. Git via Homebrew
+# --------------------------------------------------------------------------
+if ! have git; then
+  log "Installing Git via Homebrew…"
+  brew install git
+else ok "Git present ($(git --version))"; fi
+
+# --------------------------------------------------------------------------
+# 3. uv (also gives us Python)
 # --------------------------------------------------------------------------
 if ! have uv; then
   log "Installing uv ${UV_VERSION} (official installer verifies the binary checksum)…"
@@ -112,7 +120,7 @@ uv python install "$PYTHON_VERSION"
 uv python pin "$PYTHON_VERSION" 2>/dev/null || true
 
 # --------------------------------------------------------------------------
-# 3. Node.js via Homebrew
+# 4. Node.js via Homebrew
 # --------------------------------------------------------------------------
 if ! have node; then
   log "Installing Node ${NODE_VERSION%%.*}.x via Homebrew…"
@@ -122,7 +130,7 @@ else ok "Node present ($(node --version))"; fi
 have node || die "node not on PATH after install. Open a new terminal and re-run."
 
 # --------------------------------------------------------------------------
-# 4. pnpm via Corepack (ships with Node)
+# 5. pnpm via Corepack (ships with Node)
 # --------------------------------------------------------------------------
 if have corepack; then
   log "Enabling pnpm ${PNPM_VERSION} via Corepack…"
@@ -134,7 +142,7 @@ else
 fi
 
 # --------------------------------------------------------------------------
-# 5. Docker Desktop via Homebrew cask
+# 6. Docker Desktop via Homebrew cask
 # --------------------------------------------------------------------------
 if ! have docker; then
   log "Installing Docker Desktop via Homebrew cask…"
@@ -143,7 +151,7 @@ if ! have docker; then
 else ok "Docker present ($(docker --version))"; fi
 
 # --------------------------------------------------------------------------
-# 6. Configure the supply-chain cooldown (no dep younger than 2 weeks)
+# 7. Configure the supply-chain cooldown (no dep younger than 2 weeks)
 # --------------------------------------------------------------------------
 log "Configuring dependency cooldown (${DEPENDENCY_COOLDOWN_DAYS} days)…"
 
@@ -172,7 +180,7 @@ else ok "uv cooldown already in $SHELL_RC"; fi
 export UV_EXCLUDE_NEWER="$COOLDOWN_RFC3339"   # active for the rest of this run
 
 # --------------------------------------------------------------------------
-# 7. Project dependencies + Chromium (respecting the cooldown)
+# 8. Project dependencies + Chromium (respecting the cooldown)
 # --------------------------------------------------------------------------
 if [[ -f "$REPO_ROOT/pyproject.toml" ]]; then
   log "Installing backend deps with uv (cutoff ${UV_EXCLUDE_NEWER})…"

@@ -16,6 +16,7 @@ environment take effect.
 
 ## What gets installed
 
+- **Git**
 - **uv** — Python package manager (also installs **Python 3.12**)
 - **Node.js** (LTS) + **pnpm** (via Corepack)
 - **Docker Desktop**
