@@ -273,7 +273,7 @@ All rules extracted from `get_guideline()` MCP calls.
 
 ## `qa/`
 
-> `rules.md` contains QA MCP slugs. `checklist.md` must list every allowed validator by exact MCP tool name. QA is the final gate — nothing merges without `State: QA APPROVED`.
+> `rules.md` contains QA MCP slugs. `checklist.md` must list every allowed validator by exact `validate-tools` CLI command. QA is the final gate — nothing merges without `State: QA APPROVED`.
 
 ### `qa/rules.md`
 
@@ -312,8 +312,8 @@ All rules extracted from `get_guideline()` MCP calls relevant to QA review.
 - [ ] <observable outcome from feature scope>
 
 ## Allowed validators
-- `<exact_mcp_tool_name>` — <why it applies>
-- Empty means QA runs no MCP validators.
+- `validate-tools <command>` — <why it applies>
+- Empty means QA runs no validators.
 
 ## Do Not Touch
 - <files or behaviors that must not change>

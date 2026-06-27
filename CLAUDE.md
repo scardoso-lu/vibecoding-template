@@ -25,7 +25,7 @@ Do not implement features directly. Invoke the right agent for the work.
 | `backend-developer` | FastAPI / Python / DB / migrations / async / config; no MCP access |
 | `frontend-developer` | Next.js / components / forms / Server Actions / RBAC UI; no MCP access |
 | `tester` | Writes and runs focused backend/frontend tests for the feature slice |
-| `qa` | Code review, E2E coverage audit, MCP validators, merge decision |
+| `qa` | Code review, E2E coverage audit, `validate-tools` CLI validators, merge decision |
 
 **Routing is conditional**: `orchestrator` invokes only the agents needed for the slice. Backend-only work skips frontend. Frontend-only work skips backend. Docs/config-only and trivial non-behavior changes can go straight to QA.
 
@@ -44,7 +44,7 @@ Start every feature by invoking the `orchestrator`. Agents never communicate dir
 - When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.claude/feature-memory/<slice>/` or sends a richer handoff to the subagent.
 - If a downstream agent would need to guess, infer from general knowledge, or proceed best-effort, it must stop and ask the orchestrator for targeted context for the existing slice.
 - Each subagent may request targeted orchestrator context once per slice. If still blocked after one update, it returns `ESCALATE` or `BLOCKED`; the orchestrator must improve the plan instead of starting repeated context loops.
-- Validator tools are QA-only final-gate tools. QA may run only validators explicitly allowed in the feature memory `QA Handoff` or orchestrator `Agent Plan`; do not run the full validator suite by default. Allowed validators must be exact MCP tool names, such as `validate_hardcoded_secrets` or `verify_compliance`.
+- Validators are QA-only final-gate tools, run via `validate-tools <command>`. QA may run only validators explicitly allowed in the feature memory `QA Handoff` or orchestrator `Agent Plan`; do not run the full validator suite by default. Allowed validators must be exact CLI commands, such as `validate-tools secrets` or `validate-tools run`.
 - Keep feature memory compact: active slice memory under 150 lines, each role handoff under 25 lines, guideline summaries as rules only.
 - Keep only three detailed QA-approved active slice memories. Before QA-approved slice 4, 7, 10, and so on, the orchestrator compacts the previous three QA-approved slices into one review-only historical summary under `.claude/feature-memory/history/`. Blocked, in-progress, unreviewed, and QA-rejected slices stay active and detailed.
 - Use conditional routing. Invoke only the agents needed for the slice; do not run the full backend -> frontend -> tester -> qa flow unless the slice is fullstack.

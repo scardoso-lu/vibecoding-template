@@ -20,5 +20,5 @@
 - Review focus:
 - Blocking risks:
 - Allowed validators:
-  - `<validator tool name>` — <why it applies>
-  - Empty means QA runs no MCP validators.
+  - `validate-tools <command>` — <why it applies>
+  - Empty means QA runs no validators.
