@@ -107,6 +107,7 @@ interface <ResourceDto> {
 All rules extracted from `get_guideline()` MCP calls. Every backend invocation reads this file.
 
 ## `<slug>`
+Source: get_guideline("<slug>") — fetched this session
 
 - Always …
 - Never …
@@ -120,11 +121,20 @@ All rules extracted from `get_guideline()` MCP calls. Every backend invocation r
 ```md
 # <slice> — Backend Foundation
 
+## Status
+- State: active | DONE   # orchestrator owns this field
+
 ## What to build
 Base infrastructure shared by all domains.
 
+## Do Not Touch
+- <files / behaviors / contracts out of scope for this task>
+
 ## Directory tree
 <describe the file and directory structure>
+
+## Acceptance Criteria
+- [ ] <observable outcome that proves the foundation is in place>
 
 ## Commands
 <see CLAUDE.md — lint, type-check, migration>
@@ -140,8 +150,14 @@ Base infrastructure shared by all domains.
 ```md
 # <slice> — Backend: <Domain>
 
+## Status
+- State: active | DONE   # orchestrator owns this field
+
 ## What to build
 <Entity> entity + repository + use cases + routes.
+
+## Do Not Touch
+- <files / behaviors / contracts out of scope for this task>
 
 ## Depends on
 `task-foundation.md` complete.
@@ -161,6 +177,9 @@ Base infrastructure shared by all domains.
 
 ## API endpoints owned by this task
 (copy only the relevant rows from `00-shared/api-contract.md`)
+
+## Acceptance Criteria
+- [ ] <observable outcome from this domain's scope>
 
 ## Commands
 <see CLAUDE.md — lint, type-check, test>
@@ -183,6 +202,7 @@ Base infrastructure shared by all domains.
 All rules extracted from `get_guideline()` MCP calls.
 
 ## `<slug>`
+Source: get_guideline("<slug>") — fetched this session
 
 - Always …
 - Never …
@@ -193,6 +213,12 @@ All rules extracted from `get_guideline()` MCP calls.
 
 ```md
 # <slice> — Frontend Task
+
+## Status
+- State: active | DONE   # orchestrator owns this field
+
+## Do Not Touch
+- <files / behaviors / contracts out of scope for this task>
 
 ## Depends on
 Backend complete. API contract: `00-shared/api-contract.md`. Types: `00-shared/cross-stack.md`.
@@ -210,6 +236,9 @@ Backend complete. API contract: `00-shared/api-contract.md`. Types: `00-shared/c
 ## Server Actions
 `src/actions/<domain>.ts`
 - `<actionName>(params)`: <what it validates, calls, revalidates, and returns>
+
+## Acceptance Criteria
+- [ ] <observable outcome in the UI>
 
 ## Commands
 <see CLAUDE.md — type-check>
@@ -248,6 +277,7 @@ Backend complete. API contract: `00-shared/api-contract.md`. Types: `00-shared/c
 All rules extracted from `get_guideline()` MCP calls.
 
 ## `<slug>`
+Source: get_guideline("<slug>") — fetched this session
 
 - Always …
 - Never …
@@ -260,7 +290,7 @@ All rules extracted from `get_guideline()` MCP calls.
 # <slice> — Tests
 
 ## Status
-- State: active | TESTS PASS | TESTS FAIL
+- State: active | TESTS PASS | TESTS FAIL   # orchestrator sets this from the tester verdict: TESTS_ADDED_PASS → TESTS PASS, TESTS_ADDED_FAIL → TESTS FAIL
 - Last run: —
 
 ## Unit tests
@@ -293,6 +323,7 @@ All rules extracted from `get_guideline()` MCP calls.
 All rules extracted from `get_guideline()` MCP calls.
 
 ## `<slug>`
+Source: get_guideline("<slug>") — fetched this session
 
 - Always …
 - Never …
@@ -305,7 +336,7 @@ All rules extracted from `get_guideline()` MCP calls.
 # <slice> — E2E Exploration
 
 ## Status
-- State: active | E2E CLEAN | E2E BUGS FOUND
+- State: active | E2E CLEAN | E2E BUGS FOUND   # orchestrator sets this from the explorer verdict: E2E_CLEAN → E2E CLEAN, E2E_BUGS_FOUND → E2E BUGS FOUND
 - Last run: —
 
 ## Launch
@@ -343,6 +374,7 @@ Every listed flow exercised; findings logged to `report.md` with reproducible st
 All rules extracted from `get_guideline()` MCP calls relevant to QA review.
 
 ## `<slug>`
+Source: get_guideline("<slug>") — fetched this session
 
 - Always …
 - Never …
@@ -355,25 +387,28 @@ All rules extracted from `get_guideline()` MCP calls relevant to QA review.
 # <slice> — QA Checklist
 
 ## Status
-- State: active | QA APPROVED | QA BLOCKED
+- State: active | QA APPROVED | QA BLOCKED   # QA owns this field and sets the terminal verdict
 - Verdict date: —
 - Approved by: —
 
-## Review focus
-- <what to check — layer boundaries, response_model, migration safety, actor re-verification, etc.>
+## QA Handoff
 
-## Blocking risks
+### Review focus
+- <what to check — layer boundaries, response_model, migration safety, actor re-verification, etc.>
+- Rule provenance: every block in the role `rules.md` files carries a `Source: get_guideline("<slug>")` line.
+
+### Blocking risks
 - <risk: what breaks if this is wrong>
+
+### Allowed validators
+- `validate-tools <command>` — <why it applies>
+- Empty means QA runs no validators.
 
 ## E2E coverage required
 - [ ] <flow>
 
 ## Acceptance criteria
 - [ ] <observable outcome from feature scope>
-
-## Allowed validators
-- `validate-tools <command>` — <why it applies>
-- Empty means QA runs no validators.
 
 ## Do Not Touch
 - <files or behaviors that must not change>
