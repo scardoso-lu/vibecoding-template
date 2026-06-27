@@ -62,6 +62,7 @@ Start every feature by invoking the `orchestrator`. Agents never communicate dir
 | Task | Command |
 |---|---|
 | Install deps (backend) | `uv sync` |
+| Install validators (QA) | `uv tool install validate-tools` |
 | Install deps (frontend) | `pnpm install` |
 | Run backend | `uvicorn app.main:app --reload` |
 | Run frontend | `pnpm dev` |

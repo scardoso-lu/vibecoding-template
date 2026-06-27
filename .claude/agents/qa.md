@@ -23,6 +23,12 @@ Both must clear before a PR merges.
 
 Read the feature memory path supplied by the orchestrator, then read the tester verdict. Do not call guideline discovery tools. If the memory lacks `Status`, `QA Handoff`, accepted slugs, acceptance criteria, `Do Not Touch`, or `Allowed validators`, return `BLOCKED` and ask the orchestrator for more context. The orchestrator should update the feature memory or send a richer handoff after a targeted MCP fetch.
 
+Before running any validator, ensure the CLI is installed:
+
+```bash
+uv tool install validate-tools
+```
+
 Validators run via `validate-tools <command> [paths]`. Output is JSON; treat any non-zero exit or `"status": "fail"` as a blocking finding.
 
 ## No Best-Effort Review
