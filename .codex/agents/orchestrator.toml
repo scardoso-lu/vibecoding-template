@@ -26,6 +26,13 @@ Read `.codex/templates/template-full.md` before writing any feature memory files
 
 Read `.codex/guideline-routing.md` as a starting **hint**, not an authority — its slug names can drift from the live MCP catalog. Map every concern this feature touches (entities, endpoints, DB, migrations, pagination, error handling, tests, pages, forms, server actions, etc.) to the required slug list. Separate backend slugs from frontend slugs from testing slugs. If `get_guideline()` cannot resolve a slug the routing map suggested, do not guess or proceed — call `get_metadata()` once to refresh the catalog, pick the correct current slug, and update `.codex/guideline-routing.md` so the hint stays accurate.
 
+Foundation/setup requests are not backend-only just because they include backend base files. If a
+request creates or changes repository folders, root manifests, workspace layout, bootstrap scripts,
+tooling config, or both app roots, classify it as a **monorepo foundation slice**. Fetch both the
+backend setup/architecture slugs and the frontend project-structure/setup slugs, plus any
+architecture/technology-selection slug needed to justify root-level choices. Do not split this into
+separate backend and frontend slices unless the user explicitly asks for independent repos.
+
 ### Step 2 — Fetch every guideline (MANDATORY)
 
 Call `get_guideline(slug=...)` for every slug in the list. No exceptions. Never write rule text from training data. If you did not call `get_guideline()` for a slug this session, you may not write rules for it.
@@ -34,6 +41,9 @@ Call `get_guideline(slug=...)` for every slug in the list. No exceptions. Never 
 
 - `api-contract.md` — every endpoint the backend will expose and the frontend will consume.
 - `cross-stack.md` — error envelope format, pagination envelope shape, TypeScript ↔ Python type mappings.
+- `repo-structure.md` — for monorepo foundation slices only: root layout, backend root,
+  frontend root, package/workspace boundaries, shared config ownership, bootstrap commands, and
+  which agent owns each path.
 
 Skip this step entirely for backend-only or frontend-only features.
 
@@ -48,9 +58,13 @@ task `State: BLOCKED`, list the missing decision, fetch the targeted guideline i
 not emit a developer invocation for that task.
 
 - `backend/rules.md` — all backend MCP rules, extracted from `get_guideline()` responses, imperative format.
-- `backend/task-foundation.md` — always the first backend task; covers shared base infrastructure.
+- `backend/task-foundation.md` — first backend task when backend work exists; covers backend root,
+  package layout, shared base infrastructure, and backend test/tooling setup.
 - `backend/task-<domain>.md` — one file per domain; split whenever a single invocation would cover more than one full domain (entity + repo + use cases + routes).
-- `frontend/rules.md`, `frontend/task.md`, `frontend/components.md` — frontend agent reads all three.
+- `frontend/task-foundation.md` — first frontend task for monorepo foundation slices; covers the
+  frontend root, Next.js/daisyUI layout, frontend test/tooling setup, and root contracts from
+  `00-shared/repo-structure.md`.
+- `frontend/rules.md`, `frontend/task.md`, `frontend/components.md` — frontend agent reads all applicable files.
 - `e2e/rules.md`, `e2e/task.md` — e2e-explorer reads both. Create only when the slice changes user-facing behavior.
 - `qa/rules.md`, `qa/checklist.md` — QA reads both.
 
@@ -68,9 +82,10 @@ description). The testing guideline rules go in the developer `rules.md` (e.g. `
 
 | Invocation | Agent | Reads |
 |---|---|---|
-| 1 | backend-developer | `backend/rules.md` + `backend/task-foundation.md` |
-| 2 | backend-developer | `backend/rules.md` + `backend/task-<domain1>.md` |
-| 3 | backend-developer | `backend/rules.md` + `backend/task-<domain2>.md` |
+| 1 | backend-developer | `backend/rules.md` + `backend/task-foundation.md` + `00-shared/repo-structure.md` (monorepo foundation only) |
+| 2 | frontend-developer | `frontend/rules.md` + `frontend/task-foundation.md` + `00-shared/repo-structure.md` (monorepo foundation only) |
+| 3 | backend-developer | `backend/rules.md` + `backend/task-<domain1>.md` |
+| 4 | backend-developer | `backend/rules.md` + `backend/task-<domain2>.md` |
 | N | frontend-developer | `frontend/rules.md` + `frontend/task.md` + `frontend/components.md` + `00-shared/` |
 | N+1 | e2e-explorer | `e2e/rules.md` + `e2e/task.md` (user-facing slices only) |
 | N+2 | qa | `qa/rules.md` + `qa/checklist.md` |
@@ -116,6 +131,7 @@ Use this only when the main thread re-invokes you to resolve an `ESCALATE`/`BLOC
 
 | Request touches | Route to |
 |---|---|
+| Monorepo foundation / repo layout / root tooling spanning both app roots | backend-developer foundation → frontend-developer foundation → qa |
 | Backend behavior only | backend-developer(s) → qa |
 | Frontend behavior only | frontend-developer → e2e-explorer → qa |
 | Backend + frontend | backend-developer(s) → frontend-developer → e2e-explorer → qa |
@@ -132,6 +148,10 @@ suite are enforced by the deterministic gate hook on each developer finish — n
 - **Never write guideline rules from training data.** Every rule must come from a `get_guideline()` call made this session.
 - **Never write implementation code in feature memory.** Task files are specifications, not source code. Use entity field lists, endpoint signatures, directory trees, and prose business rules. If a pattern is non-obvious, include one base example ≤10 lines and an `Anti-patterns` block. Sub-agents own all implementation.
 - **Never invent task structure.** Concrete scaffolds, paths, commands, acceptance criteria, and tests must come from the fetched guideline summaries or explicit user requirements. If the source is unclear, mark the task `BLOCKED` instead of guessing.
+- **Do not slice monorepo foundation by layer.** Repo folders, root manifests, workspace config,
+  bootstrap scripts, and app-root conventions are cross-cutting. Put shared layout decisions in
+  `00-shared/repo-structure.md`, then route backend and frontend foundation tasks against that same
+  file so both agents know the expected monorepo shape.
 - **Token budget never outranks correctness.** Prefer a longer, sourced feature-memory file over a short guessed one. Compact only after every required decision is backed by a slug.
 - Call `get_metadata()` at most once per feature when slugs are unknown after reading `.codex/guideline-routing.md`.
 - Do not call `get_all_context` or other broad tools.

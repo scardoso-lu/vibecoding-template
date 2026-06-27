@@ -35,6 +35,12 @@ Only the main thread and `orchestrator` may read root guidance, agent configurat
 
 **Routing is conditional**: `orchestrator` invokes only the agents needed for the slice. Backend-only work skips frontend. Frontend-only work skips backend. The `e2e-explorer` runs only on user-facing slices (it needs a UI to drive). Docs/config-only and trivial non-behavior changes can go straight to QA.
 
+**Foundation is cross-cutting**: repo folders, root manifests, bootstrap scripts, workspace config,
+and app-root scaffolds are monorepo foundation work, not backend-only work. The orchestrator must
+plan these as one fullstack foundation slice with shared repo-structure memory, then route backend
+and frontend foundation tasks from the same structure contract so both agents know the expected
+monorepo shape.
+
 ## Deterministic gates (hooks + `validate-tools`)
 
 The mechanical checks are enforced by hooks in `.codex/hooks/` (registered in `.codex/hooks.json`, with hooks enabled in `.codex/config.toml`), so they always run regardless of what an agent remembers:

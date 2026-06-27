@@ -9,14 +9,16 @@ The orchestrator reads this file at the start of Plan Mode and follows every sec
   00-shared/                   # fullstack only — omit for backend-only or frontend-only
     api-contract.md            # every endpoint both stacks must agree on
     cross-stack.md             # error envelope, pagination shape, TypeScript↔Python type mappings
+    repo-structure.md          # monorepo foundation only: root layout and path ownership
 
   backend/
     rules.md                   # all backend MCP rules (incl. testing) — read by every backend invocation
-    task-foundation.md         # base infrastructure: Base, IdMixin, session, exceptions, migration scaffold
+    task-foundation.md         # backend root/package/tooling plus base infrastructure
     task-<domain>.md           # one file per domain: entity + repo + use cases + routes + Tests
 
   frontend/
     rules.md                   # all frontend MCP rules (incl. testing)
+    task-foundation.md         # monorepo foundation only: frontend root/package/tooling
     task.md                    # pages, services, server actions + Tests
     components.md              # only when the feature has more than three components
 
@@ -39,7 +41,7 @@ The orchestrator reads this file at the start of Plan Mode and follows every sec
 
 ## `00-shared/`
 
-> Only for fullstack features. Contains only content multiple agents must agree on — if one agent gets it wrong, another's work breaks. Never put guidelines here (those go in role `rules.md`). Never put domain model details here (those go in `backend/task-<domain>.md`); the frontend only needs the TypeScript shapes from `cross-stack.md`.
+> Only for fullstack features. Contains only content multiple agents must agree on — if one agent gets it wrong, another's work breaks. Never put guidelines here (those go in role `rules.md`). Never put domain model details here (those go in `backend/task-<domain>.md`); the frontend only needs the TypeScript shapes from `cross-stack.md`. For monorepo foundation slices, `repo-structure.md` is mandatory and is the shared source of truth for root layout decisions.
 
 ### `00-shared/api-contract.md`
 
@@ -93,6 +95,36 @@ interface <ResourceDto> {
 }
 ```
 
+### `00-shared/repo-structure.md`
+
+> Required for monorepo foundation slices. Omit for normal feature slices unless root layout changes.
+
+```md
+# <slice> — Monorepo Structure
+
+## Status
+- State: active | DONE
+
+## Root layout
+- `<backend-root>/` — backend app root and package boundary
+- `<frontend-root>/` — frontend app root and package boundary
+- `<shared-path>/` — shared scripts/config/docs, if any
+
+## Ownership
+- Backend-developer owns: <backend directories, backend manifests, backend tests/tooling>
+- Frontend-developer owns: <frontend directories, frontend manifests, frontend tests/tooling>
+- Shared/root files: <exact files, owner for creation, and which later agents may read or edit>
+
+## Workspace contracts
+- Package manager boundaries: <uv / pnpm workspace expectations>
+- Bootstrap commands: <root and per-app commands>
+- Environment files: <which `.env.example` keys belong to which app>
+- Do Not Touch: <repo paths or behaviors outside the foundation slice>
+
+## Provenance
+- <each root-level layout decision> → `<slug>`
+```
+
 ---
 
 ## `backend/`
@@ -116,7 +148,8 @@ Source: get_guideline("<slug>") — fetched this session
 
 ### `backend/task-foundation.md`
 
-> Always the first backend task. Covers shared base infrastructure only — no domain entities.
+> First backend task when backend work exists. For monorepo foundation slices, covers backend root,
+> package/tooling setup, shared base infrastructure, and backend tests. No domain entities.
 
 ```md
 # <slice> — Backend Foundation
@@ -125,13 +158,16 @@ Source: get_guideline("<slug>") — fetched this session
 - State: active | DONE   # orchestrator owns this field
 
 ## What to build
-Base infrastructure shared by all domains.
+Backend foundation inside the monorepo structure defined by `00-shared/repo-structure.md`.
 
 ## Do Not Touch
 - <files / behaviors / contracts out of scope for this task>
 
 ## Directory tree
 <describe the file and directory structure>
+
+## Depends on
+`00-shared/repo-structure.md` for root layout, ownership, package boundaries, and shared config.
 
 ## Acceptance Criteria
 - [ ] <observable outcome that proves the foundation is in place>
@@ -198,7 +234,7 @@ the return until green — so "done" means all of those pass.>
 
 ## `frontend/`
 
-> `rules.md` contains only frontend MCP slugs. `task.md` lists pages, services, and server actions by name and behavior — not by implementation. `components.md` is only created when the feature has more than three components. No JSX or TypeScript implementation bodies anywhere.
+> `rules.md` contains only frontend MCP slugs. `task-foundation.md` is created for monorepo foundation slices so the frontend-developer receives the same repo structure context as the backend-developer. `task.md` lists pages, services, and server actions by name and behavior — not by implementation. `components.md` is only created when the feature has more than three components. No JSX or TypeScript implementation bodies anywhere.
 
 ### `frontend/rules.md`
 
@@ -213,6 +249,45 @@ Source: get_guideline("<slug>") — fetched this session
 - Always …
 - Never …
 - Must …
+```
+
+### `frontend/task-foundation.md`
+
+> Required for monorepo foundation slices. Covers frontend scaffold, package/tooling setup, app directory baseline, styling setup, and frontend test setup. It must reference `00-shared/repo-structure.md`; do not let the frontend agent infer the repo layout from backend files.
+
+```md
+# <slice> — Frontend Foundation
+
+## Status
+- State: active | DONE   # orchestrator owns this field
+
+## What to build
+Frontend foundation inside the monorepo structure defined by `00-shared/repo-structure.md`.
+
+## Do Not Touch
+- <files / behaviors / contracts out of scope for this task>
+
+## Depends on
+`00-shared/repo-structure.md` for root layout, ownership, package boundaries, and shared config.
+
+## Directory tree
+<describe the frontend file and directory structure>
+
+## Tooling and app baseline
+- Package manager / scripts: <pnpm scripts and expected commands>
+- Next.js app root: <routes/layout/loading/error baseline>
+- Styling: <Tailwind/daisyUI setup and ownership>
+- Tests: <frontend test directories and cases to create>
+
+## Acceptance Criteria
+- [ ] <observable outcome that proves the frontend foundation matches the monorepo structure>
+
+## Commands
+<see AGENTS.md — type-check, test>
+
+## Stop condition
+<what "done" looks like. The SubagentStop gate runs tsc/validate-tools/tests and blocks the
+return until green.>
 ```
 
 ### `frontend/task.md`
