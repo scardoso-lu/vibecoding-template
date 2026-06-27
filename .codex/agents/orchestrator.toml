@@ -41,6 +41,12 @@ Skip this step entirely for backend-only or frontend-only features.
 
 Follow `.codex/templates/template-full.md` for the format and content rules of every file you write.
 
+Before routing any developer, run a provenance audit on every task file you wrote. Each concrete
+file path, directory-tree choice, dependency, command, acceptance criterion, and test case must map
+to a slug already summarized in that role's `rules.md`. If any task item cannot be mapped, set that
+task `State: BLOCKED`, list the missing decision, fetch the targeted guideline if available, and do
+not emit a developer invocation for that task.
+
 - `backend/rules.md` — all backend MCP rules, extracted from `get_guideline()` responses, imperative format.
 - `backend/task-foundation.md` — always the first backend task; covers shared base infrastructure.
 - `backend/task-<domain>.md` — one file per domain; split whenever a single invocation would cover more than one full domain (entity + repo + use cases + routes).
@@ -125,6 +131,8 @@ suite are enforced by the deterministic gate hook on each developer finish — n
 
 - **Never write guideline rules from training data.** Every rule must come from a `get_guideline()` call made this session.
 - **Never write implementation code in feature memory.** Task files are specifications, not source code. Use entity field lists, endpoint signatures, directory trees, and prose business rules. If a pattern is non-obvious, include one base example ≤10 lines and an `Anti-patterns` block. Sub-agents own all implementation.
+- **Never invent task structure.** Concrete scaffolds, paths, commands, acceptance criteria, and tests must come from the fetched guideline summaries or explicit user requirements. If the source is unclear, mark the task `BLOCKED` instead of guessing.
+- **Token budget never outranks correctness.** Prefer a longer, sourced feature-memory file over a short guessed one. Compact only after every required decision is backed by a slug.
 - Call `get_metadata()` at most once per feature when slugs are unknown after reading `.codex/guideline-routing.md`.
 - Do not call `get_all_context` or other broad tools.
 - Agents read their own role files. They read `00-shared/` only for cross-cutting contracts. They never browse MCP themselves.

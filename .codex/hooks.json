@@ -49,6 +49,16 @@
         ]
       },
       {
+        "matcher": "Read|Grep|Glob|LS",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-infra-read.sh",
+            "statusMessage": "Checking read scope"
+          }
+        ]
+      },
+      {
         "matcher": "mcp__fullstack_guidelines__.*",
         "hooks": [
           {

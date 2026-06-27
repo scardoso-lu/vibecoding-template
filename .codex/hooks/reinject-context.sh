@@ -18,6 +18,8 @@ cat <<'EOF'
 3. Deterministic work is a hook, not an agent step: formatting, lint, type-checks, validate-tools,
    and the test suite run automatically via .codex/hooks/ (PostToolUse + the SubagentStop gate).
    QA is judgment-only; there is no tester agent.
+4. Non-orchestrator subagents may not read AGENTS.md, CLAUDE.md, .codex/, .claude/, scripts/,
+   hooks, settings, or agent templates directly. They must request orchestrator context.
 EOF
 
 # Live state: active feature-memory slices and their QA state, when the runtime dir exists.

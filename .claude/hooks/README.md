@@ -7,14 +7,15 @@ every clone inherits them.
 | Hook | Event | Matcher | What it does |
 |---|---|---|---|
 | `session-start.sh` | `SessionStart` | — | Installs backend/frontend deps (`uv sync`, `pnpm install`) when their manifests exist, so tests and linters are ready in a fresh remote container. |
-| `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, and `git push --force`. |
+| `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, and non-orchestrator shell reads of agent infrastructure. |
 | `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to review-only `feature-memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Also confines the **e2e-explorer** to writing under `feature-memory/<slice>/e2e/`. |
+| `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks non-orchestrator subagents from reading `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `scripts/`, hooks, settings, and agent templates. Main-thread and orchestrator reads pass through. |
 | `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the orchestrator may call the guidelines server**; downstream roles are denied and told to ask the orchestrator. |
 | `auto-format.sh` | `PostToolUse` | `Edit\|Write\|MultiEdit` | Formats the file Claude just wrote (`ruff` for `.py`, locally-installed `prettier` for JS/TS/JSON/CSS/YAML). No-op when the tool isn't installed; never triggers a network install. |
 | `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs the developer's static checks (`ruff`/`mypy` or `tsc --noEmit`) when it finishes; blocks the stop with the errors so it fixes them before returning. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys / AWS keys and blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | — | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
-| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 3 CLAUDE.md rules + the deterministic-gate model + the active feature-memory slice states. |
+| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 CLAUDE.md rules + the deterministic-gate model + the active feature-memory slice states. |
 
 ## How blocking works
 
@@ -48,6 +49,10 @@ the agent prompts:
 - **MCP is orchestrator-only** (`guard-mcp.sh`): calls to `mcp__fullstack-guidelines__*`
   from `backend-developer` / `frontend-developer` / `e2e-explorer` / `qa` are
   denied. The orchestrator (and the main thread, which has no `agent_type`) pass through.
+- **Agent infrastructure reads are orchestrator-only** (`guard-infra-read.sh`): direct
+  `Read`/`Grep`/`Glob`/`LS` calls against root guidance, `.claude/`, `.codex/`, or
+  `scripts/` are denied for downstream subagents. The Bash guard also blocks obvious
+  shell reads/searches of those paths.
 - **e2e-explorer write scope** (`guard-edits.sh`): when `agent_type` is `e2e-explorer`,
   writes are allowed only under `.claude/feature-memory/<slice>/e2e/`; anything else is
   denied so fixes route back through the orchestrator.
@@ -82,7 +87,7 @@ Three hooks cover paths the per-edit hooks miss:
   blocks; loop-safe via `stop_hook_active`; a no-op when no formatter is installed.
 
 - **`reinject-context.sh` (`SessionStart`, matcher `compact`)** — compaction can drop the operating
-  rules. Anything it prints to stdout is added back to context, so it restates the three CLAUDE.md
+  rules. Anything it prints to stdout is added back to context, so it restates the four CLAUDE.md
   rules, the "deterministic work is a hook" model, and lists the active feature-memory slices with
   their QA `State`. It summarizes; it does not dump CLAUDE.md.
 

@@ -59,6 +59,15 @@
         ]
       },
       {
+        "matcher": "Read|Grep|Glob|LS",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-infra-read.sh"
+          }
+        ]
+      },
+      {
         "matcher": "mcp__fullstack-guidelines__.*",
         "hooks": [
           {

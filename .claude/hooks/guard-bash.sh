@@ -11,6 +11,7 @@ hook_json_can_parse || exit 0
 INPUT="${HOOK_INPUT_JSON:-}"
 [ -n "$INPUT" ] || INPUT="$(cat)"
 CMD="$(hook_json_get "$INPUT" "tool_input.command")"
+AGENT="$(hook_json_get "$INPUT" "agent_type")"
 [ -z "$CMD" ] && exit 0
 
 deny() {
@@ -44,5 +45,17 @@ if printf '%s' "$CMD" | grep -Eq 'git[[:space:]]+push' \
    && printf '%s' "$CMD" | grep -Eq '(--force|(^|[[:space:]])-f([[:space:]]|$))'; then
   deny "force-push is blocked. Push normally, or rebase onto a fresh branch and open a new PR."
 fi
+
+# Non-orchestrator subagents may not read agent infrastructure through shell
+# commands either. Main thread has no agent_type; orchestrator is allowed.
+case "$AGENT" in
+  ""|orchestrator)
+    : ;;
+  *)
+    if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \
+       && printf '%s' "$CMD" | grep -Eiq '(^|[[:space:]"'"'"'./\\])(CLAUDE\.md|AGENTS\.md|\.claude|\.codex|scripts)([[:space:]"'"'"'/\\]|$)'; then
+      deny "A '$AGENT' subagent may not inspect agent infrastructure through shell commands. Stop and return ESCALATE so the orchestrator can provide targeted context."
+    fi ;;
+esac
 
 exit 0
