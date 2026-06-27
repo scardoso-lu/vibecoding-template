@@ -259,6 +259,10 @@ All rules extracted from `get_guideline()` MCP calls.
 ```md
 # <slice> — Tests
 
+## Status
+- State: active | TESTS PASS | TESTS FAIL
+- Last run: —
+
 ## Unit tests
 `tests/unit/use_cases/test_<usecase>.py`
 - happy path: <what the use case returns on success>
@@ -299,6 +303,10 @@ All rules extracted from `get_guideline()` MCP calls.
 
 ```md
 # <slice> — E2E Exploration
+
+## Status
+- State: active | E2E CLEAN | E2E BUGS FOUND
+- Last run: —
 
 ## Launch
 - Backend: <command + health/ready URL to poll>

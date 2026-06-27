@@ -41,10 +41,28 @@ bash scripts/bootstrap.sh
 powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
 ```
 
-This installs the entire toolchain — uv, Python, Node, pnpm, Docker, and
-Chromium + libs for browser tests — with two supply-chain protections baked in:
-every download is signature/hash verified (fail-closed), and no dependency
-younger than 2 weeks is ever installed. See [`scripts/README.md`](scripts/README.md).
+This installs the entire toolchain — Git, GitHub CLI, uv, Python, Node, pnpm,
+Docker, and Chromium + libs for browser tests — with two supply-chain protections
+baked in: every download is signature/hash verified (fail-closed), and no
+dependency younger than 2 weeks is ever installed. See
+[`scripts/README.md`](scripts/README.md).
+
+### Make it your own repo (run this before pushing)
+
+The clone still points at the template's GitHub repo. Before you push any code,
+connect the project to **your** GitHub repo with one command:
+
+```bash
+# macOS
+bash scripts/init-project.sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\init-project.ps1
+```
+
+It optionally gives you a clean git history, creates your repo (via the GitHub
+CLI, or points at a repo URL you paste), updates the README, and makes the first
+push. After that, `git push` works normally.
 
 Then start building:
 
