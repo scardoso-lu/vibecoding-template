@@ -1,6 +1,6 @@
 # Guideline Routing
 
-Use this file only from orchestrator Plan Mode when feature memory lacks guideline slug context. Do not pass this file to backend, frontend, tester, or QA agents.
+Use this file only from orchestrator Plan Mode when feature memory lacks guideline slug context. Do not pass this file to backend, frontend, or QA agents.
 
 This map is a **starting hint, not an authority** — the slug names below can drift from the live MCP catalog. If `get_guideline()` cannot resolve a slug this map suggested, do not guess or proceed: call `get_metadata()` once to refresh the catalog, pick the correct current slug, and update this file so the hint stays accurate.
 

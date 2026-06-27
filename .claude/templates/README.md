@@ -7,7 +7,7 @@ Feature memory lives under `.claude/feature-memory/<slice>/` (gitignored — run
 - **Full slice**: `.claude/templates/template-full.md` — directory layout, per-file format, content rules, anti-patterns, and the historical summary template
 - **Minimal slice**: `.claude/templates/template-minimal.md` — for docs, config-only, copy, one-file non-behavior changes
 
-The orchestrator reads the relevant template at the start of Plan Mode. Templates are never passed to backend, frontend, tester, or QA agents.
+The orchestrator reads the relevant template at the start of Plan Mode. Templates are never passed to backend, frontend, or QA agents.
 
 ## Workflow rules
 

@@ -52,11 +52,26 @@ You may request targeted orchestrator context once per slice. If the updated han
 
 The Fullstack Guidelines MCP server is the source of truth for architecture and implementation rules, but only the orchestrator may call it. If feature memory does not contain enough frontend rule detail to avoid guessing, stop and request targeted orchestrator context. Do not resolve slugs yourself and do not self-route.
 
+## Tests are part of your slice
+
+There is no separate tester agent. You author the tests for the UI you build, following the
+testing rules in feature memory (e.g. `frontend/13-e2e-playwright`) and the `Tests` section of
+`task.md`: component tests, server-action tests, page-behavior tests, and scripted Playwright
+flows when the slice changes user-visible behavior. Write the smallest tests that prove the
+`Acceptance Criteria`.
+
+## Deterministic gate on finish
+
+When you finish, a `SubagentStop` hook automatically runs the mechanical checks —
+`tsc --noEmit` (types), `validate-tools run` (compliance validators), and the test command —
+and **blocks your return with the failures until they pass**. Run them yourself with `task.md`'s
+`Commands` section before finishing; do not ask anyone to run validators or tests. They are
+enforced, not optional.
+
 ## Rules
 
 - Follow only the component, data-fetching, mutation, state, accessibility, security, permission, and testing rules summarized in feature memory for this slice.
 - If a rule category appears relevant but is absent from feature memory, stop and request orchestrator context instead of applying general knowledge.
-- After implementing, run the local commands listed in `task.md`'s `Commands` section. Leave MCP validators to QA.
 - Commit messages may cite only guideline slugs already present in feature memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.
-- Report completed work to the orchestrator. Do not route directly to backend-developer, tester, or qa.
+- Report completed work to the orchestrator. Do not route directly to backend-developer or qa.

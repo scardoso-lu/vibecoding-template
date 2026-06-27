@@ -52,11 +52,26 @@ You may request targeted orchestrator context once per slice. If the updated han
 
 The Fullstack Guidelines MCP server is the source of truth for architecture and implementation rules, but only the orchestrator may call it. If feature memory does not contain enough backend rule detail to avoid guessing, stop and request targeted orchestrator context. Do not resolve slugs yourself and do not self-route.
 
+## Tests are part of your slice
+
+There is no separate tester agent. You author the tests for the behavior you implement,
+following the testing rules summarized in feature memory (e.g. `backend/09-testing`) and the
+`Tests` section of your task file: unit/integration tests for use cases, repositories, API
+routes, permissions, errors, and migrations. Write the smallest tests that prove the
+`Acceptance Criteria`.
+
+## Deterministic gate on finish
+
+When you finish, a `SubagentStop` hook automatically runs the mechanical checks —
+`ruff` (lint/format), `mypy` (types), `validate-tools run` (compliance validators), and
+`pytest` — and **blocks your return with the failures until they pass**. Run them yourself
+with the task file's `Commands` section before finishing; do not ask anyone to run validators
+or tests, and do not treat them as QA's job. They are enforced, not optional.
+
 ## Rules
 
 - Follow only the architecture, security, migration, logging, configuration, and testing rules summarized in feature memory for this slice.
 - If a rule category appears relevant but is absent from feature memory, stop and request orchestrator context instead of applying general knowledge.
-- After implementing, run the local commands listed in the task file's `Commands` section. Leave MCP validators to QA.
 - Commit messages may cite only guideline slugs already present in feature memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.
-- Report completed work to the orchestrator. Do not route directly to frontend-developer, tester, or qa.
+- Report completed work to the orchestrator. Do not route directly to frontend-developer or qa.

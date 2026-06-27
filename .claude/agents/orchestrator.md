@@ -57,9 +57,15 @@ Follow `.claude/templates/template-full.md` for the format and content rules of 
 - `backend/task-foundation.md` — always the first backend task; covers shared base infrastructure.
 - `backend/task-<domain>.md` — one file per domain; split whenever a single invocation would cover more than one full domain (entity + repo + use cases + routes).
 - `frontend/rules.md`, `frontend/task.md`, `frontend/components.md` — frontend agent reads all three.
-- `tests/rules.md`, `tests/task.md` — tester reads both.
 - `e2e/rules.md`, `e2e/task.md` — e2e-explorer reads both. Create only when the slice changes user-facing behavior.
 - `qa/rules.md`, `qa/checklist.md` — QA reads both.
+
+There is no separate tester role. Each developer authors the tests for its own slice, so include
+a `Tests` section in every `backend/task-*.md` and `frontend/task.md` (cases to cover, by
+description). The testing guideline rules go in the developer `rules.md` (e.g. `backend/09-testing`,
+`frontend/13-e2e-playwright`). Lint, types, `validate-tools` validators, and the test suite are
+**not agent steps** — they run automatically as deterministic hooks
+(`.claude/hooks/verify-subagent.sh`) when a developer finishes, and block its return on failure.
 
 ### Step 5 — Emit the Agent Plan
 
@@ -72,16 +78,17 @@ Follow `.claude/templates/template-full.md` for the format and content rules of 
 | 2 | backend-developer | `backend/rules.md` + `backend/task-<domain1>.md` |
 | 3 | backend-developer | `backend/rules.md` + `backend/task-<domain2>.md` |
 | N | frontend-developer | `frontend/rules.md` + `frontend/task.md` + `frontend/components.md` + `00-shared/` |
-| N+1 | tester | `tests/rules.md` + `tests/task.md` |
-| N+2 | e2e-explorer | `e2e/rules.md` + `e2e/task.md` (user-facing slices only) |
-| N+3 | qa | `qa/rules.md` + `qa/checklist.md` |
+| N+1 | e2e-explorer | `e2e/rules.md` + `e2e/task.md` (user-facing slices only) |
+| N+2 | qa | `qa/rules.md` + `qa/checklist.md` |
 
-Execution order: sequential. Each invocation depends on the previous.
+Execution order: sequential. Each invocation depends on the previous. Developers author and run
+their own tests; the deterministic gate hook runs lint/types/validators/tests on each developer
+finish, so there is no tester invocation.
 ```
 
 For each row, also state the `Do not touch` scope and the `Stop condition` so the main thread can invoke each agent directly from this table — it does not need a per-step Route handoff. The main thread executes the rows in order and returns to you only on an `ESCALATE`/`BLOCKED` return or to fan out E2E findings.
 
-You own the `State:` field in every `task.md` / `checklist.md` you author: set it when routing, and record the matching state string when an agent returns a verdict (`TESTS_ADDED_PASS` → `TESTS PASS`, `E2E_CLEAN` → `E2E CLEAN`, etc.). QA sets the terminal `QA APPROVED` / `QA BLOCKED` itself.
+You own the `State:` field in every `task.md` / `checklist.md` you author: set it when routing, and record the matching state string when an agent returns a verdict (e.g. `E2E_CLEAN` → `E2E CLEAN`). QA sets the terminal `QA APPROVED` / `QA BLOCKED` itself.
 
 ### Compaction
 
@@ -115,12 +122,14 @@ Use this only when the main thread re-invokes you to resolve an `ESCALATE`/`BLOC
 
 | Request touches | Route to |
 |---|---|
-| Backend behavior only | backend-developer(s) → tester → qa |
-| Frontend behavior only | frontend-developer → tester → e2e-explorer → qa |
-| Backend + frontend | backend-developer(s) → frontend-developer → tester → e2e-explorer → qa |
-| Tests only | tester → qa |
-| Review / compliance / security / PR hygiene | qa |
+| Backend behavior only | backend-developer(s) → qa |
+| Frontend behavior only | frontend-developer → e2e-explorer → qa |
+| Backend + frontend | backend-developer(s) → frontend-developer → e2e-explorer → qa |
+| Review / security / PR hygiene | qa |
 | Docs / config-only / no behavior change | qa |
+
+Developers author and run their own tests; lint, types, `validate-tools` validators, and the
+suite are enforced by the deterministic gate hook on each developer finish — not as routed steps.
 
 ---
 
@@ -133,8 +142,8 @@ Use this only when the main thread re-invokes you to resolve an `ESCALATE`/`BLOC
 - Agents read their own role files. They read `00-shared/` only for cross-cutting contracts. They never browse MCP themselves.
 - If an agent escalates for missing context, fetch the missing guideline, update the relevant `rules.md`, and route again. Each agent gets one escalation per feature.
 - `00-shared/` is only created for fullstack features. Backend-only and frontend-only features have no shared directory.
-- QA `checklist.md` must list every allowed validator by exact `validate-tools` CLI command. QA may not run unlisted validators without asking you first.
+- **Deterministic checks are hooks, not agent steps.** Lint, types, `validate-tools` validators, and the test suite run automatically when a developer finishes (`.claude/hooks/verify-subagent.sh`). Do not write an allowed-validators list, do not route a tester, and do not ask QA to run validators — there is no validator budget.
 - e2e-explorer runs on user-facing slices only (it needs a UI to drive); skip it for backend-only or non-behavior changes. It never browses MCP, never edits application code, and never runs validators.
 - When e2e-explorer returns `E2E_BUGS_FOUND`, route each `block:`/`question:` finding to the suspected owner (backend-developer or frontend-developer), then re-invoke e2e-explorer to confirm the fix. The slice is not done while `block:` findings remain in `e2e/report.md`.
-- QA is always the final gate. Nothing merges without `State: QA APPROVED` in `qa/checklist.md`.
-- Never communicate directly with developer, tester, or qa agents — all routing goes through the main thread.
+- QA is the final judgment gate. Nothing merges without a green deterministic gate **and** `State: QA APPROVED` in `qa/checklist.md`.
+- Never communicate directly with developer or qa agents — all routing goes through the main thread.
