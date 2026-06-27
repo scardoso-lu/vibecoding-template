@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Stop hook — speak a short notice when Claude finishes a turn.
+# Stop hook — speak a short notice when Codex finishes a turn.
 #
 # Audio plays on the machine running the session, so this is only audible in a LOCAL
-# Claude Code session. It is a deliberate, silent no-op anywhere without a text-to-speech
+# Codex session. It is a deliberate, silent no-op anywhere without a text-to-speech
 # backend (remote containers, CI) — a Stop hook must never block or error the turn.
 set -uo pipefail
 
-PHRASE="${1:-Claude stop, goodbye.}"
+PHRASE="${1:-Codex stop, goodbye.}"
 
 # Consume and discard the Stop-event JSON on stdin; none of its fields are needed.
 cat >/dev/null 2>&1 || true

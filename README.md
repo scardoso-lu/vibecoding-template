@@ -41,8 +41,8 @@ bash scripts/bootstrap.sh
 powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
 ```
 
-This installs the entire toolchain — Git, GitHub CLI, uv, Python, Node, pnpm,
-Docker, and Chromium + libs for browser tests — with two supply-chain protections
+This installs the entire toolchain — Git, GitHub CLI, jq, uv, Python, Node,
+pnpm, Docker, and Chromium + libs for browser tests — with two supply-chain protections
 baked in: every download is signature/hash verified (fail-closed), and no
 dependency younger than 2 weeks is ever installed. See
 [`scripts/README.md`](scripts/README.md).

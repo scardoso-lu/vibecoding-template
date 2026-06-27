@@ -9,7 +9,7 @@
 #   frontend: tsc --noEmit (types) · validate-tools run · pnpm test
 #
 # Fail-safe: a missing manifest or missing tool is skipped (no-op on the scaffold).
-# Loop-safe: honors stop_hook_active, and Claude Code caps consecutive Stop-blocks at 8.
+# Loop-safe: honors stop_hook_active, and Codex caps consecutive Stop-blocks at 8.
 set -uo pipefail
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,7 +25,7 @@ if [ "$(hook_json_get "$INPUT" "stop_hook_active" "false")" = "true" ]; then
 fi
 
 AGENT="$(hook_json_get "$INPUT" "agent_type")"
-ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+ROOT="${CODEX_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "$ROOT" || exit 0
 
 fails=""

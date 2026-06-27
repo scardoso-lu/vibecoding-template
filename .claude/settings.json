@@ -5,7 +5,8 @@
       "mcp__fullstack-guidelines__get_metadata",
       "mcp__fullstack-guidelines__get_guideline",
       "mcp__fullstack-guidelines__search_guidelines",
-      "Bash(validate-tools *)"
+      "Bash(validate-tools *)",
+      "Bash(python .claude/hooks/run-hook.py *)"
     ]
   },
   "hooks": {
@@ -14,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/session-start.sh"
           }
         ]
       },
@@ -23,7 +24,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/reinject-context.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/reinject-context.sh"
           }
         ]
       }
@@ -34,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-bash.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-bash.sh"
           }
         ]
       },
@@ -44,7 +45,7 @@
           {
             "type": "command",
             "if": "Bash(git commit *)",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-commit.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-commit.sh"
           }
         ]
       },
@@ -53,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-edits.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-edits.sh"
           }
         ]
       },
@@ -62,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-mcp.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-mcp.sh"
           }
         ]
       }
@@ -73,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/auto-format.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/auto-format.sh"
           }
         ]
       }
@@ -84,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify-subagent.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-subagent.sh"
           }
         ]
       }
@@ -94,7 +95,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/notify-attention.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/notify-attention.sh"
           }
         ]
       }
@@ -104,11 +105,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/format-changed.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/format-changed.sh"
           },
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/notify-stop.sh\""
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/notify-stop.sh"
           }
         ]
       }

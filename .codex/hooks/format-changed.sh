@@ -19,11 +19,11 @@ if [ "$(hook_json_get "$INPUT" "stop_hook_active" "false")" = "true" ]; then
   exit 0
 fi
 
-ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+ROOT="${CODEX_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "$ROOT" || exit 0
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
-AUTO_FORMAT="$ROOT/.claude/hooks/auto-format.sh"
+AUTO_FORMAT="$ROOT/.codex/hooks/auto-format.sh"
 [ -x "$AUTO_FORMAT" ] || [ -f "$AUTO_FORMAT" ] || exit 0
 
 # Changed (tracked) + untracked files, NUL-delimited so paths with spaces survive.

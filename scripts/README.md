@@ -39,7 +39,7 @@ template.
 
 ## What gets installed
 
-- **Git** + **GitHub CLI** (`gh`)
+- **Git** + **GitHub CLI** (`gh`) + **jq** for hook JSON parsing
 - **uv** — Python package manager (also installs **Python 3.12**)
 - **Node.js** (LTS) + **pnpm** (via Corepack)
 - **Docker Desktop**

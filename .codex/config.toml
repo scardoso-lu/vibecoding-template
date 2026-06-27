@@ -1,0 +1,18 @@
+project_doc_max_bytes = 65536
+
+[features]
+hooks = true
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[mcp_servers.fullstack-guidelines]
+url = "https://fullstack-agent-guidelines.vercel.app/mcp"
+enabled = true
+enabled_tools = [
+  "get_metadata",
+  "get_guideline",
+  "search_guidelines",
+]

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse guard (Bash, if: Bash(git commit *)) — defense-in-depth secrets gate on commits.
+# PreToolUse guard (Bash) — defense-in-depth secrets gate on commits.
 #
 # The SubagentStop gate only covers developer subagents; a `git commit` from the main thread runs
 # no check. Before a commit, scan the *staged diff* (only what is about to be committed) for
@@ -24,7 +24,7 @@ CMD="$(hook_json_get "$INPUT" "tool_input.command")"
 # Only act on git commits (the `if` field pre-filters, but it fails open, so re-check here).
 printf '%s' "$CMD" | grep -Eq '(^|[^[:alnum:]])git[[:space:]]+commit([[:space:]]|$)' || exit 0
 
-ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+ROOT="${CODEX_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "$ROOT" 2>/dev/null || exit 0
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 

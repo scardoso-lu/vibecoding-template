@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Codex when working with code in this repository.
 
 ## Stack
 
@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Three rules, no exceptions
 
 **1. Use guidelines through feature-slice memory.**
-The `fullstack-guidelines` MCP server is the source of truth for what code should look like, but MCP results are expensive because they stay in context. The orchestrator owns guideline discovery for each feature slice: fetch the complete set of specific slugs needed for the slice once, write the applicable rules into `.claude/feature-memory/<slice>/` (per-role files), and pass the relevant file to each downstream agent. Developer and QA agents read the feature memory first and must not refetch guideline text themselves.
+The `fullstack-guidelines` MCP server is the source of truth for what code should look like, but MCP results are expensive because they stay in context. The orchestrator owns guideline discovery for each feature slice: fetch the complete set of specific slugs needed for the slice once, write the applicable rules into `.codex/feature-memory/<slice>/` (per-role files), and pass the relevant file to each downstream agent. Developer and QA agents read the feature memory first and must not refetch guideline text themselves.
 
 **2. Route every request through the agent system.**
 Do not implement features directly. Invoke the right agent for the work.
@@ -34,13 +34,13 @@ Do not implement features directly. Invoke the right agent for the work.
 
 ## Deterministic gates (hooks + `validate-tools`)
 
-The mechanical checks are enforced by hooks in `.claude/hooks/` (registered in `.claude/settings.json`), so they always run regardless of what an agent remembers:
+The mechanical checks are enforced by hooks in `.codex/hooks/` (registered in `.codex/hooks.json`, with hooks enabled in `.codex/config.toml`), so they always run regardless of what an agent remembers:
 
 - **`auto-format.sh`** (`PostToolUse`) formats every edited file (`ruff` / `prettier`).
 - **`verify-subagent.sh`** (`SubagentStop` for `backend-developer` / `frontend-developer`) runs lint, type-checks, `validate-tools run`, and the test suite when a developer finishes, and **blocks its return until they pass**. This is where compliance and tests are enforced — not in QA.
 - **`guard-*.sh`** (`PreToolUse`) block forbidden commands/edits and enforce that only the orchestrator calls MCP and the e2e-explorer writes only under `e2e/`.
 
-Because of this, QA reviews judgment only (does the design hold, do the tests cover the right behavior, is E2E adequate, can it merge) and never reproduces the mechanical gate. See `.claude/hooks/README.md`.
+Because of this, QA reviews judgment only (does the design hold, do the tests cover the right behavior, is E2E adequate, can it merge) and never reproduces the mechanical gate. See `.codex/hooks/README.md`.
 
 The orchestrator has two modes and must use exactly one per response:
 
@@ -51,15 +51,15 @@ Start every feature by invoking the `orchestrator`. The main thread is the hub: 
 
 ## MCP budget rules
 
-- Prefer existing local context: `.claude/feature-memory/<slice>/`, repository files, tests, and prior agent handoffs.
-- The orchestrator may call `get_metadata()` once per feature slice only when the needed slugs are not already known from existing feature memory or `.claude/guideline-routing.md`.
+- Prefer existing local context: `.codex/feature-memory/<slice>/`, repository files, tests, and prior agent handoffs.
+- The orchestrator may call `get_metadata()` once per feature slice only when the needed slugs are not already known from existing feature memory or `.codex/guideline-routing.md`.
 - Fetch only the specific guidelines required by the current slice. Never call broad context tools such as `get_all_context` for normal feature work.
-- When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.claude/feature-memory/<slice>/` or sends a richer handoff to the subagent.
+- When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.codex/feature-memory/<slice>/` or sends a richer handoff to the subagent.
 - If a downstream agent would need to guess, infer from general knowledge, or proceed best-effort, it must stop and ask the orchestrator for targeted context for the existing slice.
 - Each subagent may request targeted orchestrator context once per slice. If still blocked after one update, it returns `ESCALATE` or `BLOCKED`; the orchestrator must improve the plan instead of starting repeated context loops.
 - `validate-tools` validators are **not an agent step**. They run inside the `verify-subagent.sh` hook when a developer finishes. Do not write an allowed-validators list in feature memory, do not ask QA to run validators.
 - Keep feature memory compact: active slice memory under 150 lines, each role handoff under 25 lines, guideline summaries as rules only.
-- Keep only three detailed QA-approved active slice memories. Before QA-approved slice 4, 7, 10, and so on, the orchestrator compacts the previous three QA-approved slices into one review-only historical summary under `.claude/feature-memory/history/`. Blocked, in-progress, unreviewed, and QA-rejected slices stay active and detailed.
+- Keep only three detailed QA-approved active slice memories. Before QA-approved slice 4, 7, 10, and so on, the orchestrator compacts the previous three QA-approved slices into one review-only historical summary under `.codex/feature-memory/history/`. Blocked, in-progress, unreviewed, and QA-rejected slices stay active and detailed.
 - Use conditional routing. Invoke only the agents needed for the slice; do not run the full backend -> frontend -> e2e-explorer -> qa flow unless the slice is fullstack and user-facing.
 - The `e2e-explorer` never browses MCP and never edits application code. When it returns `E2E_BUGS_FOUND`, the orchestrator routes each fix to the suspected owner, then re-invokes the explorer to confirm. A user-facing slice is not done while `block:` findings remain in `e2e/report.md`.
 - Plan before routing. The orchestrator must not mix Plan Mode and Route Mode in the same response.

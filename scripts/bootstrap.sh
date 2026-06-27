@@ -2,7 +2,7 @@
 #
 # bootstrap.sh — install the full toolchain for this project on macOS.
 #
-# Installs via Homebrew: Git, GitHub CLI, Node.js, Docker Desktop, plus uv
+# Installs via Homebrew: Git, GitHub CLI, jq, Node.js, Docker Desktop, plus uv
 # (official installer) and Python, pnpm (Corepack), and the Chromium browser +
 # libs Playwright needs.
 # Then it turns on the supply-chain cooldown (no dependency younger than 2 weeks)
@@ -58,7 +58,7 @@ COOLDOWN_MINUTES=$(( DEPENDENCY_COOLDOWN_DAYS * 24 * 60 ))
 
 report_versions() {
   log "Installed toolchain:"
-  for t in brew git gh uv python3 node pnpm docker; do
+  for t in brew git gh jq uv python3 node pnpm docker; do
     if have "$t"; then printf "   %-8s %s\n" "$t" "$("$t" --version 2>&1 | head -n1)"
     else printf "   %-8s ${c_red}missing${c_reset}\n" "$t"; fi
   done
@@ -95,6 +95,11 @@ if ! have gh; then
   log "Installing GitHub CLI via Homebrew…"
   brew install gh
 else ok "GitHub CLI present ($(gh --version | head -n1))"; fi
+
+if ! have jq; then
+  log "Installing jq via Homebrew…"
+  brew install jq
+else ok "jq present ($(jq --version))"; fi
 
 # --------------------------------------------------------------------------
 # 3. uv (also gives us Python)

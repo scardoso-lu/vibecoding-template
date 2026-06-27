@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PostToolUse hook (Edit|Write) — deterministically format/lint the file Claude just
+# PostToolUse hook (Edit|Write) — deterministically format/lint the file Codex just
 # wrote, so consistent style no longer depends on each agent remembering to run it.
 #
 # Only uses formatters that are already installed locally — never triggers a network
@@ -17,7 +17,7 @@ FP="$(hook_json_get "$INPUT" "tool_input.file_path")"
 [ -z "$FP" ] && exit 0
 [ -f "$FP" ] || exit 0
 
-ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+ROOT="${CODEX_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 
 # Resolve a locally-installed prettier without invoking npx (which would fetch it).
 prettier_bin() {

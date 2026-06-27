@@ -1,0 +1,112 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/session-start.sh",
+            "statusMessage": "Preparing project toolchain"
+          }
+        ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/reinject-context.sh",
+            "statusMessage": "Restoring project context"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-bash.sh",
+            "statusMessage": "Checking shell command"
+          },
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-commit.sh",
+            "statusMessage": "Checking staged commit contents"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-edits.sh",
+            "statusMessage": "Checking edit scope"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__fullstack_guidelines__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-mcp.sh",
+            "statusMessage": "Checking MCP access"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/auto-format.sh",
+            "statusMessage": "Formatting changed files"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "backend-developer|frontend-developer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-subagent.sh",
+            "statusMessage": "Running developer gate"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/notify-attention.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/format-changed.sh",
+            "statusMessage": "Formatting changed files"
+          },
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/notify-stop.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -4,8 +4,8 @@
   Install the full toolchain for this project on Windows.
 
 .DESCRIPTION
-  Installs: winget (App Installer) check, Git, GitHub CLI, Python, Node.js, uv,
-  pnpm, Docker Desktop, and Chromium + libs for Playwright. Then enables the
+  Installs: winget (App Installer) check, Git, GitHub CLI, jq, Python, Node.js,
+  uv, pnpm, Docker Desktop, and Chromium + libs for Playwright. Then enables the
   supply-chain cooldown (no dependency younger than 2 weeks) for uv and pnpm.
 
   Security model:
@@ -58,7 +58,7 @@ $CooldownCutoff  = (Get-Date).ToUniversalTime().AddDays(-$CooldownDays).ToString
 
 function Report-Versions {
   Write-Step 'Installed toolchain:'
-  foreach ($t in 'uv','python','node','pnpm','docker','git','gh') {
+  foreach ($t in 'uv','python','node','pnpm','docker','git','gh','jq') {
     if (Have $t) { "   {0,-8} {1}" -f $t, ((& $t --version 2>&1) | Select-Object -First 1) | Write-Host }
     else { Write-Host ("   {0,-8} missing" -f $t) -ForegroundColor Red }
   }
@@ -100,6 +100,7 @@ Write-Ok "winget present ($(winget --version))"
 # --------------------------------------------------------------------------
 if (-not (Have git))    { Winget-Install -Id 'Git.Git' }                              else { Write-Ok 'git present' }
 if (-not (Have gh))     { Winget-Install -Id 'GitHub.cli' }                            else { Write-Ok 'gh present' }
+if (-not (Have jq))     { Winget-Install -Id 'jqlang.jq' }                             else { Write-Ok 'jq present' }
 if (-not (Have python)) { Winget-Install -Id 'Python.Python.3.12' -Version $V['PYTHON_VERSION'] } else { Write-Ok 'python present' }
 if (-not (Have node))   { Winget-Install -Id 'OpenJS.NodeJS.LTS' -Version $V['NODE_VERSION'] }    else { Write-Ok 'node present' }
 Refresh-Path
