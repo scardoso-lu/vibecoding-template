@@ -26,6 +26,13 @@ deny() {
   exit 0
 }
 
+if [ "$AGENT" = "qa" ]; then
+  case "$PATH_VALUE" in
+    .claude/skills/playwright-cli/*|*/.claude/skills/playwright-cli/*)
+      exit 0 ;;
+  esac
+fi
+
 case "$PATH_VALUE" in
   CLAUDE.md|AGENTS.md|*/CLAUDE.md|*/AGENTS.md|\
   .claude|.claude/*|*/.claude|*/.claude/*|\

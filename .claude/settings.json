@@ -118,6 +118,14 @@
           },
           {
             "type": "command",
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/compaction-watch.sh"
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/workflow-watch.sh"
+          },
+          {
+            "type": "command",
             "command": "python .claude/hooks/run-hook.py .claude/hooks/notify-stop.sh"
           }
         ]

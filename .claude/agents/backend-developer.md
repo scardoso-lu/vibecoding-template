@@ -1,6 +1,6 @@
 ---
 name: backend-developer
-description: Implement FastAPI backend features from MCP-backed feature memory. Reads the slice rules before writing code and requests orchestrator context when rules are missing.
+description: Implement FastAPI backend code and tests from feature memory.
 model: sonnet
 tools:
   - Read
@@ -62,11 +62,10 @@ routes, permissions, errors, and migrations. Write the smallest tests that prove
 
 ## Deterministic gate on finish
 
-When you finish, a `SubagentStop` hook automatically runs the mechanical checks —
-`ruff` (lint/format), `mypy` (types), `validate-tools run` (compliance validators), and
-`pytest` — and **blocks your return with the failures until they pass**. Run them yourself
-with the commands listed in `slice.md` before finishing; do not ask anyone to run validators
-or tests, and do not treat them as QA's job. They are enforced, not optional.
+Do not run repo validators manually. The `SubagentStop` hook runs the relevant contract validator,
+static checks, `validate-tools`, and tests when you finish, and blocks the handoff on failures.
+Run only the focused commands explicitly listed in `slice.md` when you need them to implement or
+verify the behavior.
 
 ## Rules
 
@@ -75,3 +74,4 @@ or tests, and do not treat them as QA's job. They are enforced, not optional.
 - Commit messages may cite only guideline slugs already present in feature memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.
 - Report completed work to the orchestrator. Do not route directly to frontend-developer or qa.
+

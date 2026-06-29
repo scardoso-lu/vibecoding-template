@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# PreToolUse guard for Edit / Write / apply_patch — protects files that must not be
-# hand-edited, and enforces the e2e-explorer's write scope using the subagent
+# PreToolUse guard for Edit / Write / apply_patch - protects files that must not be
+# hand-edited, and enforces QA's write scope using the subagent
 # identity (agent_type) the hook receives. Emits the PreToolUse deny decision as
 # JSON. Fails open (exit 0) if JSON parsing is unavailable.
 set -uo pipefail
@@ -20,11 +20,11 @@ deny() {
   exit 0
 }
 
-# Compacted, QA-approved historical slices are review-only — never edited as active
+# Compacted, QA-approved historical slices are review-only - never edited as active
 # handoffs (see orchestrator compaction rules in AGENTS.md).
 case "$FP" in
-  */.codex/feature-memory/history/*|.codex/feature-memory/history/*)
-    deny "'.codex/feature-memory/history/' is review-only (compacted QA-approved slices). Do not edit historical summaries." ;;
+  */feature-memory/history/*|feature-memory/history/*)
+    deny "'feature-memory/history/' is review-only (compacted QA-approved slices). Do not edit historical summaries." ;;
 esac
 
 # Secrets files. .env.example is the tracked template and stays editable.
@@ -36,15 +36,17 @@ case "$base" in
     deny "editing a secrets file ('$base') is blocked. Put real values in .env by hand; document required keys in .env.example." ;;
 esac
 
-# Role scope: the e2e-explorer may write only under .codex/feature-memory/<slice>/e2e/
-# (its report and artifacts). Code/test/config fixes route through the orchestrator.
-if [ "$AGENT" = "e2e-explorer" ]; then
+# Role scope: QA may write only deterministic Playwright E2E specs/helpers and the terminal
+# slice verdict. Application code, unit tests, config, and non-E2E fixes route through the
+# orchestrator.
+if [ "$AGENT" = "qa" ]; then
   case "$FP" in
-    */.codex/feature-memory/*/e2e/*|.codex/feature-memory/*/e2e/*)
+    */frontend/e2e/*|frontend/e2e/*|*/feature-memory/*/slice.md|feature-memory/*/slice.md)
       : ;;  # allowed
     *)
-      deny "the e2e-explorer may write only under .codex/feature-memory/<slice>/e2e/. Log the defect and route the fix through the orchestrator instead of editing '$FP'." ;;
+      deny "QA may write only frontend/e2e/** Playwright specs/helpers or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the orchestrator instead of editing '$FP'." ;;
   esac
 fi
 
 exit 0
+

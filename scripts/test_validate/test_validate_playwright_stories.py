@@ -1,0 +1,73 @@
+﻿from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from scripts.validate.checks.playwright_stories import validate_playwright_stories
+
+
+def write_slice(tmp_path: Path, table_header: str, row_location: str) -> Path:
+    slice_dir = tmp_path / "feature-memory" / "story"
+    slice_dir.mkdir(parents=True)
+    (slice_dir / "slice.md").write_text(
+        f"""# Slice
+
+## E2E Test Stories
+| Story ID | User Story | Criteria | {table_header} | Seed/Setup | Assertions | Slugs |
+|---|---|---|---|---|---|---|
+| e2e-001 | As a user, I want save, so data persists. | AC-001 | {row_location} | fixture | visible | frontend/13-e2e-playwright |
+
+## QA Handoff
+- Playwright story tests required: yes
+- Focused Playwright command: pnpm e2e -- save
+""",
+        encoding="utf-8",
+    )
+    return slice_dir / "slice.md"
+
+
+def test_valid_story_location_and_comment_pass(tmp_path: Path) -> None:
+    write_slice(tmp_path, "Test Location", "frontend/e2e/save.spec.ts::save")
+    test_file = tmp_path / "frontend" / "e2e" / "save.spec.ts"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text(
+        "import { test } from '@playwright/test';\n"
+        "// Story: As a user, I want save, so data persists.\n"
+        "test('save', async () => {});\n",
+        encoding="utf-8",
+    )
+
+    assert validate_playwright_stories(tmp_path) == []
+
+
+def test_stale_spec_file_header_is_reported(tmp_path: Path) -> None:
+    write_slice(tmp_path, "Spec File", "frontend/e2e/save.spec.ts")
+
+    findings = validate_playwright_stories(tmp_path)
+
+    assert any("Test Location, not Spec File" in f.message for f in findings)
+
+
+def test_missing_story_comment_is_reported(tmp_path: Path) -> None:
+    write_slice(tmp_path, "Test Location", "frontend/e2e/save.spec.ts::save")
+    test_file = tmp_path / "frontend" / "e2e" / "save.spec.ts"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text("test('save', async () => {});\n", encoding="utf-8")
+
+    findings = validate_playwright_stories(tmp_path)
+
+    assert any("missing // Story:" in f.message for f in findings)
+
+
+def test_test_location_must_be_under_frontend_e2e(tmp_path: Path) -> None:
+    write_slice(tmp_path, "Test Location", "tests/save.spec.ts::save")
+
+    findings = validate_playwright_stories(tmp_path)
+
+    assert any("under frontend/e2e" in f.message for f in findings)
+
+
+

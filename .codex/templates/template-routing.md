@@ -10,8 +10,8 @@ the current slice. Do not load every template by default.
 | Repo layout, root tooling, bootstrap, app roots | `.codex/templates/categories/foundation.md` |
 | FastAPI/domain/API/migrations/backend tests | `.codex/templates/categories/backend.md` |
 | Next.js routes/components/actions/frontend tests | `.codex/templates/categories/frontend.md` |
-| User-facing browser exploration | `.codex/templates/categories/e2e.md` |
-| Final merge judgment | `.codex/templates/categories/qa.md` |
+| User-facing Playwright story tests | `.codex/templates/categories/e2e.md` |
+| QA merge judgment | `.codex/templates/categories/qa.md` |
 | Historical compaction | `.codex/templates/categories/history.md` |
 | Docs/config/copy/one-file non-behavior change | `.codex/templates/template-minimal.md` |
 

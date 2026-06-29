@@ -16,9 +16,10 @@ eggs/
 .eggs/
 lib/
 lib64/
-# Keep the bootstrap manifests — the generic Python lib/ rule above would hide them.
+# Keep the bootstrap manifests - the generic Python lib/ rule above would hide them.
 !scripts/lib/
 !scripts/lib/**
+scripts/lib/**/__pycache__/
 parts/
 sdist/
 var/
@@ -48,6 +49,8 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage.json
+coverage-summary.json
 *.cover
 *.py.cover
 .hypothesis/
@@ -221,5 +224,22 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Runtime-generated feature memory (orchestrator writes these; tracked templates live in .claude/templates/)
-.claude/feature-memory/
-.codex/feature-memory/
+feature-memory/
+
+# Per-stack environment files (use .env.example in each service dir as the template)
+backend/.env
+frontend/.env
+
+# Node / Next.js
+node_modules/
+.next/
+dist/
+build/
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# Playwright
+playwright-report/
+test-results/

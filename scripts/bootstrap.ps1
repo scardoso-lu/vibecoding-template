@@ -5,8 +5,9 @@
 
 .DESCRIPTION
   Installs: winget (App Installer) check, Git, GitHub CLI, jq, Python, Node.js,
-  uv, pnpm, Docker Desktop, and Chromium + libs for Playwright. Then enables the
-  supply-chain cooldown (no dependency younger than 2 weeks) for uv and pnpm.
+  uv, pnpm, playwright-cli, Docker Desktop, and Chromium + libs for Playwright.
+  Then enables the supply-chain cooldown (no dependency younger than 2 weeks)
+  for uv and pnpm.
 
   Security model:
     - Toolchain is installed with winget, which verifies publisher signatures and
@@ -58,9 +59,15 @@ $CooldownCutoff  = (Get-Date).ToUniversalTime().AddDays(-$CooldownDays).ToString
 
 function Report-Versions {
   Write-Step 'Installed toolchain:'
-  foreach ($t in 'uv','python','node','pnpm','docker','git','gh','jq') {
-    if (Have $t) { "   {0,-8} {1}" -f $t, ((& $t --version 2>&1) | Select-Object -First 1) | Write-Host }
-    else { Write-Host ("   {0,-8} missing" -f $t) -ForegroundColor Red }
+  foreach ($t in 'uv','python','node','pnpm','playwright-cli','docker','git','gh','jq') {
+    if (Have $t) {
+      try {
+        $version = ((& $t --version 2>&1) | Select-Object -First 1)
+      } catch {
+        $version = "present, version check failed: $($_.Exception.Message)"
+      }
+      "   {0,-14} {1}" -f $t, $version | Write-Host
+    } else { Write-Host ("   {0,-14} missing" -f $t) -ForegroundColor Red }
   }
 }
 
@@ -134,7 +141,15 @@ if (Have corepack) {
 } else { Write-Ok 'pnpm present' }
 
 # --------------------------------------------------------------------------
-# 5. Docker Desktop (winget, signed)
+# 5. playwright-cli (npm global, used by the QA Playwright CLI skill)
+# --------------------------------------------------------------------------
+if (-not (Have playwright-cli)) {
+  Write-Step "Installing playwright-cli $($V['PLAYWRIGHT_CLI_VERSION']) global command..."
+  npm install -g "@playwright/cli@$($V['PLAYWRIGHT_CLI_VERSION'])"
+} else { Write-Ok "playwright-cli present ($(playwright-cli --version))" }
+
+# --------------------------------------------------------------------------
+# 6. Docker Desktop (winget, signed)
 # --------------------------------------------------------------------------
 if (-not (Have docker)) {
   Winget-Install -Id 'Docker.DockerDesktop'
@@ -142,7 +157,7 @@ if (-not (Have docker)) {
 } else { Write-Ok "docker present ($(docker --version))" }
 
 # --------------------------------------------------------------------------
-# 6. Supply-chain cooldown config
+# 7. Supply-chain cooldown config
 # --------------------------------------------------------------------------
 Write-Step "Configuring dependency cooldown (${CooldownDays} days)..."
 
@@ -172,7 +187,7 @@ if (-not (Test-Path $ProfilePath) -or -not (Select-String -Path $ProfilePath -Pa
 $env:UV_EXCLUDE_NEWER = $CooldownCutoff   # active for the rest of this run
 
 # --------------------------------------------------------------------------
-# 7. Project deps + Chromium (respecting the cooldown)
+# 8. Project deps + Chromium (respecting the cooldown)
 # --------------------------------------------------------------------------
 if (Test-Path (Join-Path $RepoRoot 'pyproject.toml')) {
   Write-Step "Installing backend deps with uv (cutoff $env:UV_EXCLUDE_NEWER)..."

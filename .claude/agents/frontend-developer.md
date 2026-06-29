@@ -1,6 +1,6 @@
 ---
 name: frontend-developer
-description: Implement Next.js frontend features from MCP-backed feature memory. Reads the slice rules before writing code and requests orchestrator context when rules are missing.
+description: Implement Next.js frontend code and tests from feature memory.
 model: sonnet
 tools:
   - Read
@@ -55,18 +55,17 @@ The Fullstack Guidelines MCP server is the source of truth for architecture and 
 ## Tests are part of your slice
 
 There is no separate tester agent. You author the tests for the UI you build, following the
-testing rules in feature memory (e.g. `frontend/13-e2e-playwright`) and the `Tests` section of
-`slice.md`: component tests, server-action tests, page-behavior tests, and scripted Playwright
-flows when the slice changes user-visible behavior. Write the smallest tests that prove the
+testing rules in feature memory and the `Tests` section of `slice.md`: component tests,
+server-action tests, page-behavior tests, and Playwright CLI-runnable E2E specs when the slice
+changes user-visible behavior. Write the smallest tests that prove the
 `Acceptance Criteria`.
 
 ## Deterministic gate on finish
 
-When you finish, a `SubagentStop` hook automatically runs the mechanical checks —
-`tsc --noEmit` (types), `validate-tools run` (compliance validators), and the test command —
-and **blocks your return with the failures until they pass**. Run them yourself with `task.md`'s
-`Commands` section before finishing; do not ask anyone to run validators or tests. They are
-enforced, not optional.
+Do not run repo validators manually. The `SubagentStop` hook runs the relevant contract validator,
+static checks, `validate-tools`, and tests when you finish, and blocks the handoff on failures.
+Run only the focused commands explicitly listed in `slice.md` when you need them to implement or
+verify the behavior.
 
 ## Rules
 
@@ -75,3 +74,4 @@ enforced, not optional.
 - Commit messages may cite only guideline slugs already present in feature memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.
 - Report completed work to the orchestrator. Do not route directly to backend-developer or qa.
+

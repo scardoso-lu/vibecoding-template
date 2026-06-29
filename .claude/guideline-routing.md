@@ -2,7 +2,7 @@
 
 Use this file only from orchestrator Plan Mode when feature memory lacks guideline slug context. Do not pass this file to backend, frontend, or QA agents.
 
-This map is a **starting hint, not an authority** — the slug names below can drift from the live MCP catalog. If `get_guideline()` cannot resolve a slug this map suggested, do not guess or proceed: call `get_metadata()` once to refresh the catalog, pick the correct current slug, and update this file so the hint stays accurate.
+This map is a **starting hint, not an authority** - the slug names below can drift from the live MCP catalog. If `get_guideline()` cannot resolve a slug this map suggested, do not guess or proceed: call `get_metadata()` once to refresh the catalog, pick the correct current slug, and update this file so the hint stays accurate.
 
 Fetch targeted MCP guideline details when a rule is unclear. Do not copy full guideline text into feature memory; summarize only the slice-specific rule.
 
@@ -47,8 +47,8 @@ Fetch targeted MCP guideline details when a rule is unclear. Do not copy full gu
 | Accessibility / responsive | `frontend/15-accessibility` |
 | Performance / slow page | `frontend/18-performance` |
 | Component tests | `frontend/17-component-testing` |
-| E2E tests | `frontend/13-e2e-playwright` |
-| Exploratory E2E (e2e-explorer) | `frontend/13-e2e-playwright`, `frontend/14-loading-error-empty-states`, `frontend/19-rbac-permissions` |
+| E2E Playwright story specs | `frontend/13-e2e-playwright` |
+| QA Playwright spec generation/healing | `frontend/13-e2e-playwright`, `frontend/14-loading-error-empty-states`, `frontend/19-rbac-permissions` |
 | Project structure / new feature scaffold | `frontend/01-project-structure`, `frontend/20-feature-discipline` |
 | Refactor / cleanup | `frontend/11-rework-clean` |
 | OWASP / XSS / security | `frontend/07-owasp-top10` |

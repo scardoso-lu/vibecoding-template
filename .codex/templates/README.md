@@ -1,6 +1,6 @@
-﻿# Feature Memory Templates
+# Feature Memory Templates
 
-Feature memory lives under `.codex/feature-memory/<slice>/` (gitignored, runtime only). The orchestrator writes it in Plan Mode; sub-agents read it, never write it. The exception is `e2e-explorer`, which writes findings to `e2e/report.md` and `e2e/artifacts/`.
+Feature memory lives under `feature-memory/<slice>/` (gitignored, runtime only). The orchestrator writes it in Plan Mode; sub-agents read it, never write it. The exception is QA, which may set the terminal verdict in `slice.md`. User-facing E2E evidence is deterministic Playwright code under `frontend/e2e/**` plus Playwright runner output, not a separate prose E2E report artifact.
 
 ## Templates
 
@@ -14,3 +14,4 @@ The orchestrator reads `template-routing.md` first, then only the category templ
 ## Workflow rules
 
 See `.codex/agents/orchestrator.toml` for Plan Mode steps, Minimal Slice Mode eligibility, compaction schedule, and routing rules.
+

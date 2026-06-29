@@ -16,3 +16,6 @@ enabled_tools = [
   "get_guideline",
   "search_guidelines",
 ]
+
+[mcp_servers.fullstack-guidelines.tools.get_guideline]
+approval_mode = "approve"

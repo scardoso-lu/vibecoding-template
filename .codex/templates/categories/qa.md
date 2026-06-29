@@ -6,5 +6,6 @@ Include this section in every non-minimal `slice.md`.
 ## QA Handoff
 - Review focus:
 - Blocking risks:
-- E2E required: yes | no
+- Playwright story tests required: yes | no
+- Focused Playwright command:
 ```
