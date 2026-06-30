@@ -66,9 +66,19 @@ def main() -> int:
     evidence_dir = slice_dir / "evidence"
 
     commands: list[tuple[str, str, str]] = [
-        ("uv run pytest scripts\\test_validate", ".", "workflow-tests.txt"),
         ("validate-tools project-layout .", ".", "project-layout.txt"),
     ]
+    runtime_smoke_config = slice_dir / "runtime-smoke.json"
+    if (root / "docker-compose.yml").exists():
+        commands.append(("docker compose up --build --wait", ".", "docker-compose-up.txt"))
+        if (root / "frontend/package.json").exists():
+            commands.append(
+                (
+                    f"python scripts\\validate\\runtime-smoke.py --config {runtime_smoke_config.relative_to(root)}",
+                    ".",
+                    "runtime-smoke.txt",
+                )
+            )
     if (root / "backend/pyproject.toml").exists():
         commands.append(
             (
@@ -85,6 +95,8 @@ def main() -> int:
                 ("npx pnpm@10.16.0 --dir frontend e2e", ".", "e2e.txt"),
             ]
         )
+    if (root / "docker-compose.yml").exists():
+        commands.append(("docker compose down --remove-orphans", ".", "docker-compose-down.txt"))
 
     runs = [
         run_command(root, command, cwd, evidence_dir / output_name)

@@ -9,9 +9,12 @@ from scripts.validate.checks.feature_memory import feature_memory_roots
 def validate_qa_evidence(root: Path) -> list[Finding]:
     findings: list[Finding] = []
     required_commands = [
-        "uv run pytest scripts\\test_validate",
         "validate-tools project-layout .",
     ]
+    if (root / "docker-compose.yml").exists():
+        required_commands.append("docker compose up")
+        if (root / "frontend").exists():
+            required_commands.append("runtime-smoke.py")
     for memory_root in feature_memory_roots(root):
         for slice_md in memory_root.rglob("slice.md"):
             if "history" in slice_md.relative_to(memory_root).parts:
@@ -23,6 +26,8 @@ def validate_qa_evidence(root: Path) -> list[Finding]:
             slice_dir = slice_md.parent
             evidence_json = slice_dir / "qa-evidence.json"
             rel = slice_dir.relative_to(root).as_posix()
+            if (root / "docker-compose.yml").exists() and (root / "frontend").exists() and not (slice_dir / "runtime-smoke.json").exists():
+                findings.append(Finding(f"{rel}/runtime-smoke.json", "full frontend slice must define runtime smoke URL and rendered-content assertions"))
             if not evidence_json.exists():
                 findings.append(Finding(f"{rel}/qa-evidence.json", "full slice must record deterministic QA evidence JSON"))
                 continue
@@ -60,8 +65,16 @@ def validate_qa_evidence(root: Path) -> list[Finding]:
             for command in required_commands:
                 if command not in command_text:
                     findings.append(Finding(rel, f"QA evidence missing command: {command}"))
-            if (root / "backend").exists() and "--cov=src" not in command_text:
-                findings.append(Finding(rel, "QA evidence missing backend test command"))
+            if (root / "backend").exists():
+                backend_runs = [
+                    run
+                    for run in runs
+                    if isinstance(run, dict)
+                    and str(run.get("cwd", "")).replace("/", "\\") == "backend"
+                    and "--cov=src" in str(run.get("command", ""))
+                ]
+                if not backend_runs:
+                    findings.append(Finding(rel, "QA evidence missing backend test command running from ./backend"))
             if (root / "frontend").exists():
                 frontend_commands = {
                     "frontend test": "--dir frontend test:coverage",

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import sys
@@ -22,9 +22,16 @@ def test_project_layout_catches_missing_stack_artifacts_and_root_pnpm(tmp_path: 
     write(tmp_path / "backend/.env.example")
     write(tmp_path / "frontend/package.json", "{}")
     write(tmp_path / "frontend/Dockerfile", "COPY package.json ./\nRUN pnpm install\n")
+    write(tmp_path / "frontend/.env.example", "SERVICE_URL=http://localhost:8000\n")
+    write(tmp_path / "frontend/app/page.tsx")
+    write(tmp_path / "frontend/pages/_app.tsx")
+    write(tmp_path / "frontend/src/app/page.tsx")
     write(tmp_path / "pnpm-lock.yaml")
     write(tmp_path / "pnpm-workspace.yaml")
-    write(tmp_path / "docker-compose.yml", "services:\n  backend:\n    image: test\n")
+    write(
+        tmp_path / "docker-compose.yml",
+        "services:\n  backend:\n    image: test\n  frontend:\n    image: test\n",
+    )
 
     findings = validate_project_layout(tmp_path)
     messages = "\n".join(finding.format() for finding in findings)
@@ -34,6 +41,9 @@ def test_project_layout_catches_missing_stack_artifacts_and_root_pnpm(tmp_path: 
     assert "frontend/pnpm-lock.yaml" in messages
     assert "stack artifact must live under frontend/" in messages
     assert "backend service must use stack-local env file" in messages
+    assert "duplicate Next App Router roots" in messages
+    assert "do not mix legacy frontend/pages router" in messages
+    assert "compose frontend env must not point service URLs at localhost" in messages
 
 
 def test_database_policy_rejects_runtime_sqlite_default(tmp_path: Path) -> None:
@@ -65,7 +75,7 @@ def test_migration_validator_rejects_empty_initial_revision(tmp_path: Path) -> N
 
 def test_qa_evidence_requires_command_provenance(tmp_path: Path) -> None:
     write(
-        tmp_path / "feature-memory/spare-part-warehouse/slice.md",
+        tmp_path / "feature-memory/inventory/slice.md",
         """## Status
 - State: active
 ## Request
@@ -99,7 +109,7 @@ Fullstack.
 
 
 def test_qa_evidence_rejects_markdown_evidence(tmp_path: Path) -> None:
-    slice_dir = tmp_path / "feature-memory/spare-part-warehouse"
+    slice_dir = tmp_path / "feature-memory/inventory"
     write(
         slice_dir / "slice.md",
         """## Status
@@ -134,7 +144,7 @@ Fullstack.
 
 
 def test_qa_evidence_json_requires_passed_runs_and_expected_commands(tmp_path: Path) -> None:
-    slice_dir = tmp_path / "feature-memory/spare-part-warehouse"
+    slice_dir = tmp_path / "feature-memory/inventory"
     write(
         slice_dir / "slice.md",
         """## Status
@@ -163,22 +173,23 @@ Fullstack.
     )
     write(tmp_path / "backend/pyproject.toml")
     write(tmp_path / "frontend/package.json", "{}")
+    write(tmp_path / "docker-compose.yml", "services:\n  backend:\n    image: test\n")
     write(
         slice_dir / "qa-evidence.json",
         json.dumps(
             {
                 "generated_by": {
-                    "command": "python scripts\\validate\\gate.py --root . --slice feature-memory\\spare-part-warehouse\\slice.md",
+                    "command": "python scripts\\validate\\gate.py --root . --slice feature-memory\\inventory\\slice.md",
                     "cwd": ".",
                 },
                 "runs": [
                     {
-                        "command": "uv run pytest scripts\\test_validate",
-                        "cwd": ".",
+                        "command": "uv run pytest --cov=src --cov-report=json:coverage.json --cov-fail-under=80",
+                        "cwd": "backend",
                         "exit_code": 1,
                         "started_at": "2026-06-29T00:00:00Z",
                         "finished_at": "2026-06-29T00:00:01Z",
-                        "output_path": "feature-memory/spare-part-warehouse/evidence/workflow.txt",
+                        "output_path": "feature-memory/inventory/evidence/backend.txt",
                     }
                 ]
             }
@@ -190,13 +201,15 @@ Fullstack.
 
     assert "did not pass" in messages
     assert "validate-tools project-layout ." in messages
-    assert "backend test command" in messages
+    assert "docker compose up" in messages
+    assert "runtime-smoke.json" in messages
+    assert "runtime-smoke.py" in messages
     assert "frontend test command" in messages
     assert "unit_coverage" in messages
 
 
 def test_qa_evidence_requires_coverage_above_threshold_and_e2e_pointer(tmp_path: Path) -> None:
-    slice_dir = tmp_path / "feature-memory/spare-part-warehouse"
+    slice_dir = tmp_path / "feature-memory/inventory"
     write(
         slice_dir / "slice.md",
         """## Status
@@ -225,22 +238,27 @@ Fullstack.
     )
     write(tmp_path / "backend/pyproject.toml")
     write(tmp_path / "frontend/package.json", "{}")
+    write(tmp_path / "docker-compose.yml", "services:\n  backend:\n    image: test\n")
+    write(
+        slice_dir / "runtime-smoke.json",
+        json.dumps({"url": "http://localhost:3000/app", "must_contain": ["Inventory"], "forbid": ["Unhandled error"]}),
+    )
     write(
         slice_dir / "qa-evidence.json",
         json.dumps(
             {
                 "generated_by": {
-                    "command": "python scripts\\validate\\gate.py --root . --slice feature-memory\\spare-part-warehouse\\slice.md",
+                    "command": "python scripts\\validate\\gate.py --root . --slice feature-memory\\inventory\\slice.md",
                     "cwd": ".",
                 },
                 "runs": [
                     {
-                        "command": "uv run pytest scripts\\test_validate",
-                        "cwd": ".",
+                        "command": "uv run pytest --cov=src --cov-report=json:coverage.json --cov-fail-under=80",
+                        "cwd": "backend",
                         "exit_code": 0,
                         "started_at": "2026-06-29T00:00:00Z",
                         "finished_at": "2026-06-29T00:00:01Z",
-                        "output_path": "feature-memory/spare-part-warehouse/evidence/workflow.txt",
+                        "output_path": "feature-memory/inventory/evidence/backend.txt",
                     },
                     {
                         "command": "validate-tools project-layout .",
@@ -248,39 +266,63 @@ Fullstack.
                         "exit_code": 0,
                         "started_at": "2026-06-29T00:00:01Z",
                         "finished_at": "2026-06-29T00:00:02Z",
-                        "output_path": "feature-memory/spare-part-warehouse/evidence/layout.txt",
+                        "output_path": "feature-memory/inventory/evidence/layout.txt",
                     },
                     {
-                        "command": "uv run pytest backend\\test",
+                        "command": "docker compose up --build --wait",
                         "cwd": ".",
                         "exit_code": 0,
                         "started_at": "2026-06-29T00:00:02Z",
                         "finished_at": "2026-06-29T00:00:03Z",
-                        "output_path": "feature-memory/spare-part-warehouse/evidence/backend.txt",
+                        "output_path": "feature-memory/inventory/evidence/docker-compose-up.txt",
+                    },
+                    {
+                        "command": "python scripts\\validate\\runtime-smoke.py --config feature-memory\\inventory\\runtime-smoke.json",
+                        "cwd": ".",
+                        "exit_code": 0,
+                        "started_at": "2026-06-29T00:00:03Z",
+                        "finished_at": "2026-06-29T00:00:04Z",
+                        "output_path": "feature-memory/inventory/evidence/runtime-smoke.txt",
+                    },
+                    {
+                        "command": "uv run pytest --cov=src --cov-report=json:coverage.json --cov-fail-under=80",
+                        "cwd": "backend",
+                        "exit_code": 0,
+                        "started_at": "2026-06-29T00:00:04Z",
+                        "finished_at": "2026-06-29T00:00:05Z",
+                        "output_path": "feature-memory/inventory/evidence/backend.txt",
                     },
                     {
                         "command": "npx pnpm@10.16.0 --dir frontend test:coverage",
                         "cwd": ".",
                         "exit_code": 0,
-                        "started_at": "2026-06-29T00:00:03Z",
-                        "finished_at": "2026-06-29T00:00:04Z",
-                        "output_path": "feature-memory/spare-part-warehouse/evidence/frontend.txt",
+                        "started_at": "2026-06-29T00:00:05Z",
+                        "finished_at": "2026-06-29T00:00:06Z",
+                        "output_path": "feature-memory/inventory/evidence/frontend.txt",
                     },
                     {
                         "command": "npx pnpm@10.16.0 --dir frontend build",
                         "cwd": ".",
                         "exit_code": 0,
-                        "started_at": "2026-06-29T00:00:04Z",
-                        "finished_at": "2026-06-29T00:00:05Z",
-                        "output_path": "feature-memory/spare-part-warehouse/evidence/build.txt",
+                        "started_at": "2026-06-29T00:00:06Z",
+                        "finished_at": "2026-06-29T00:00:07Z",
+                        "output_path": "feature-memory/inventory/evidence/build.txt",
                     },
                     {
                         "command": "npx pnpm@10.16.0 --dir frontend e2e",
                         "cwd": ".",
                         "exit_code": 0,
-                        "started_at": "2026-06-29T00:00:05Z",
-                        "finished_at": "2026-06-29T00:00:06Z",
-                        "output_path": "feature-memory/spare-part-warehouse/evidence/e2e.txt",
+                        "started_at": "2026-06-29T00:00:07Z",
+                        "finished_at": "2026-06-29T00:00:08Z",
+                        "output_path": "feature-memory/inventory/evidence/e2e.txt",
+                    },
+                    {
+                        "command": "docker compose down --remove-orphans",
+                        "cwd": ".",
+                        "exit_code": 0,
+                        "started_at": "2026-06-29T00:00:08Z",
+                        "finished_at": "2026-06-29T00:00:09Z",
+                        "output_path": "feature-memory/inventory/evidence/docker-compose-down.txt",
                     },
                 ],
                 "unit_coverage": [
@@ -299,7 +341,7 @@ Fullstack.
 
 
 def test_e2e_coverage_requires_all_initial_prompt_stories_to_map_to_tests(tmp_path: Path) -> None:
-    slice_dir = tmp_path / "feature-memory/spare-part-warehouse"
+    slice_dir = tmp_path / "feature-memory/inventory"
     write(slice_dir / "slice.md", "## Status\n- State: active\n")
     write(
         slice_dir / "e2e-coverage.json",

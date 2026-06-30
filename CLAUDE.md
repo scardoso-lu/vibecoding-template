@@ -97,8 +97,9 @@ Workflow scripts own mechanical review:
 
 Hooks run the applicable script checks automatically. `validate-tools` runs inside the developer
 stop hook; it is not a QA step. QA evidence must be machine-readable `qa-evidence.json`, generated
-by the gate runner, with command/cwd/exit-code/timestamp/output-path records and backend/frontend
-unit coverage at or above 80 percent.
+by the gate runner, with command/cwd/exit-code/timestamp/output-path records, successful
+`docker compose up` evidence when `docker-compose.yml` exists, and backend/frontend unit coverage
+at or above 80 percent.
 
 ## MCP Budget
 

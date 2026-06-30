@@ -21,6 +21,7 @@ def validate_project_layout(root: Path) -> list[Finding]:
     findings: list[Finding] = []
     backend_root = root / "backend"
     frontend_root = root / "frontend"
+    compose = root / "docker-compose.yml"
     if backend_root.exists():
         for rel in [
             "backend/Dockerfile",
@@ -35,6 +36,20 @@ def validate_project_layout(root: Path) -> list[Finding]:
         if dockerfile_test.exists() and "COPY test" not in read_text(dockerfile_test):
             findings.append(Finding("backend/Dockerfile.test", "backend test image must copy test/ before running pytest"))
     if frontend_root.exists():
+        if (frontend_root / "app").exists() and (frontend_root / "src/app").exists():
+            findings.append(
+                Finding(
+                    "frontend/app",
+                    "duplicate Next App Router roots; use frontend/src/app and remove frontend/app",
+                )
+            )
+        if (frontend_root / "pages").exists() and (frontend_root / "src/app").exists():
+            findings.append(
+                Finding(
+                    "frontend/pages",
+                    "do not mix legacy frontend/pages router with frontend/src/app",
+                )
+            )
         for rel in [
             "frontend/Dockerfile",
             "frontend/.env.example",
@@ -51,10 +66,19 @@ def validate_project_layout(root: Path) -> list[Finding]:
             [".npmrc", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "pnpm install"],
         ):
             findings.append(Finding("frontend/Dockerfile", "frontend image must copy stack-local pnpm files before install"))
+        env_example = root / "frontend/.env.example"
+        if compose.exists() and env_example.exists():
+            env_text = read_text(env_example)
+            if re.search(r"=\s*https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(?:/|$)", env_text):
+                findings.append(
+                    Finding(
+                        "frontend/.env.example",
+                        "compose frontend env must not point service URLs at localhost",
+                    )
+                )
     for rel in ["pnpm-lock.yaml", "pnpm-workspace.yaml"]:
         if (root / rel).exists():
             findings.append(Finding(rel, "stack artifact must live under frontend/, not repo root"))
-    compose = root / "docker-compose.yml"
     if backend_root.exists() and frontend_root.exists() and not compose.exists():
         findings.append(Finding("docker-compose.yml", "fullstack app needs a compose runtime path"))
     if compose.exists():
@@ -215,6 +239,21 @@ def validate_frontend_contract(root: Path) -> list[Finding]:
     frontend_root = root / "frontend"
     if not frontend_root.exists():
         return findings
+
+    if (frontend_root / "app").exists() and (frontend_root / "src/app").exists():
+        findings.append(
+            Finding(
+                "frontend/app",
+                "duplicate Next App Router roots; use frontend/src/app and remove frontend/app",
+            )
+        )
+    if (frontend_root / "pages").exists() and (frontend_root / "src/app").exists():
+        findings.append(
+            Finding(
+                "frontend/pages",
+                "do not mix legacy frontend/pages router with frontend/src/app",
+            )
+        )
 
     findings.extend(
         _existing_dirs(

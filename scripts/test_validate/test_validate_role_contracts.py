@@ -38,6 +38,8 @@ def test_backend_contract_requires_route_tests_and_env_keys(tmp_path: Path) -> N
 
 def test_frontend_contract_rejects_brittle_e2e_and_missing_action_tests(tmp_path: Path) -> None:
     write(tmp_path / "frontend/src/app/[lang]/(app)/parts/page.tsx")
+    write(tmp_path / "frontend/app/page.tsx")
+    write(tmp_path / "frontend/pages/_app.tsx")
     write(tmp_path / "frontend/src/components/parts/part-form.tsx")
     write(tmp_path / "frontend/src/services/parts.ts")
     write(tmp_path / "frontend/src/actions/parts.ts")
@@ -48,6 +50,8 @@ def test_frontend_contract_rejects_brittle_e2e_and_missing_action_tests(tmp_path
 
     assert "do not use sleeps" in messages
     assert "prefer role/label/text locators" in messages
+    assert "duplicate Next App Router roots" in messages
+    assert "do not mix legacy frontend/pages router" in messages
     assert "missing Server Action test" in messages
     assert "missing form validation test" in messages
     assert "user-facing route should define loading" in messages

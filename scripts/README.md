@@ -58,6 +58,10 @@ launcher syntax, shell hook syntax, and registered smoke paths. The Stop and Sub
 the applicable validators automatically; run these commands manually only when debugging or before
 committing workflow changes.
 
+When `docker-compose.yml` exists, the deterministic gate records `docker compose up --build --wait`
+and cleanup evidence. The QA evidence validator rejects full slices that do not show a successful
+compose startup run.
+
 Run the validator test suite with:
 
 ```bash
