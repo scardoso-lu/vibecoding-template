@@ -1,98 +1,81 @@
-# Toolchain bootstrap
+# Scripts
 
-One command sets up everything this project needs — **you do not need to know how
-to install any of it.**
+## Bootstrap
 
-| You're on | Run this |
+One command sets up the local toolchain.
+
+| Platform | Command |
 |---|---|
-| **macOS** | `bash scripts/bootstrap.sh` |
-| **Windows** | `powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1` |
+| macOS | `bash scripts/bootstrap.sh` |
+| Windows | `powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1` |
 
-Add `--check` (bash) or `-Check` (PowerShell) to just report what's installed
-without changing anything. Re-running is safe — every step is idempotent.
+Use `--check` for bash or `-Check` for PowerShell to report installed tools without changing
+anything. Re-running bootstrap is safe.
 
-When it finishes, **open a new terminal** so the updated `PATH` and the cooldown
-environment take effect.
+## Init Project
 
-## Make the clone your own repo (`init-project`)
+A fresh clone still points `origin` at the template repo. Run this once before the first push:
 
-A fresh clone still points `origin` at the template's GitHub repo, so your first
-push would fail or go to the wrong place. **Run this once, before you push any
-code:**
-
-| You're on | Run this |
+| Platform | Command |
 |---|---|
-| **macOS** | `bash scripts/init-project.sh` |
-| **Windows** | `powershell -ExecutionPolicy Bypass -File scripts\init-project.ps1` |
+| macOS | `bash scripts/init-project.sh` |
+| Windows | `powershell -ExecutionPolicy Bypass -File scripts\init-project.ps1` |
 
-It interactively:
+The script asks for the project name, connects the clone to your GitHub repo, can reset template
+history, rewrites template references in `README.md`, and pushes the initial commit.
 
-1. asks your project name,
-2. connects to **your** GitHub repo — creates it with the GitHub CLI (`gh`) if
-   you're signed in (`gh auth login`), otherwise points at a repo URL you paste,
-3. optionally wipes the template's git history for a clean start,
-4. rewrites the template references in `README.md`, and
-5. makes the first commit and pushes.
+## Workflow Checks
 
-After that, `git push` works normally and the project is fully detached from the
-template.
+These scripts keep mechanical agent-workflow rules out of long prompts.
+`scripts/validate/` contains both the executable entrypoints (hyphenated filenames, e.g.
+`agent-guidance.py`) and the importable validator implementations (underscored filenames, e.g.
+`agent_guidance.py`) they call — hyphens are not valid in Python import statements, so the two
+names coexist in the same directory rather than in a separate package.
 
-## What gets installed
+| Task | Command |
+|---|---|
+| Full workflow doctor | `python scripts/validate/doctor.py --root .` |
+| Run all workflow validators | `python scripts/validate/workflow.py --root .` |
+| Scan root/agent/template guidance | `python scripts/validate/agent-guidance.py --root .` |
+| Validate feature memories | `python scripts/validate/feature-memory.py --root .` |
+| Check feature-memory compaction threshold | `python scripts/validate/compaction.py --root .` |
+| Validate Playwright story-test contracts | `python scripts/validate/playwright-stories.py --root .` |
+| Validate hook registration and smoke paths | `python scripts/validate/hook-registration.py --root .` |
+| Validate stack-local project layout | `python scripts/validate/project-layout.py --root .` |
+| Validate backend database policy | `python scripts/validate/database.py --root .` |
+| Validate Alembic migration bodies | `python scripts/validate/migrations.py --root .` |
+| Validate backend mechanical contracts | `python scripts/validate/backend.py --root .` |
+| Validate frontend mechanical contracts | `python scripts/validate/frontend.py --root .` |
+| Validate QA Playwright workflow contracts | `python scripts/validate/qa.py --root .` |
+| Validate acceptance-criteria test mapping | `python scripts/validate/test-coverage.py --root .` |
+| Validate initial-prompt E2E coverage mapping | `python scripts/validate/e2e-coverage.py --root .` |
+| Validate deterministic QA evidence | `python scripts/validate/qa-evidence.py --root .` |
+| Validate hook/tool command shapes | `python scripts/validate/tooling.py --root .` |
+| Validate changed-file ownership and Do Not Touch | `python scripts/validate/ownership.py --root . --agent <agent> --slice <slice.md>` |
+| Execute deterministic gate and write QA evidence | `python scripts/validate/gate.py --root . --slice feature-memory/<slice>/slice.md` |
+| Summarize Playwright failure output | `python scripts/validate/playwright-output.py <output-file>` |
 
-- **Git** + **GitHub CLI** (`gh`) + **jq** for hook JSON parsing
-- **uv** — Python package manager (also installs **Python 3.12**)
-- **Node.js** (LTS) + **pnpm** (via Corepack)
-- **Docker Desktop**
-- **Chromium** + the system libraries **Playwright** needs (for the
-  `e2e-explorer` agent and frontend E2E tests)
-- A base package manager if missing — **Homebrew** (macOS); **winget** is used
-  on Windows and must already be present (ships with Windows 10/11)
+Most validators accept `--root <path>` and `--json`. `doctor.py` also checks hook JSON, hook
+launcher syntax, shell hook syntax, and registered smoke paths. The Stop and SubagentStop hooks run
+the applicable validators automatically; run these commands manually only when debugging or before
+committing workflow changes.
 
-## The supply-chain guarantees
+When `docker-compose.yml` exists, the deterministic gate records `docker compose up --build --wait`
+and cleanup evidence. The QA evidence validator rejects full slices that do not show a successful
+compose startup run.
 
-Two protections are wired in, using the package managers' own built-in features
-(not hand-rolled checks):
+Run the validator test suite with:
 
-### 1. Everything is hash/signature verified — fail closed
+```bash
+uv run --with pytest pytest scripts/test_validate
+```
 
-- Toolchain installs go through **signed package managers** — **Homebrew** on
-  macOS, **winget** on Windows. They verify publisher signatures and package
-  hashes against their own manifests. Versions are pinned in
-  [`lib/versions.env`](lib/versions.env).
-- **uv** is installed with Astral's official installer, which verifies the
-  downloaded binary's checksum itself; the version is pinned.
-- There are **no raw binary downloads** in the scripts, so there is nothing to
-  hand-verify. If you ever add one, verify its SHA-256 against the vendor's
-  published checksum (`shasum -a 256` / `Get-FileHash`) and abort on mismatch.
+## Toolchain Notes
 
-### 2. No dependency younger than 2 weeks (rolling cooldown)
+Bootstrap installs Git, GitHub CLI, jq, uv, Python, Node.js, pnpm, playwright-cli, Docker Desktop,
+Chromium, and Playwright system libraries when possible.
 
-Most npm/PyPI supply-chain attacks are a malicious **new version** that gets
-caught and pulled within days. Waiting 14 days before adopting any release dodges
-almost all of them. This is enforced for **every future install**, not just
-during bootstrap:
-
-- **PyPI / uv** → `UV_EXCLUDE_NEWER` is set to *today − 14 days*, recomputed every
-  time you open a shell (added to your shell profile). `uv` then refuses any
-  release published after that cutoff.
-- **npm / pnpm** → `minimumReleaseAge: 20160` (minutes = 14 days) in
-  [`../pnpm-workspace.yaml`](../pnpm-workspace.yaml). `pnpm install` refuses any
-  version newer than the cooldown.
-
-Change the window in one place — `DEPENDENCY_COOLDOWN_DAYS` in
-[`lib/versions.env`](lib/versions.env) — and re-run the bootstrap.
-
-## Updating pinned versions
-
-1. Edit the version in [`lib/versions.env`](lib/versions.env).
-2. Re-run the bootstrap. The package manager (Homebrew / winget) or the uv
-   installer verifies the new version's integrity for you.
-
-## Bypassing the cooldown for one package (rare)
-
-Only if you genuinely need a release younger than the window:
-
-- pnpm: add the package name to `minimumReleaseAgeExclude` in
-  `pnpm-workspace.yaml`.
-- uv: run that one command with `--exclude-newer` overridden, or unset
-  `UV_EXCLUDE_NEWER` for a single invocation. Prefer not to.
+Toolchain versions live in `scripts/lib/versions.env`. The bootstrap scripts install through signed
+package managers where possible and configure a rolling dependency cooldown. When a generated
+frontend workspace exists, pnpm cooldown settings belong in `pnpm-workspace.yaml`; until then this
+template may not have a root pnpm workspace file.

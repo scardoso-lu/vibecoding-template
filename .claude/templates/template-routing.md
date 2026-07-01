@@ -10,8 +10,8 @@ the current slice. Do not load every template by default.
 | Repo layout, root tooling, bootstrap, app roots | `.claude/templates/categories/foundation.md` |
 | FastAPI/domain/API/migrations/backend tests | `.claude/templates/categories/backend.md` |
 | Next.js routes/components/actions/frontend tests | `.claude/templates/categories/frontend.md` |
-| User-facing browser exploration | `.claude/templates/categories/e2e.md` |
-| Final merge judgment | `.claude/templates/categories/qa.md` |
+| User-facing Playwright story tests | `.claude/templates/categories/e2e.md` |
+| QA merge judgment | `.claude/templates/categories/qa.md` |
 | Historical compaction | `.claude/templates/categories/history.md` |
 | Docs/config/copy/one-file non-behavior change | `.claude/templates/template-minimal.md` |
 

@@ -1,0 +1,18 @@
+# Root-level lint config for scripts/ only. Stack-local code gets its own
+# backend/pyproject.toml (and frontend tooling) once the app is scaffolded;
+# ruff prefers the closest config to the invocation directory, so this file
+# never affects those.
+
+[lint.per-file-ignores]
+# scripts/validate/*.py and scripts/test_validate/*.py run as standalone
+# files (`python scripts/validate/foo.py`, direct pytest collection), so
+# Python puts each file's own directory on sys.path, not the repo root.
+# They insert the repo root before importing `scripts.*` themselves; that
+# insert has to come before the import, which trips E402 on a pattern that
+# is required, not accidental. `-m` invocation would sidestep the issue but
+# is not usable here: several of these entrypoints are deliberately
+# hyphenated (agent-guidance.py, feature-memory.py, ...) so their CLI names
+# do not collide with the underscore-named modules they import, and hyphens
+# are not valid in a `python -m` dotted module path.
+"scripts/validate/*.py" = ["E402"]
+"scripts/test_validate/*.py" = ["E402"]

@@ -1,116 +1,134 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) in this repository.
 
 ## Stack
 
-- **Backend**: Python / FastAPI - Clean Architecture / DDD
-- **Frontend**: Next.js 15 - App Router, Server Components, Server Actions, daisyUI
-- **Migrations**: Alembic
-- **Python package manager**: uv
+- Backend: Python / FastAPI / Clean Architecture / DDD
+- Frontend: Next.js 15 / App Router / Server Components / Server Actions / daisyUI
+- Migrations: Alembic
+- Python package manager: uv
 
-## Four rules, no exceptions
+The backend, frontend, and docs app folders may be absent in a clean workflow test. Recreate them
+only from feature memory and MCP-backed rules.
 
-**1. Use guidelines through feature-slice memory.**
-The `fullstack-guidelines` MCP server is the source of truth for what code should look like, but MCP results are expensive because they stay in context. The orchestrator owns guideline discovery for each feature slice: fetch the complete set of specific slugs needed for the slice once, write `.claude/feature-memory/<slice>/slice.md` and `.claude/feature-memory/<slice>/rules.md`, and pass those files to each downstream agent. Developer and QA agents read the feature memory first and must not refetch guideline text themselves.
+## Non-Negotiable Rules
 
-**2. Route every request through the agent system.**
-Do not implement features directly. Invoke the right agent for the work.
+1. Use feature-slice memory for guidelines.
+   The `fullstack-guidelines` MCP server is the source of truth. The orchestrator fetches the
+   needed slugs once per slice, writes `feature-memory/<slice>/slice.md` and `rules.md`, and hands
+   those files to downstream agents. Developers and QA do not refetch guideline text.
 
-**3. Keep Claude and Codex guidance aligned.**
-`CLAUDE.md` and `AGENTS.md` are paired root entrypoints and must stay at least 90% similar in structure and operational guidance. When one file changes, update the other in the same change unless the difference is strictly runtime-specific (`.claude/` versus `.codex/`, Claude naming versus Codex naming, or tool availability). Keep `.claude/` and `.codex/` support files mirrored by role, hook, template, and guideline-routing purpose.
+2. Route work through the agent system.
+   Start feature work with `orchestrator`. The main thread executes the Agent Plan rows and returns
+   to the orchestrator only for `ESCALATE`, `BLOCKED`, or QA finding fan-out.
 
-**4. Block subagent reads of agent infrastructure.**
-Only the main thread and `orchestrator` may read root guidance, agent configuration, hooks, workflow scripts, or cross-runtime support files. Non-orchestrator subagents must not open, search, or inspect `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `scripts/`, hook files, settings files, or agent templates unless the orchestrator handoff names the exact file path as required task input. If a subagent needs that context, it must stop and return `ESCALATE` for orchestrator-owned context instead of reading the file directly.
+3. Keep Claude and Codex guidance mirrored.
+   `CLAUDE.md` and `AGENTS.md` must stay structurally aligned. `.claude/` and `.codex/` support
+   files must stay mirrored by role, hook, template, and guideline-routing purpose, except for
+   runtime-specific names and tool syntax.
 
-## Agents
+4. Block subagent reads of agent infrastructure.
+   Only the main thread and `orchestrator` may read root guidance, agent config, hooks, workflow
+   scripts, settings, templates, or cross-runtime support files. Non-orchestrator subagents may read
+   those files only when the orchestrator handoff names the exact path. QA may read
+   `.claude/skills/playwright-cli/**` for Playwright spec work.
+
+## Agent Roles
 
 | Agent | Responsibility |
 |---|---|
-| `orchestrator` | Scopes the request, resolves guideline slugs, writes feature memory, routes to the right agent |
-| `backend-developer` | FastAPI / Python / DB / migrations / async / config **and the slice's tests**; no MCP access |
-| `frontend-developer` | Next.js / components / forms / Server Actions / RBAC UI **and the slice's tests**; no MCP access |
-| `e2e-explorer` | Drives the running app in a real browser, explores user-facing flows, logs bugs as structured findings; never edits code |
-| `qa` | Judgment-only merge review: architecture/contract compliance, Do-Not-Touch, E2E adequacy, merge decision |
+| `orchestrator` | Defines the slice, fetches MCP rules, writes feature memory, and emits the Agent Plan |
+| `backend-developer` | Implements backend code and tests from feature memory; no MCP access |
+| `frontend-developer` | Implements frontend code and tests from feature memory; no MCP access |
+| `qa` | Reviews the slice, writes/heals Playwright story tests when needed, and returns `APPROVED` or `BLOCKED` |
 
-**Routing is conditional**: `orchestrator` invokes only the agents needed for the slice. Backend-only work skips frontend. Frontend-only work skips backend. The `e2e-explorer` runs only on user-facing slices (it needs a UI to drive). Docs/config-only and trivial non-behavior changes can go straight to QA.
+Routing is conditional. Backend-only work skips frontend. Frontend-only work skips backend.
+Docs/config/copy/minimal changes can route straight to QA review. Foundation work is one
+cross-cutting monorepo slice when it touches repo layout, root manifests, bootstrap scripts,
+workspace config, or both app roots.
 
-**Foundation is cross-cutting**: repo folders, root manifests, bootstrap scripts, workspace config,
-and app-root scaffolds are monorepo foundation work, not backend-only work. The orchestrator must
-plan these inside one fullstack feature memory, then route backend and frontend foundation tasks
-from the same `slice.md` structure contract so both agents know the expected monorepo shape.
+Slice by coherent user outcome, not by layer. Do not split one normal MVP request into scaffold,
+endpoint, CRUD, page, and test memories unless the user asks for phases, the outcomes can ship
+independently, a hard gate must land first, or the scope is too large for one QA review.
 
-**Slice by user outcome, not implementation layer**: a feature slice is the smallest coherent user
-request that can be planned, implemented, explored, and reviewed together. Do not split a normal
-MVP-style request into separate scaffold, auth, endpoint, CRUD, page, and test slices just because
-different layers or files are involved. For example, "create a nutrition app to track weight and a
-food plan" is one fullstack app slice with foundation plus related CRUD tasks in the same feature
-memory, unless the user explicitly asks for phased delivery or a hard dependency makes one part
-impossible to specify safely.
+## Feature Memory Contract
 
-## Deterministic gates (hooks + `validate-tools`)
+The orchestrator reads `.claude/templates/template-routing.md`, loads only the needed category
+templates, then writes:
 
-The mechanical checks are enforced by hooks in `.claude/hooks/` (registered in `.claude/settings.json`), so they always run regardless of what an agent remembers:
+- `feature-memory/<slice>/slice.md`
+- `feature-memory/<slice>/rules.md`
 
-- **`auto-format.sh`** (`PostToolUse`) formats every edited file (`ruff` / `prettier`).
-- **`verify-subagent.sh`** (`SubagentStop` for `backend-developer` / `frontend-developer`) runs lint, type-checks, `validate-tools run`, and the test suite when a developer finishes, and **blocks its return until they pass**. This is where compliance and tests are enforced — not in QA.
-- **`guard-*.sh`** (`PreToolUse`) block forbidden commands, edits, and infrastructure reads; enforce that only the orchestrator calls MCP; and keep the e2e-explorer write scope under `e2e/`.
+Full slices must include `Status`, `Request`, `Slice Boundary`, `Do Not Touch`, `Implementation
+Plan`, `Acceptance Criteria`, `QA Handoff`, and provenance. User-facing slices also need
+`E2E Test Stories`, with each row mapped to one Playwright `test(...)`. Acceptance criteria must use
+stable `AC-###` IDs, `Test Coverage` must map every criterion to backend/frontend-unit/E2E/harness
+tests, and user-facing slices must include `e2e-coverage.json` mapping initial-prompt user stories
+to Playwright tests.
 
-Because of this, QA reviews judgment only (does the design hold, do the tests cover the right behavior, is E2E adequate, can it merge) and never reproduces the mechanical gate. See `.claude/hooks/README.md`.
+Do not create role-specific feature-memory directories such as `00-shared/`, `backend/`,
+`frontend/`, or `qa/`. Do not put validator allow-lists in feature memory.
 
-The orchestrator has two modes and must use exactly one per response:
+## Deterministic Enforcement
 
-- Plan Mode (primary): create/update `slice.md`, `rules.md`, and the Agent Plan. The Agent Plan table is the full execution sequence — each row names the agent, files to read, do-not-touch scope, and stop condition.
-- Route Mode (exception): emit one tiny targeted handoff. Used only when the orchestrator is re-invoked to resolve an `ESCALATE`/`BLOCKED` return or to fan out an E2E `block:`/`question:` fix — not for normal happy-path steps.
+Hooks in `.claude/hooks/` are registered by `.claude/settings.json`. They own formatting,
+forbidden edits/reads, MCP scope, commit secret checks, changed-file formatting, and developer stop
+gates.
 
-Start every feature by invoking the `orchestrator`. The main thread is the hub: it drives the Agent Plan table row by row, invoking each agent directly, and returns to the orchestrator only for escalations and E2E-bug fan-out. Agents never communicate directly with each other.
+Workflow scripts own mechanical review:
 
-## MCP budget rules
+| Check | Command |
+|---|---|
+| Full workflow doctor | `python scripts/validate/doctor.py --root .` |
+| All workflow validators | `python scripts/validate/workflow.py --root .` |
+| Root/agent/template guidance | `python scripts/validate/agent-guidance.py --root .` |
+| Feature memory contract | `python scripts/validate/feature-memory.py --root .` |
+| Feature memory compaction | `python scripts/validate/compaction.py --root .` |
+| Hook registration and smoke paths | `python scripts/validate/hook-registration.py --root .` |
+| Playwright story contracts | `python scripts/validate/playwright-stories.py --root .` |
+| Acceptance/test coverage mapping | `python scripts/validate/test-coverage.py --root .` |
+| Initial-prompt E2E coverage mapping | `python scripts/validate/e2e-coverage.py --root .` |
+| Backend contract | `python scripts/validate/backend.py --root .` |
+| Frontend contract | `python scripts/validate/frontend.py --root .` |
+| QA contract | `python scripts/validate/qa.py --root .` |
+| Ownership / Do Not Touch | `python scripts/validate/ownership.py --root . --agent <agent> --slice <slice.md>` |
+| Deterministic gate evidence | `python scripts/validate/gate.py --root . --slice feature-memory/<slice>/slice.md` |
 
-- Prefer existing local context: `.claude/feature-memory/<slice>/`, repository files, tests, and prior agent handoffs.
-- The orchestrator may call `get_metadata()` once per feature slice only when the needed slugs are not already known from existing feature memory or `.claude/guideline-routing.md`.
-- The orchestrator reads `.claude/templates/template-routing.md` first, then only the category templates needed for the slice. Do not load or recreate a monolithic full template.
-- Fetch only the specific guidelines required by the current slice. Never call broad context tools such as `get_all_context` for normal feature work.
-- When downstream agents lack guideline context, they must ask the orchestrator for more context instead of independently browsing the MCP server. The orchestrator then does one targeted MCP update for the existing slice, covering all related missing rule categories, and either updates `.claude/feature-memory/<slice>/` or sends a richer handoff to the subagent.
-- If a downstream agent would need to guess, infer from general knowledge, or proceed best-effort, it must stop and ask the orchestrator for targeted context for the existing slice.
-- Each subagent may request targeted orchestrator context once per slice. If still blocked after one update, it returns `ESCALATE` or `BLOCKED`; the orchestrator must improve the plan instead of starting repeated context loops.
-- `validate-tools` validators are **not an agent step**. They run inside the `verify-subagent.sh` hook when a developer finishes. Do not write an allowed-validators list in feature memory, do not ask QA to run validators.
-- Correctness beats compactness. Do not omit provenance, required rules, or blocking uncertainty to satisfy a token budget. Keep handoffs concise, but full feature memory may exceed 150 lines when needed to preserve MCP-backed decisions.
-- Keep only three detailed QA-approved active slice memories. Before QA-approved slice 4, 7, 10, and so on, the orchestrator compacts the previous three QA-approved slices into one review-only historical summary under `.claude/feature-memory/history/`. Blocked, in-progress, unreviewed, and QA-rejected slices stay active and detailed.
-- Use conditional routing. Invoke only the agents needed for the slice; do not run the full backend -> frontend -> e2e-explorer -> qa flow unless the slice is fullstack and user-facing.
-- Keep one feature memory per coherent user outcome. Use `slice.md` Agent Plan rows for foundation, backend, frontend, E2E, and QA work; do not create new feature slices or role-specific markdown files for those implementation phases.
-- Split a user request into multiple feature memories only when the user asks for phases, the work contains independent product outcomes that can ship separately, a compliance/security gate must land before dependent behavior, or the requested scope is too large to review as one QA unit. Record the reason for every split in the Agent Plan.
-- The `e2e-explorer` never browses MCP and never edits application code. When it returns `E2E_BUGS_FOUND`, the orchestrator routes each fix to the suspected owner, then re-invokes the explorer to confirm. A user-facing slice is not done while `block:` findings remain in `e2e/report.md`.
-- Plan before routing. The orchestrator must not mix Plan Mode and Route Mode in the same response.
-- Handoffs must be tiny: `slice.md`, `rules.md`, changed file list, and exact task.
-- Handoffs must also list every agent-infrastructure file a non-orchestrator subagent may read. If a file is not listed, the subagent treats it as blocked.
-- `slice.md` must include task provenance: each concrete file path, directory-tree choice, dependency, command, acceptance criterion, and test case must map to a rule in `rules.md` by slug. If the orchestrator cannot cite the slug, it must mark the slice `BLOCKED` and ask for targeted MCP context instead of routing it.
-- Every slice memory must include `Status` and `Do Not Touch`. The QA Handoff carries review focus and blocking risks only — no validator list.
-- Commit messages may cite only slugs already present in feature memory. Agents must not expand commit slugs with fresh guideline work.
-- Minimal Slice Mode is mandatory for docs, config-only, copy, one-file non-behavior changes, and dependency-free fixes.
+Hooks run the applicable script checks automatically. `validate-tools` runs inside the developer
+stop hook; it is not a QA step. QA evidence must be machine-readable `qa-evidence.json`, generated
+by the gate runner, with command/cwd/exit-code/timestamp/output-path records, successful
+`docker compose up` evidence when `docker-compose.yml` exists, and backend/frontend unit coverage
+at or above 80 percent.
 
-## Development commands
+## MCP Budget
 
-> Update once the project scaffold is in place.
+- Prefer existing `feature-memory/`, repo files, tests, and prior handoffs.
+- The orchestrator may call `get_metadata()` once per slice only when routing does not identify the
+  needed slugs.
+- Fetch only specific guidelines required for the slice.
+- Never call broad context tools such as `get_all_context` for normal feature work.
+- If a downstream agent lacks context, it asks the orchestrator once for a targeted update. If still
+  blocked, it returns `ESCALATE` or `BLOCKED`.
+- Correctness beats compactness. Unsupported concrete paths, commands, dependencies, tests, and
+  acceptance criteria must be marked `BLOCKED`, not guessed.
+
+## Development Commands
+
+The scaffold commands depend on which app folders exist. Bootstrap scripts are the stable entry
+points:
 
 | Task | Command |
 |---|---|
-| Bootstrap full toolchain (macOS) | `bash scripts/bootstrap.sh` |
-| Bootstrap full toolchain (Windows) | `powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1` |
-| Connect clone to your own repo (macOS) | `bash scripts/init-project.sh` |
-| Connect clone to your own repo (Windows) | `powershell -ExecutionPolicy Bypass -File scripts\init-project.ps1` |
-| Install deps (backend) | `uv sync` |
-| Install validators (run by the gate hook) | `uv tool install validate-tools` |
-| Install deps (frontend) | `pnpm install` |
-| Run backend | `uvicorn app.main:app --reload` |
-| Run frontend | `pnpm dev` |
-| Lint / format | `ruff check . && ruff format .` |
-| Type-check (backend) | `mypy src/` |
-| Type-check (frontend) | `pnpm tsc --noEmit` |
-| Tests (backend) | `pytest` / `pytest tests/path/test_file.py::test_name` |
-| Tests (frontend) | `pnpm test` |
-| Migrations | `alembic upgrade head` / `alembic revision --autogenerate -m "..."` |
+| Bootstrap full toolchain on macOS | `bash scripts/bootstrap.sh` |
+| Bootstrap full toolchain on Windows | `powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1` |
+| Connect clone to your own repo on macOS | `bash scripts/init-project.sh` |
+| Connect clone to your own repo on Windows | `powershell -ExecutionPolicy Bypass -File scripts\init-project.ps1` |
+
+When a slice creates backend or frontend manifests, that slice must document its run, lint,
+type-check, test, and migration commands in feature memory.
 
 ## Environment
 
-Variables go in `.env` (gitignored). Document required keys in `.env.example`. For config changes, the orchestrator should add the relevant MCP-backed configuration rule to feature memory before routing.
+Variables go in `.env` files, which are gitignored. Document required keys in `.env.example` when a
+slice introduces configuration.

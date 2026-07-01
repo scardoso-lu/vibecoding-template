@@ -3,8 +3,8 @@
 # bootstrap.sh — install the full toolchain for this project on macOS.
 #
 # Installs via Homebrew: Git, GitHub CLI, jq, Node.js, Docker Desktop, plus uv
-# (official installer) and Python, pnpm (Corepack), and the Chromium browser +
-# libs Playwright needs.
+# (official installer) and Python, pnpm (Corepack), playwright-cli, and the
+# Chromium browser + libs Playwright needs.
 # Then it turns on the supply-chain cooldown (no dependency younger than 2 weeks)
 # for uv & pnpm.
 #
@@ -58,7 +58,7 @@ COOLDOWN_MINUTES=$(( DEPENDENCY_COOLDOWN_DAYS * 24 * 60 ))
 
 report_versions() {
   log "Installed toolchain:"
-  for t in brew git gh jq uv python3 node pnpm docker; do
+  for t in brew git gh jq uv python3 node pnpm playwright-cli docker; do
     if have "$t"; then printf "   %-8s %s\n" "$t" "$("$t" --version 2>&1 | head -n1)"
     else printf "   %-8s ${c_red}missing${c_reset}\n" "$t"; fi
   done
@@ -138,7 +138,15 @@ else
 fi
 
 # --------------------------------------------------------------------------
-# 6. Docker Desktop via Homebrew cask
+# 6. playwright-cli (npm global, used by the QA Playwright CLI skill)
+# --------------------------------------------------------------------------
+if ! have playwright-cli; then
+  log "Installing playwright-cli ${PLAYWRIGHT_CLI_VERSION} global command..."
+  npm install -g "@playwright/cli@${PLAYWRIGHT_CLI_VERSION}"
+else ok "playwright-cli present ($(playwright-cli --version))"; fi
+
+# --------------------------------------------------------------------------
+# 7. Docker Desktop via Homebrew cask
 # --------------------------------------------------------------------------
 if ! have docker; then
   log "Installing Docker Desktop via Homebrew cask…"
@@ -147,7 +155,7 @@ if ! have docker; then
 else ok "Docker present ($(docker --version))"; fi
 
 # --------------------------------------------------------------------------
-# 7. Configure the supply-chain cooldown (no dep younger than 2 weeks)
+# 8. Configure the supply-chain cooldown (no dep younger than 2 weeks)
 # --------------------------------------------------------------------------
 log "Configuring dependency cooldown (${DEPENDENCY_COOLDOWN_DAYS} days)…"
 
@@ -176,7 +184,7 @@ else ok "uv cooldown already in $SHELL_RC"; fi
 export UV_EXCLUDE_NEWER="$COOLDOWN_RFC3339"   # active for the rest of this run
 
 # --------------------------------------------------------------------------
-# 8. Project dependencies + Chromium (respecting the cooldown)
+# 9. Project dependencies + Chromium (respecting the cooldown)
 # --------------------------------------------------------------------------
 if [[ -f "$REPO_ROOT/pyproject.toml" ]]; then
   log "Installing backend deps with uv (cutoff ${UV_EXCLUDE_NEWER})…"

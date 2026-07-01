@@ -1,6 +1,6 @@
 # Rules Template
 
-Write one `.claude/feature-memory/<slice>/rules.md`. Group fetched MCP rules by role. Every rule
+Write one `feature-memory/<slice>/rules.md`. Group fetched MCP rules by role. Every rule
 block must cite the source slug.
 
 ```md
@@ -18,13 +18,13 @@ Source: get_guideline("<slug>")
 Source: get_guideline("<slug>")
 - Always ...
 
-## E2E
-### `<slug>`
-Source: get_guideline("<slug>")
-- Always ...
-
 ## QA
 ### `<slug>`
 Source: get_guideline("<slug>")
 - Always ...
+
+### `<user-facing/testing slug>`
+Source: get_guideline("<slug>")
+- Playwright spec generation, story coverage, and runner-output expectations ...
 ```
+

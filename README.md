@@ -15,10 +15,9 @@ Each feature request is routed to the smallest useful set of specialized agents:
 - **Orchestrator** - understands what you're asking for and coordinates the work
 - **Backend developer** - builds the API and database layer
 - **Frontend developer** - builds the UI
-- **Tester** - writes and runs focused tests for the feature
-- **QA** - reviews the code and gives a final APPROVED or BLOCKED verdict
+- **QA** - generates or heals small-story Playwright specs, reviews the code, and gives a final APPROVED or BLOCKED verdict
 
-The orchestrator fetches only the guideline context needed for the slice, writes a compact feature memory, and passes tiny role-specific handoffs to downstream agents. Tester writes and runs tests; QA owns validation, MCP validators, and the final APPROVED or BLOCKED verdict.
+The orchestrator fetches only the guideline context needed for the slice, writes compact feature memory, and maps each user-facing E2E story to a Playwright spec. Developers write the implementation tests for their slice, deterministic hooks run validators and test commands, and QA owns Playwright spec generation/healing plus the final APPROVED or BLOCKED verdict.
 
 ## Stack
 
@@ -41,8 +40,8 @@ bash scripts/bootstrap.sh
 powershell -ExecutionPolicy Bypass -File scripts\bootstrap.ps1
 ```
 
-This installs the entire toolchain — Git, GitHub CLI, jq, uv, Python, Node,
-pnpm, Docker, and Chromium + libs for browser tests — with two supply-chain protections
+This installs the entire toolchain - Git, GitHub CLI, jq, uv, Python, Node,
+pnpm, playwright-cli, Docker, and Chromium + libs for browser tests - with two supply-chain protections
 baked in: every download is signature/hash verified (fail-closed), and no
 dependency younger than 2 weeks is ever installed. See
 [`scripts/README.md`](scripts/README.md).
