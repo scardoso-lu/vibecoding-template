@@ -1,13 +1,12 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import argparse
 import json
 import re
-import sys
-import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
+
 
 @dataclass
 class Finding:
@@ -79,7 +78,9 @@ def parse_md_table(text: str, heading: str) -> list[dict[str, str]]:
 
 
 def has_heading(text: str, heading: str) -> bool:
-    return re.search(rf"^##+\s+{re.escape(heading)}\s*$", text, re.MULTILINE) is not None
+    return (
+        re.search(rf"^##+\s+{re.escape(heading)}\s*$", text, re.MULTILINE) is not None
+    )
 
 
 def section_text(text: str, heading: str) -> str:
@@ -108,7 +109,9 @@ def acceptance_criteria_ids(text: str) -> tuple[set[str], list[str]]:
         found = split_ids(line)
         if found:
             ids.update(found)
-        elif line.startswith(("- [ ]", "- [x]", "- [X]", "* [ ]", "* [x]", "* [X]", "- ", "* ")):
+        elif line.startswith(
+            ("- [ ]", "- [x]", "- [X]", "* [ ]", "* [x]", "* [X]", "- ", "* ")
+        ):
             invalid.append(line)
     for row in parse_md_table(text, "Acceptance Criteria"):
         value = row.get("ID") or row.get("Criterion ID") or row.get("Criteria") or ""
@@ -169,11 +172,18 @@ def cli_main(
     if validator is None:
         if validators is None:
             raise ValueError("validators are required when validator is None")
-        results = {validator_name: fn(root) for validator_name, fn in validators.items()}
+        results = {
+            validator_name: fn(root) for validator_name, fn in validators.items()
+        }
     else:
         results = {name or "validator": validator(root)}
     if args.json_output:
-        print(json.dumps({k: [finding.__dict__ for finding in v] for k, v in results.items()}, indent=2))
+        print(
+            json.dumps(
+                {k: [finding.__dict__ for finding in v] for k, v in results.items()},
+                indent=2,
+            )
+        )
     else:
         for validator_name, findings in results.items():
             if findings:
@@ -183,4 +193,3 @@ def cli_main(
             else:
                 print(f"{validator_name}: ok")
     return 1 if any(results.values()) else 0
-
