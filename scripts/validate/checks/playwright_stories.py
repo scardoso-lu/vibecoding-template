@@ -15,6 +15,12 @@ from scripts.validate.checks.common import (
 )
 from scripts.validate.checks.feature_memory import feature_memory_roots
 
+STEP_COMMENT = re.compile(r"//\s*(\d+)\)")
+
+
+def _step_numbers(text: str) -> list[int]:
+    return [int(match.group(1)) for match in STEP_COMMENT.finditer(text)]
+
 
 def validate_playwright_stories(root: Path) -> list[Finding]:
     findings: list[Finding] = []
@@ -103,6 +109,21 @@ def validate_playwright_stories(root: Path) -> list[Finding]:
                                 Finding(
                                     path_part,
                                     f"test name {test_name!r} not found for story row {index}",
+                                )
+                            )
+                        steps = _step_numbers(test_text)
+                        if not steps:
+                            findings.append(
+                                Finding(
+                                    path_part,
+                                    f"missing numbered step comments (e.g. // 1) ...) for story row {index}",
+                                )
+                            )
+                        elif steps != list(range(1, len(steps) + 1)):
+                            findings.append(
+                                Finding(
+                                    path_part,
+                                    f"step comments for story row {index} must be sequential starting at 1, found {steps}",
                                 )
                             )
             if (
