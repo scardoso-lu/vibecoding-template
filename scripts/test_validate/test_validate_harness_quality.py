@@ -7,8 +7,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.app_contracts import validate_database_policy, validate_migrations, validate_project_layout
-from scripts.validate.checks.harness_quality import validate_qa_evidence, validate_tooling
+from scripts.validate.checks.app_contracts import (
+    validate_database_policy,
+    validate_migrations,
+    validate_project_layout,
+)
+from scripts.validate.checks.harness_quality import (
+    validate_qa_evidence,
+    validate_tooling,
+)
 from scripts.validate.checks.playwright_stories import validate_e2e_coverage
 
 
@@ -17,7 +24,9 @@ def write(path: Path, text: str = "") -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def test_project_layout_catches_missing_stack_artifacts_and_root_pnpm(tmp_path: Path) -> None:
+def test_project_layout_catches_missing_stack_artifacts_and_root_pnpm(
+    tmp_path: Path,
+) -> None:
     write(tmp_path / "backend/pyproject.toml")
     write(tmp_path / "backend/.env.example")
     write(tmp_path / "frontend/package.json", "{}")
@@ -47,7 +56,10 @@ def test_project_layout_catches_missing_stack_artifacts_and_root_pnpm(tmp_path: 
 
 
 def test_database_policy_rejects_runtime_sqlite_default(tmp_path: Path) -> None:
-    write(tmp_path / "backend/src/config/settings.py", 'DATABASE_URL = "sqlite:///./warehouse.db"\n')
+    write(
+        tmp_path / "backend/src/config/settings.py",
+        'DATABASE_URL = "sqlite:///./warehouse.db"\n',
+    )
     write(tmp_path / "backend/.env.example", "DATABASE_URL=sqlite:///./warehouse.db\n")
     write(tmp_path / "docker-compose.yml", "services:\n  backend:\n    image: test\n")
 
@@ -105,7 +117,10 @@ Fullstack.
 
     findings = validate_qa_evidence(tmp_path)
 
-    assert any("full slice must record deterministic QA evidence" in finding.message for finding in findings)
+    assert any(
+        "full slice must record deterministic QA evidence" in finding.message
+        for finding in findings
+    )
 
 
 def test_qa_evidence_rejects_markdown_evidence(tmp_path: Path) -> None:
@@ -136,14 +151,19 @@ Fullstack.
 - source
 """,
     )
-    write(slice_dir / "qa-evidence.md", "| Command | Result |\n|---|---|\n| pytest | passed |\n")
+    write(
+        slice_dir / "qa-evidence.md",
+        "| Command | Result |\n|---|---|\n| pytest | passed |\n",
+    )
 
     findings = validate_qa_evidence(tmp_path)
 
     assert any("QA evidence JSON" in finding.message for finding in findings)
 
 
-def test_qa_evidence_json_requires_passed_runs_and_expected_commands(tmp_path: Path) -> None:
+def test_qa_evidence_json_requires_passed_runs_and_expected_commands(
+    tmp_path: Path,
+) -> None:
     slice_dir = tmp_path / "feature-memory/inventory"
     write(
         slice_dir / "slice.md",
@@ -191,7 +211,7 @@ Fullstack.
                         "finished_at": "2026-06-29T00:00:01Z",
                         "output_path": "feature-memory/inventory/evidence/backend.txt",
                     }
-                ]
+                ],
             }
         ),
     )
@@ -208,7 +228,9 @@ Fullstack.
     assert "unit_coverage" in messages
 
 
-def test_qa_evidence_requires_coverage_above_threshold_and_e2e_pointer(tmp_path: Path) -> None:
+def test_qa_evidence_requires_coverage_above_threshold_and_e2e_pointer(
+    tmp_path: Path,
+) -> None:
     slice_dir = tmp_path / "feature-memory/inventory"
     write(
         slice_dir / "slice.md",
@@ -241,7 +263,13 @@ Fullstack.
     write(tmp_path / "docker-compose.yml", "services:\n  backend:\n    image: test\n")
     write(
         slice_dir / "runtime-smoke.json",
-        json.dumps({"url": "http://localhost:3000/app", "must_contain": ["Inventory"], "forbid": ["Unhandled error"]}),
+        json.dumps(
+            {
+                "url": "http://localhost:3000/app",
+                "must_contain": ["Inventory"],
+                "forbid": ["Unhandled error"],
+            }
+        ),
     )
     write(
         slice_dir / "qa-evidence.json",
@@ -326,7 +354,12 @@ Fullstack.
                     },
                 ],
                 "unit_coverage": [
-                    {"surface": "backend", "minimum_percent": 80, "actual_percent": 79, "summary_path": "backend/coverage.json"}
+                    {
+                        "surface": "backend",
+                        "minimum_percent": 80,
+                        "actual_percent": 79,
+                        "summary_path": "backend/coverage.json",
+                    }
                 ],
             }
         ),
@@ -340,7 +373,9 @@ Fullstack.
     assert "missing e2e_coverage_path" in messages
 
 
-def test_e2e_coverage_requires_all_initial_prompt_stories_to_map_to_tests(tmp_path: Path) -> None:
+def test_e2e_coverage_requires_all_initial_prompt_stories_to_map_to_tests(
+    tmp_path: Path,
+) -> None:
     slice_dir = tmp_path / "feature-memory/inventory"
     write(slice_dir / "slice.md", "## Status\n- State: active\n")
     write(
@@ -348,7 +383,11 @@ def test_e2e_coverage_requires_all_initial_prompt_stories_to_map_to_tests(tmp_pa
         json.dumps(
             {
                 "user_stories": [
-                    {"id": "US-001", "prompt_text": "track warehouse items", "covered_by": ["e2e-001"]},
+                    {
+                        "id": "US-001",
+                        "prompt_text": "track warehouse items",
+                        "covered_by": ["e2e-001"],
+                    },
                     {"id": "US-002", "prompt_text": "match vendors", "covered_by": []},
                 ],
                 "tests": [
@@ -361,7 +400,10 @@ def test_e2e_coverage_requires_all_initial_prompt_stories_to_map_to_tests(tmp_pa
             }
         ),
     )
-    write(tmp_path / "frontend/e2e/warehouse.spec.ts", "// Covers: US-001\ntest('tracks items', async () => {})\n")
+    write(
+        tmp_path / "frontend/e2e/warehouse.spec.ts",
+        "// Covers: US-001\ntest('tracks items', async () => {})\n",
+    )
 
     findings = validate_e2e_coverage(tmp_path)
     messages = "\n".join(finding.format() for finding in findings)
@@ -370,12 +412,31 @@ def test_e2e_coverage_requires_all_initial_prompt_stories_to_map_to_tests(tmp_pa
     assert "E2E test file missing test id marker e2e-001" in messages
 
 
-def test_tooling_rejects_unconfigured_validate_tools_run_and_root_manifest_checks(tmp_path: Path) -> None:
+def test_e2e_coverage_does_not_require_json_for_backend_only_slice(
+    tmp_path: Path,
+) -> None:
+    slice_dir = tmp_path / "feature-memory/inventory"
+    write(
+        slice_dir / "slice.md",
+        "## Status\n- State: active\n\nBackend-only slice, no UI.\n",
+    )
+
+    findings = validate_e2e_coverage(tmp_path)
+
+    assert findings == []
+
+
+def test_tooling_rejects_unconfigured_validate_tools_run_and_root_manifest_checks(
+    tmp_path: Path,
+) -> None:
     write(
         tmp_path / ".codex/hooks/verify-subagent.sh",
         "validate-tools run\nif [ -f pyproject.toml ]; then echo backend; fi\nif [ -f package.json ]; then echo frontend; fi\n",
     )
-    write(tmp_path / "frontend/package.json", json.dumps({"scripts": {"lint": "next lint"}}))
+    write(
+        tmp_path / "frontend/package.json",
+        json.dumps({"scripts": {"lint": "next lint"}}),
+    )
 
     findings = validate_tooling(tmp_path)
     messages = "\n".join(finding.format() for finding in findings)
@@ -384,4 +445,3 @@ def test_tooling_rejects_unconfigured_validate_tools_run_and_root_manifest_check
     assert "backend/pyproject.toml" in messages
     assert "frontend/package.json" in messages
     assert "lint script must be non-interactive" in messages
-

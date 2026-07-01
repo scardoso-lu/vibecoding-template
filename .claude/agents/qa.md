@@ -46,18 +46,21 @@ defaults to plain Playwright specs, not Cucumber, unless the slice explicitly re
 Rules for every user-facing slice:
 
 1. Each Playwright `test(...)` covers exactly one small user story.
-2. Put the story in the test code, directly before or inside that test:
-   `// Story: As a <user>, I want <capability>, so <outcome>.`
+2. Put the story in the test code, directly before or inside that test, e.g.
+   `// Story: As a client, I want to buy informatics products, so that I can find and purchase the item I need.`
    Also include `// Covers: US-###, AC-###` markers that match `e2e-coverage.json` and
    `slice.md` coverage metadata.
-3. Keep story tests focused. A spec file may group closely related stories when that matches the
+3. Number every action inside the test as a sequential `// N)` step comment starting at 1
+   (see the worked example in `.claude/templates/categories/e2e.md`). `validate_playwright_stories`
+   rejects a spec file with missing or non-sequential step comments.
+4. Keep story tests focused. A spec file may group closely related stories when that matches the
    existing `frontend/e2e/` layout, but do not create broad end-to-end scripts that cover multiple
    unrelated user outcomes in one test.
-4. Use semantic locators: role, label, text, then test id as an escape hatch. No CSS/nth-child
+5. Use semantic locators: role, label, text, then test id as an escape hatch. No CSS/nth-child
    selectors for normal UI.
-5. Seed through fixtures or API helpers, not UI setup clicks, unless the setup itself is the story.
-6. No sleeps, `waitForTimeout`, or rerun-until-green. Use Playwright auto-waiting assertions.
-7. Prefer the existing `frontend/e2e/` layout and helpers. Do not create a new test framework
+6. Seed through fixtures or API helpers, not UI setup clicks, unless the setup itself is the story.
+7. No sleeps, `waitForTimeout`, or rerun-until-green. Use Playwright auto-waiting assertions.
+8. Prefer the existing `frontend/e2e/` layout and helpers. Do not create a new test framework
    layout unless feature memory explicitly calls for it.
 
 ## Allowed Writes

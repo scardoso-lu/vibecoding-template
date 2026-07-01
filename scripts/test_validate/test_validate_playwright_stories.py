@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -36,7 +36,10 @@ def test_valid_story_location_and_comment_pass(tmp_path: Path) -> None:
     test_file.write_text(
         "import { test } from '@playwright/test';\n"
         "// Story: As a user, I want save, so data persists.\n"
-        "test('save', async () => {});\n",
+        "test('save', async () => {\n"
+        "  // 1) open page\n"
+        "  // 2) click save\n"
+        "});\n",
         encoding="utf-8",
     )
 
@@ -70,4 +73,81 @@ def test_test_location_must_be_under_frontend_e2e(tmp_path: Path) -> None:
     assert any("under frontend/e2e" in f.message for f in findings)
 
 
+def test_missing_step_comments_is_reported(tmp_path: Path) -> None:
+    write_slice(tmp_path, "Test Location", "frontend/e2e/save.spec.ts::save")
+    test_file = tmp_path / "frontend" / "e2e" / "save.spec.ts"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text(
+        "// Story: As a user, I want save, so data persists.\n"
+        "test('save', async () => {});\n",
+        encoding="utf-8",
+    )
 
+    findings = validate_playwright_stories(tmp_path)
+
+    assert any("missing numbered step comments" in f.message for f in findings)
+
+
+def test_non_sequential_step_comments_is_reported(tmp_path: Path) -> None:
+    write_slice(tmp_path, "Test Location", "frontend/e2e/save.spec.ts::save")
+    test_file = tmp_path / "frontend" / "e2e" / "save.spec.ts"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text(
+        "// Story: As a user, I want save, so data persists.\n"
+        "test('save', async () => {\n"
+        "  // 1) open page\n"
+        "  // 3) click save\n"
+        "});\n",
+        encoding="utf-8",
+    )
+
+    findings = validate_playwright_stories(tmp_path)
+
+    assert any("must be sequential starting at 1" in f.message for f in findings)
+
+
+def test_step_comments_are_scoped_to_the_named_test_in_a_grouped_spec_file(
+    tmp_path: Path,
+) -> None:
+    write_slice(tmp_path, "Test Location", "frontend/e2e/save.spec.ts::save")
+    test_file = tmp_path / "frontend" / "e2e" / "save.spec.ts"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text(
+        "// Story: As a user, I want load, so data is restored.\n"
+        "test('load', async () => {\n"
+        "  // 1) open page\n"
+        "  // 2) load save\n"
+        "});\n"
+        "\n"
+        "// Story: As a user, I want save, so data persists.\n"
+        "test('save', async () => {\n"
+        "  // 1) open page\n"
+        "  // 2) click save\n"
+        "});\n",
+        encoding="utf-8",
+    )
+
+    assert validate_playwright_stories(tmp_path) == []
+
+
+def test_step_comments_missing_from_the_named_test_is_reported_even_if_another_test_has_them(
+    tmp_path: Path,
+) -> None:
+    write_slice(tmp_path, "Test Location", "frontend/e2e/save.spec.ts::save")
+    test_file = tmp_path / "frontend" / "e2e" / "save.spec.ts"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text(
+        "// Story: As a user, I want load, so data is restored.\n"
+        "test('load', async () => {\n"
+        "  // 1) open page\n"
+        "  // 2) load save\n"
+        "});\n"
+        "\n"
+        "// Story: As a user, I want save, so data persists.\n"
+        "test('save', async () => {});\n",
+        encoding="utf-8",
+    )
+
+    findings = validate_playwright_stories(tmp_path)
+
+    assert any("missing numbered step comments" in f.message for f in findings)

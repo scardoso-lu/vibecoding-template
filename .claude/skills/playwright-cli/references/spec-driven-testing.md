@@ -30,6 +30,38 @@ If there is no Playwright install, bootstrap one and let the user pick the defau
 npm init playwright@latest
 ```
 
+**Windows and normal local machines (macOS, Windows, plain Linux dev boxes)**: do nothing special.
+`npm init playwright@latest` / `npx playwright install` downloads the matching Chromium/Firefox/WebKit
+build for the installed `@playwright/test` version, and the default sandbox works. Do not add
+`executablePath` or `--no-sandbox` here — there is no pre-baked browser path to pin, and on Windows
+Chromium's sandbox model doesn't hit the root/zygote failure below at all.
+
+**Sandboxed/pre-installed browser environments (Linux CI or cloud containers only, running as
+root, with a browser image baked in at a fixed path)**: only apply this when both are true —
+`PLAYWRIGHT_BROWSERS_PATH` (or an equivalent pre-installed browser directory) exists, and it's an
+older/different revision than the installed `@playwright/test` package expects. Verified against a
+live page in one such environment on 2026-07-01.
+
+- If `npx playwright test` or `playwright-cli open` fails with `Executable doesn't exist at
+  .../chromium_headless_shell-<rev>/...`, the installed package's pinned browser revision does not
+  match what's on disk. Pin the real path instead of downloading:
+  ```ts
+  // playwright.config.ts
+  use: { launchOptions: { executablePath: '/opt/pw-browsers/chromium' } }
+  ```
+  ```json
+  // .playwright/cli.config.json (for playwright-cli open/attach as a standalone browser)
+  { "browser": { "browserName": "chromium", "launchOptions": { "executablePath": "/opt/pw-browsers/chromium" } } }
+  ```
+  Replace `/opt/pw-browsers/chromium` with wherever that environment's pre-installed browser
+  actually lives — this path is specific to the sandboxed container it was verified in, not a
+  general default.
+- If `playwright-cli open` (launching its own browser, not attaching to a `--debug=cli` test) then
+  fails with `Running as root without --no-sandbox is not supported`, add `--no-sandbox` to the same
+  `launchOptions.args`. Attaching to a browser already launched by `npx playwright test` does not
+  need this — only a standalone `playwright-cli open`/`attach --cdp` launch does. This is a Linux
+  root-only failure mode; it does not apply on Windows or when running as a normal (non-root) user.
+
 ### 1.2 Prerequisite: seed test
 
 A **seed test** is a minimal test that lands the page in the state every scenario starts from: navigation to the app, any required login, feature flags, etc. Scenarios assume a fresh start *after* the seed. `--debug=cli` pauses *inside* this test, so the seed is where every planning and generation session begins.

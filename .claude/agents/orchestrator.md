@@ -91,7 +91,7 @@ matches the existing `frontend/e2e/` layout. Each row must list the covered `AC-
 ## E2E Test Stories
 | Story ID | User Story | Criteria | Test Location | Seed/Setup | Assertions | Slugs |
 |---|---|---|---|---|---|---|
-| e2e-001 | As a <user>, I want <capability>, so <outcome>. | AC-001 | `frontend/e2e/<feature>.spec.ts::<test name>` | <fixture/API seed> | <observable assertions> | `<slug>` |
+| e2e-001 | As a client, I want to buy informatics products, so that I can find and purchase the item I need. | AC-001 | `frontend/e2e/product-search.spec.ts::filters informatics products and shows priced grid` | seed catalog with an "Informatics" category and priced products | product grid renders filtered results with visible pricing | `<slug>` |
 ```
 
 Also write `feature-memory/<slice>/e2e-coverage.json` for user-facing slices. It must map every
