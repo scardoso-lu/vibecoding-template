@@ -32,3 +32,35 @@ Also write `feature-memory/<slice>/e2e-coverage.json`:
   ]
 }
 ```
+
+## Worked Example
+
+| Story ID | User Story | Criteria | Test Location | Seed/Setup | Assertions | Slugs |
+|---|---|---|---|---|---|---|
+| e2e-001 | As a client, I want to buy informatics products, so that I can find and purchase the item I need. | AC-001 | `frontend/e2e/product-search.spec.ts::filters informatics products and shows priced grid` | seed catalog with an "Informatics" category and priced products | product grid renders filtered results with visible pricing | `<slug>` |
+
+```ts
+// Story: e2e-001 covers US-001
+test("filters informatics products and shows priced grid", async ({ page }) => {
+  await page.goto("/");                                              // 1) open home page
+  await page.getByRole("searchbox", { name: /search/i }).click();    // 2) client clicks search
+  await page.getByRole("link", { name: "Informatics" }).click();     // 3) filter by informatics
+  await page.getByRole("searchbox", { name: /search/i }).fill("keyboard"); // 4) type product name
+  await page.getByRole("searchbox", { name: /search/i }).press("Enter");  // 5) press enter
+  await expect(page.getByTestId("product-grid")).toBeVisible();      // 6) wait for products to load
+  await expect(page.getByTestId("product-price").first()).toBeVisible(); // 7) view product grid with pricing
+});
+```
+
+```json
+{
+  "schema_version": 1,
+  "source": "initial user prompt",
+  "user_stories": [
+    {"id": "US-001", "prompt_text": "As a client, I want to buy informatics products.", "covered_by": ["e2e-001"]}
+  ],
+  "tests": [
+    {"id": "e2e-001", "location": "frontend/e2e/product-search.spec.ts::filters informatics products and shows priced grid", "covers": ["US-001"]}
+  ]
+}
+```
