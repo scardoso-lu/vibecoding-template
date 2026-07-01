@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 from __future__ import annotations
 
 import argparse
@@ -12,14 +12,20 @@ def iso_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def run_command(root: Path, command: str, cwd: str, output_path: Path) -> dict[str, object]:
+def run_command(
+    root: Path, command: str, cwd: str, output_path: Path
+) -> dict[str, object]:
     started_at = iso_now()
     workdir = root / cwd
-    result = subprocess.run(command, cwd=workdir, shell=True, capture_output=True, text=True, check=False)
+    result = subprocess.run(
+        command, cwd=workdir, shell=True, capture_output=True, text=True, check=False
+    )
     finished_at = iso_now()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
-        result.stdout + ("\n" if result.stdout and result.stderr else "") + result.stderr,
+        result.stdout
+        + ("\n" if result.stdout and result.stderr else "")
+        + result.stderr,
         encoding="utf-8",
     )
     return {
@@ -61,7 +67,11 @@ def main() -> int:
     args = parser.parse_args()
 
     root = args.root.resolve()
-    slice_path = (root / args.slice).resolve() if not args.slice.is_absolute() else args.slice.resolve()
+    slice_path = (
+        (root / args.slice).resolve()
+        if not args.slice.is_absolute()
+        else args.slice.resolve()
+    )
     slice_dir = slice_path.parent
     evidence_dir = slice_dir / "evidence"
 
@@ -70,11 +80,13 @@ def main() -> int:
     ]
     runtime_smoke_config = slice_dir / "runtime-smoke.json"
     if (root / "docker-compose.yml").exists():
-        commands.append(("docker compose up --build --wait", ".", "docker-compose-up.txt"))
+        commands.append(
+            ("docker compose up --build --wait", ".", "docker-compose-up.txt")
+        )
         if (root / "frontend/package.json").exists():
             commands.append(
                 (
-                    f"python scripts\\validate\\runtime-smoke.py --config {runtime_smoke_config.relative_to(root)}",
+                    f"python scripts/validate/runtime-smoke.py --config {runtime_smoke_config.relative_to(root).as_posix()}",
                     ".",
                     "runtime-smoke.txt",
                 )
@@ -90,13 +102,19 @@ def main() -> int:
     if (root / "frontend/package.json").exists():
         commands.extend(
             [
-                ("npx pnpm@10.16.0 --dir frontend test:coverage", ".", "frontend-coverage.txt"),
+                (
+                    "npx pnpm@10.16.0 --dir frontend test:coverage",
+                    ".",
+                    "frontend-coverage.txt",
+                ),
                 ("npx pnpm@10.16.0 --dir frontend build", ".", "frontend-build.txt"),
                 ("npx pnpm@10.16.0 --dir frontend e2e", ".", "e2e.txt"),
             ]
         )
     if (root / "docker-compose.yml").exists():
-        commands.append(("docker compose down --remove-orphans", ".", "docker-compose-down.txt"))
+        commands.append(
+            ("docker compose down --remove-orphans", ".", "docker-compose-down.txt")
+        )
 
     runs = [
         run_command(root, command, cwd, evidence_dir / output_name)
@@ -132,17 +150,18 @@ def main() -> int:
         "coverage_threshold": args.coverage_threshold,
         "generated_at": iso_now(),
         "generated_by": {
-            "command": f"python scripts\\validate\\gate.py --root . --slice {args.slice}",
+            "command": f"python scripts/validate/gate.py --root . --slice {args.slice}",
             "cwd": ".",
         },
         "runs": runs,
         "unit_coverage": unit_coverage,
         "e2e_coverage_path": e2e_coverage_path,
     }
-    (slice_dir / "qa-evidence.json").write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+    (slice_dir / "qa-evidence.json").write_text(
+        json.dumps(evidence, indent=2) + "\n", encoding="utf-8"
+    )
     return 1 if any(run["exit_code"] != 0 for run in runs) else 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
