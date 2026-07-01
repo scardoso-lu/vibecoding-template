@@ -38,7 +38,9 @@ test("filters informatics products and shows priced grid", async ({ page }) => {
 
 This exact spec was run against a live demo page with a real Chromium browser and passed
 (`npx playwright test`, and separately via the `--debug=cli` / `playwright-cli attach` / `resume`
-flow). If the browser fails to launch, see the "Sandboxed/pre-installed browser environments" note
+flow). On Windows, macOS, or a plain local Linux box, `npx playwright install` is all you need.
+Only if the browser fails to launch inside a sandboxed Linux CI/cloud container with a
+pre-installed browser at a fixed path, see the "Sandboxed/pre-installed browser environments" note
 in `spec-driven-testing.md` section 1.1 for the `executablePath`/`--no-sandbox` fix.
 
 Also write `feature-memory/<slice>/e2e-coverage.json`:
