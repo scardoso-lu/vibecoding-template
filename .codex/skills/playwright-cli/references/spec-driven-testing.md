@@ -30,6 +30,26 @@ If there is no Playwright install, bootstrap one and let the user pick the defau
 npm init playwright@latest
 ```
 
+**Sandboxed/pre-installed browser environments** (containers running as root, CI images with a
+browser baked in at a different revision than the installed `@playwright/test` package expects):
+verified against a live page in this environment on 2026-07-01.
+
+- If `npx playwright test` or `playwright-cli open` fails with `Executable doesn't exist at
+  .../chromium_headless_shell-<rev>/...`, the installed package's pinned browser revision does not
+  match what's on disk. Pin the real path instead of downloading:
+  ```ts
+  // playwright.config.ts
+  use: { launchOptions: { executablePath: '/opt/pw-browsers/chromium' } }
+  ```
+  ```json
+  // .playwright/cli.config.json (for playwright-cli open/attach as a standalone browser)
+  { "browser": { "browserName": "chromium", "launchOptions": { "executablePath": "/opt/pw-browsers/chromium" } } }
+  ```
+- If `playwright-cli open` (launching its own browser, not attaching to a `--debug=cli` test) then
+  fails with `Running as root without --no-sandbox is not supported`, add `--no-sandbox` to the same
+  `launchOptions.args`. Attaching to a browser already launched by `npx playwright test` does not
+  need this — only a standalone `playwright-cli open`/`attach --cdp` launch does.
+
 ### 1.2 Prerequisite: seed test
 
 A **seed test** is a minimal test that lands the page in the state every scenario starts from: navigation to the app, any required login, feature flags, etc. Scenarios assume a fresh start *after* the seed. `--debug=cli` pauses *inside* this test, so the seed is where every planning and generation session begins.
