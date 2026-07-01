@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.agent_guidance import validate_agent_guidance
+from scripts.validate.agent_guidance import validate_agent_guidance
 
 
 def test_detects_stale_agent_guidance_terms(tmp_path: Path) -> None:

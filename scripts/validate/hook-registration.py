@@ -9,8 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.common import repo_root_from
-from scripts.validate.checks.hook_registration import validate_hook_registration
+from scripts.validate.common import repo_root_from
+from scripts.validate.hook_registration import validate_hook_registration
 
 
 def main() -> int:

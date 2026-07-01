@@ -27,8 +27,10 @@ history, rewrites template references in `README.md`, and pushes the initial com
 ## Workflow Checks
 
 These scripts keep mechanical agent-workflow rules out of long prompts.
-`scripts/validate/` contains executable entrypoints. Shared validator implementation lives under
-`scripts/validate/checks/` so command names do not collide with importable modules.
+`scripts/validate/` contains both the executable entrypoints (hyphenated filenames, e.g.
+`agent-guidance.py`) and the importable validator implementations (underscored filenames, e.g.
+`agent_guidance.py`) they call — hyphens are not valid in Python import statements, so the two
+names coexist in the same directory rather than in a separate package.
 
 | Task | Command |
 |---|---|

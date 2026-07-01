@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-from scripts.validate.checks.common import (
+from scripts.validate.common import (
     Finding,
     acceptance_criteria_ids,
     has_heading,
@@ -13,7 +13,7 @@ from scripts.validate.checks.common import (
     read_text,
     split_ids,
 )
-from scripts.validate.checks.feature_memory import feature_memory_roots
+from scripts.validate.feature_memory import feature_memory_roots
 
 STEP_COMMENT = re.compile(r"//\s*(\d+)\)")
 TEST_CALL = re.compile(r"\btest(?:\.\w+)?\s*\(")
@@ -346,7 +346,7 @@ def validate_e2e_coverage(root: Path) -> list[Finding]:
 
 def validate_qa_contract(root: Path) -> list[Finding]:
     findings = validate_playwright_stories(root)
-    from scripts.validate.checks.feature_memory import validate_test_coverage_mapping
+    from scripts.validate.feature_memory import validate_test_coverage_mapping
 
     findings.extend(validate_test_coverage_mapping(root))
     findings.extend(validate_e2e_coverage(root))

@@ -9,8 +9,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.common import repo_root_from
-from scripts.validate.checks.feature_memory import approved_active_slices, compaction_due_slices
+from scripts.validate.common import repo_root_from
+from scripts.validate.feature_memory import approved_active_slices, compaction_due_slices
 
 
 def main() -> int:

@@ -7,16 +7,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.app_contracts import (
+from scripts.validate.app_contracts import (
     validate_database_policy,
     validate_migrations,
     validate_project_layout,
 )
-from scripts.validate.checks.harness_quality import (
+from scripts.validate.harness_quality import (
     validate_qa_evidence,
     validate_tooling,
 )
-from scripts.validate.checks.playwright_stories import validate_e2e_coverage
+from scripts.validate.playwright_stories import validate_e2e_coverage
 
 
 def write(path: Path, text: str = "") -> None:

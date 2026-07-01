@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Sequence
 
-from scripts.validate.checks.common import Finding, line_number, read_text
+from scripts.validate.common import Finding, line_number, read_text
 
 def _existing_dirs(root: Path, rel_paths: Sequence[str]) -> list[Finding]:
     return [Finding(rel, "missing required project directory") for rel in rel_paths if not (root / rel).is_dir()]

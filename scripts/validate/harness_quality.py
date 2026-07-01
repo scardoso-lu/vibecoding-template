@@ -3,8 +3,8 @@
 import json
 from pathlib import Path
 
-from scripts.validate.checks.common import Finding, read_text
-from scripts.validate.checks.feature_memory import feature_memory_roots
+from scripts.validate.common import Finding, read_text
+from scripts.validate.feature_memory import feature_memory_roots
 
 def validate_qa_evidence(root: Path) -> list[Finding]:
     findings: list[Finding] = []

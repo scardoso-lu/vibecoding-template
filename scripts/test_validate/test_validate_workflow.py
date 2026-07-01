@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.workflow import run_validators
+from scripts.validate.workflow import run_validators
 
 
 def test_aggregator_returns_named_validator_results(tmp_path: Path) -> None:

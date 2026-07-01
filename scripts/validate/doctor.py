@@ -12,9 +12,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.common import Finding, repo_root_from
-from scripts.validate.checks.hook_registration import validate_hook_registration
-from scripts.validate.checks.workflow import run_validators
+from scripts.validate.common import Finding, repo_root_from
+from scripts.validate.hook_registration import validate_hook_registration
+from scripts.validate.workflow import run_validators
 
 
 def run(command: list[str], *, cwd: Path) -> tuple[int, str, str]:

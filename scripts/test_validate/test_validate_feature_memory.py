@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.feature_memory import compaction_due_slices, validate_compaction, validate_feature_memory
+from scripts.validate.feature_memory import compaction_due_slices, validate_compaction, validate_feature_memory
 
 
 FULL_SLICE = """# Slice

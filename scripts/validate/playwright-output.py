@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.playwright_output import summarize_playwright_output
+from scripts.validate.playwright_output import summarize_playwright_output
 
 
 def main() -> int:

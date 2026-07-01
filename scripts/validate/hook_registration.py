@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable, Sequence
 
-from scripts.validate.checks.common import Finding, hook_commands, hook_matchers, read_text
+from scripts.validate.common import Finding, hook_commands, hook_matchers, read_text
 
 Runner = Callable[[Sequence[str], str], subprocess.CompletedProcess[str]]
 

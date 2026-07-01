@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.common import cli_main
-from scripts.validate.checks.playwright_stories import validate_playwright_stories
+from scripts.validate.common import cli_main
+from scripts.validate.playwright_stories import validate_playwright_stories
 
 
 if __name__ == "__main__":

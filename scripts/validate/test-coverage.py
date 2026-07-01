@@ -7,8 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.common import cli_main
-from scripts.validate.checks.feature_memory import validate_test_coverage_mapping
+from scripts.validate.common import cli_main
+from scripts.validate.feature_memory import validate_test_coverage_mapping
 
 
 if __name__ == "__main__":

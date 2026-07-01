@@ -5,7 +5,7 @@ import re
 import tomllib
 from pathlib import Path
 
-from scripts.validate.checks.common import Finding, iter_text_files, line_number, read_text
+from scripts.validate.common import Finding, iter_text_files, line_number, read_text
 
 STALE_TERMS: dict[str, str] = {
     "e2e-explorer": "standalone E2E role was merged into QA",

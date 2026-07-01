@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.checks.playwright_stories import validate_playwright_stories
+from scripts.validate.playwright_stories import validate_playwright_stories
 
 
 def write_slice(tmp_path: Path, table_header: str, row_location: str) -> Path:

@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from scripts.validate.checks.common import Finding, acceptance_criteria_ids, has_heading, parse_md_table, read_text, split_ids
+from scripts.validate.common import Finding, acceptance_criteria_ids, has_heading, parse_md_table, read_text, split_ids
 
 def feature_memory_roots(root: Path) -> list[Path]:
     path = root / "feature-memory"
