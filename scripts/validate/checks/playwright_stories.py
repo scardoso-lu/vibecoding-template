@@ -16,10 +16,36 @@ from scripts.validate.checks.common import (
 from scripts.validate.checks.feature_memory import feature_memory_roots
 
 STEP_COMMENT = re.compile(r"//\s*(\d+)\)")
+TEST_CALL = re.compile(r"\btest(?:\.\w+)?\s*\(")
 
 
 def _step_numbers(text: str) -> list[int]:
     return [int(match.group(1)) for match in STEP_COMMENT.finditer(text)]
+
+
+def _test_body(text: str, test_name: str) -> str | None:
+    for match in TEST_CALL.finditer(text):
+        paren_open = match.end() - 1
+        arg_match = re.match(r"\s*(['\"`])((?:\\.|(?!\1).)*)\1", text[paren_open + 1 :])
+        if not arg_match or arg_match.group(2) != test_name:
+            continue
+        depth = 0
+        i = paren_open
+        while i < len(text):
+            char = text[i]
+            if text[i : i + 2] == "//":
+                newline = text.find("\n", i)
+                i = len(text) if newline == -1 else newline + 1
+                continue
+            if char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    return text[paren_open : i + 1]
+            i += 1
+        return text[paren_open:]
+    return None
 
 
 def validate_playwright_stories(root: Path) -> list[Finding]:
@@ -111,21 +137,25 @@ def validate_playwright_stories(root: Path) -> list[Finding]:
                                     f"test name {test_name!r} not found for story row {index}",
                                 )
                             )
-                        steps = _step_numbers(test_text)
-                        if not steps:
-                            findings.append(
-                                Finding(
-                                    path_part,
-                                    f"missing numbered step comments (e.g. // 1) ...) for story row {index}",
+                        scoped_body = (
+                            _test_body(test_text, test_name) if test_name else test_text
+                        )
+                        if scoped_body is not None:
+                            steps = _step_numbers(scoped_body)
+                            if not steps:
+                                findings.append(
+                                    Finding(
+                                        path_part,
+                                        f"missing numbered step comments (e.g. // 1) ...) for story row {index}",
+                                    )
                                 )
-                            )
-                        elif steps != list(range(1, len(steps) + 1)):
-                            findings.append(
-                                Finding(
-                                    path_part,
-                                    f"step comments for story row {index} must be sequential starting at 1, found {steps}",
+                            elif steps != list(range(1, len(steps) + 1)):
+                                findings.append(
+                                    Finding(
+                                        path_part,
+                                        f"step comments for story row {index} must be sequential starting at 1, found {steps}",
+                                    )
                                 )
-                            )
             if (
                 "Playwright story tests required: yes" in text
                 and "Focused Playwright command:" not in text
