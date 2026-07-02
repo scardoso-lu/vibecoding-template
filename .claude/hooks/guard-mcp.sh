@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse guard for the guidelines MCP server - enforces the project's core MCP
-# budget rule: only the orchestrator may call the fullstack-guidelines server.
+# budget rule: only the planner may call the fullstack-guidelines server.
 # Registered against the matcher `mcp__fullstack-guidelines__.*`.
 #
 # Downstream agents already lack MCP tools in their frontmatter; this hook is
@@ -22,10 +22,11 @@ deny() {
   exit 0
 }
 
-# The orchestrator owns guideline discovery; every other role must ask it for context.
+# The planner owns guideline discovery; every other role must ask for context via the
+# orchestrator, which routes back through the planner.
 case "$AGENT" in
-  backend-developer|frontend-developer|qa)
-    deny "Only the orchestrator may call the guidelines MCP server. Stop and request targeted context from the orchestrator (see the MCP budget rules in CLAUDE.md) - do not resolve slugs or browse MCP from a '$AGENT' subagent." ;;
+  backend-developer|frontend-developer|qa|challenger|orchestrator)
+    deny "Only the planner may call the guidelines MCP server. Stop and request targeted context through the orchestrator (see the MCP budget rules in CLAUDE.md) - do not resolve slugs or browse MCP from a '$AGENT' subagent." ;;
 esac
 
 exit 0

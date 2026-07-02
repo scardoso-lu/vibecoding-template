@@ -15,13 +15,17 @@ only from feature memory and MCP-backed rules.
 ## Non-Negotiable Rules
 
 1. Use feature-slice memory for guidelines.
-   The `fullstack-guidelines` MCP server is the source of truth. The orchestrator fetches the
+   The `fullstack-guidelines` MCP server is the source of truth. The `planner` fetches the
    needed slugs once per slice, writes `feature-memory/<slice>/slice.md` and `rules.md`, and hands
    those files to downstream agents. Developers and QA do not refetch guideline text.
 
 2. Route work through the agent system.
-   Start feature work with `orchestrator`. The main thread executes the Agent Plan rows and returns
-   to the orchestrator only for `ESCALATE`, `BLOCKED`, or QA finding fan-out.
+   Start feature work with `orchestrator`. It sequences the plan/challenge loop: `planner` writes
+   the plan, `challenger` scores it as a gang, and the loop repeats until the challenger accepts at
+   **at least 90 percent** (capped at 3 rounds, then the user is asked). Only then does the main
+   thread execute the Agent Plan rows, returning to the orchestrator for `ESCALATE`, `BLOCKED`, or
+   QA finding fan-out. Incomplete information is always asked back to the user, with planning held
+   in plan mode until the answer arrives.
 
 3. Keep Claude and Codex guidance mirrored.
    `CLAUDE.md` and `AGENTS.md` must stay structurally aligned. `.claude/` and `.codex/` support
@@ -29,19 +33,26 @@ only from feature memory and MCP-backed rules.
    runtime-specific names and tool syntax.
 
 4. Block subagent reads of agent infrastructure.
-   Only the main thread and `orchestrator` may read root guidance, agent config, hooks, workflow
-   scripts, settings, templates, or cross-runtime support files. Non-orchestrator subagents may read
-   those files only when the orchestrator handoff names the exact path. QA may read
-   `.claude/skills/playwright-cli/**` for Playwright spec work.
+   Only the main thread and the coordination tier (`orchestrator`, `planner`, `challenger`) may read
+   root guidance, agent config, hooks, workflow scripts, settings, templates, or cross-runtime
+   support files. Implementer/QA subagents may read those files only when the orchestrator handoff
+   names the exact path. QA may read `.claude/skills/playwright-cli/**` for Playwright spec work.
 
 ## Agent Roles
 
 | Agent | Responsibility |
 |---|---|
-| `orchestrator` | Defines the slice, fetches MCP rules, writes feature memory, and emits the Agent Plan |
+| `orchestrator` | Coordinates the plan/challenge loop and routes only the required implementer/QA agents; no planning, no MCP |
+| `planner` | Defines the slice, fetches MCP rules, writes feature memory, emits the Agent Plan, and asks the user when info is incomplete |
+| `challenger` | Challenges the plan as a gang of adversarial personas and returns an aggregate acceptance percentage (90 percent gate); read-only |
 | `backend-developer` | Implements backend code and tests from feature memory; no MCP access |
 | `frontend-developer` | Implements frontend code and tests from feature memory; no MCP access |
 | `qa` | Reviews the slice, writes/heals Playwright story tests when needed, and returns `APPROVED` or `BLOCKED` |
+
+The orchestrator runs every request through the `planner` -> `challenger` loop before routing
+implementation. The challenger scores the plan against a 7-persona panel; all challenges stop only
+when acceptance is at least 90 percent. If the loop hits its round cap or the planner/challenger
+flags missing information, the orchestrator asks the user and holds planning in plan mode.
 
 Routing is conditional. Backend-only work skips frontend. Frontend-only work skips backend.
 Docs/config/copy/minimal changes can route straight to QA review. Foundation work is one
@@ -54,7 +65,7 @@ independently, a hard gate must land first, or the scope is too large for one QA
 
 ## Feature Memory Contract
 
-The orchestrator reads `.claude/templates/template-routing.md`, loads only the needed category
+The planner reads `.claude/templates/template-routing.md`, loads only the needed category
 templates, then writes:
 
 - `feature-memory/<slice>/slice.md`
@@ -104,12 +115,12 @@ at or above 80 percent.
 ## MCP Budget
 
 - Prefer existing `feature-memory/`, repo files, tests, and prior handoffs.
-- The orchestrator may call `get_metadata()` once per slice only when routing does not identify the
-  needed slugs.
+- The planner may call `get_metadata()` once per slice only when routing does not identify the
+  needed slugs. No other agent calls MCP.
 - Fetch only specific guidelines required for the slice.
 - Never call broad context tools such as `get_all_context` for normal feature work.
-- If a downstream agent lacks context, it asks the orchestrator once for a targeted update. If still
-  blocked, it returns `ESCALATE` or `BLOCKED`.
+- If a downstream agent lacks context, it asks the orchestrator once for a targeted update; the
+  orchestrator routes back through the planner. If still blocked, it returns `ESCALATE` or `BLOCKED`.
 - Correctness beats compactness. Unsupported concrete paths, commands, dependencies, tests, and
   acceptance criteria must be marked `BLOCKED`, not guessed.
 

@@ -7,10 +7,10 @@ every clone inherits them.
 | Hook | Event | Matcher | What it does |
 |---|---|---|---|
 | `session-start.sh` | `SessionStart` | - | Installs backend/frontend deps (`uv sync`, `pnpm install`) when their manifests exist, so tests and linters are ready in a fresh remote container. |
-| `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, and non-orchestrator shell reads of agent infrastructure. |
+| `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, and implementer/QA shell reads of agent infrastructure. |
 | `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to review-only `feature-memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Also confines **QA** to writing `frontend/e2e/**` Playwright specs/helpers and the slice verdict. |
-| `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks non-orchestrator subagents from reading `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `scripts/`, hooks, settings, and agent templates. Main-thread and orchestrator reads pass through. |
-| `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the orchestrator may call the guidelines server**; downstream roles are denied and told to ask the orchestrator. |
+| `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks implementer/QA subagents from reading `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `scripts/`, hooks, settings, and agent templates. Main-thread and coordination-tier (orchestrator/planner/challenger) reads pass through. |
+| `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the planner may call the guidelines server**; other roles are denied and told to request context through the orchestrator. |
 | `auto-format.sh` | `PostToolUse` | `Edit\|Write\|MultiEdit` | Formats the file Claude just wrote (`ruff` for `.py`, locally-installed `prettier` for JS/TS/JSON/CSS/YAML). No-op when the tool isn't installed; never triggers a network install. |
 | `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs stack-local validators, static checks, and available tests/coverage before a developer returns. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys / AWS keys and blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
@@ -48,14 +48,15 @@ subagent:
 The guards read `agent_type` to enforce role-scoped contracts that used to live only in
 the agent prompts:
 
-- **MCP is orchestrator-only** (`guard-mcp.sh`): calls to `mcp__fullstack-guidelines__*`
-  from `backend-developer` / `frontend-developer` / `qa` are
-  denied. The orchestrator (and the main thread, which has no `agent_type`) pass through.
-- **Agent infrastructure reads are orchestrator-only** (`guard-infra-read.sh`): direct
+- **MCP is planner-only** (`guard-mcp.sh`): calls to `mcp__fullstack-guidelines__*`
+  from `backend-developer` / `frontend-developer` / `qa` / `challenger` / `orchestrator` are
+  denied. The planner (and the main thread, which has no `agent_type`) pass through.
+- **Agent infrastructure reads are coordination-tier-only** (`guard-infra-read.sh`): direct
   `Read`/`Grep`/`Glob`/`LS` calls against root guidance, `.claude/`, `.codex/`, or
-  `scripts/` are denied for downstream subagents. The Bash guard also blocks obvious
-  shell reads/searches of those paths. Narrow exception: QA may read
-  `.claude/skills/playwright-cli/**` for Playwright spec generation/healing.
+  `scripts/` are denied for implementer/QA subagents. Orchestrator, planner, and challenger
+  pass through. The Bash guard also blocks obvious shell reads/searches of those paths.
+  Narrow exception: QA may read `.claude/skills/playwright-cli/**` for Playwright spec
+  generation/healing.
 - **QA write scope** (`guard-edits.sh`): when `agent_type` is `qa`, writes are allowed only under
   `frontend/e2e/**` or to the terminal `slice.md` verdict; anything else is denied so app fixes
   route back through the orchestrator.
@@ -147,8 +148,8 @@ deleted from the agents.** Applied here:
 
 This split is why the **`tester` agent was removed** (developers author tests; the SubagentStop
 gate runs them) and the **`qa` agent was slimmed to judgment only** (it no longer runs
-`validate-tools` - the gate does). The agents that remain - orchestrator, the two developers,
-qa - each do something a script cannot.
+`validate-tools` - the gate does). The agents that remain - orchestrator, planner, challenger, the
+two developers, qa - each do something a script cannot.
 
 **Opt-in: an LLM-backed Stop gate.** For an even stronger finish condition, Claude Code supports
 `type: "prompt"` and `type: "agent"` hooks that call a model. For example, an agent-based `Stop`

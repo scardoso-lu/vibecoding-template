@@ -110,7 +110,7 @@ orchestrator to the suspected owner.
 7. Spot-check rule provenance: every block in `rules.md` must carry
    `Source: get_guideline("<slug>")`. Missing source is a `question:` finding.
 8. Check cross-cutting hard rules from `rules.md` and `QA Handoff`. If a relevant rule category is
-   missing, return `BLOCKED` and ask the orchestrator to update the slice from MCP.
+   missing, return `BLOCKED` and ask the orchestrator to have the planner update the slice from MCP.
 
 ## Verdict
 

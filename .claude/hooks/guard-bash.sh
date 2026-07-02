@@ -46,10 +46,11 @@ if printf '%s' "$CMD" | grep -Eq 'git[[:space:]]+push' \
   deny "force-push is blocked. Push normally, or rebase onto a fresh branch and open a new PR."
 fi
 
-# Non-orchestrator subagents may not read agent infrastructure through shell
-# commands either. Main thread has no agent_type; orchestrator is allowed.
+# Implementer/QA subagents may not read agent infrastructure through shell commands
+# either. Main thread has no agent_type; the coordination tier (orchestrator, planner,
+# challenger) is allowed.
 case "$AGENT" in
-  ""|orchestrator)
+  ""|orchestrator|planner|challenger)
     : ;;
   *)
     if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \

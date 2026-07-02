@@ -11,15 +11,17 @@ cd "$ROOT" 2>/dev/null || true
 
 cat <<'EOF'
 [context refresh after compaction - vibecoding-template operating rules]
-1. Use guidelines through feature-slice memory: only the orchestrator calls the
+1. Use guidelines through feature-slice memory: only the planner calls the
    fullstack-guidelines MCP; it writes feature-memory/<slice>/slice.md and rules.md.
-2. Route every request through the agent system (start with the orchestrator); do not implement
-   features directly on the main thread.
+2. Route every request through the agent system (start with the orchestrator). It sequences the
+   planner/challenger loop (challenger must accept at >=90% or the user is asked), then routes
+   developers/QA. Do not implement features directly on the main thread.
 3. Deterministic work is a hook, not an agent step: formatting, lint, type-checks, validate-tools,
    and the test suite run automatically via .claude/hooks/ (PostToolUse + the SubagentStop gate).
    QA owns code-first Playwright specs/output and final judgment; there is no tester or separate E2E agent.
-4. Non-orchestrator subagents may not read AGENTS.md, CLAUDE.md, .codex/, .claude/, scripts/,
-   hooks, settings, or agent templates directly. They must request orchestrator context.
+4. Implementer/QA subagents may not read AGENTS.md, CLAUDE.md, .codex/, .claude/, scripts/, hooks,
+   settings, or agent templates directly. Only orchestrator, planner, and challenger may; others
+   request context through the orchestrator.
 EOF
 
 # Live state: active feature-memory slices and their QA state, when the runtime dir exists.

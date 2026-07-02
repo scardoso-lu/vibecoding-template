@@ -223,7 +223,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Runtime-generated feature memory (orchestrator writes these; tracked templates live in .claude/templates/)
+# Runtime-generated feature memory (planner writes these; tracked templates live in .claude/templates/)
 feature-memory/
 
 # Per-stack environment files (use .env.example in each service dir as the template)

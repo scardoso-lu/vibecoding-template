@@ -1,6 +1,6 @@
 # Feature Memory Templates
 
-Feature memory lives under `feature-memory/<slice>/` (gitignored, runtime only). The orchestrator writes it in Plan Mode; sub-agents read it, never write it. The exception is QA, which may set the terminal verdict in `slice.md`. User-facing E2E evidence is deterministic Playwright code under `frontend/e2e/**` plus Playwright runner output, not a separate prose E2E report artifact.
+Feature memory lives under `feature-memory/<slice>/` (gitignored, runtime only). The planner writes it in Plan Mode; sub-agents read it, never write it. The exception is QA, which may set the terminal verdict in `slice.md`. User-facing E2E evidence is deterministic Playwright code under `frontend/e2e/**` plus Playwright runner output, not a separate prose E2E report artifact.
 
 ## Templates
 
@@ -9,9 +9,9 @@ Feature memory lives under `feature-memory/<slice>/` (gitignored, runtime only).
 - **Full slice index**: `.claude/templates/template-full.md` is intentionally small and points to the routing table.
 - **Minimal slice**: `.claude/templates/template-minimal.md` is for docs, config-only, copy, and one-file non-behavior changes.
 
-The orchestrator reads `template-routing.md` first, then only the category templates needed for the slice. Templates are never passed to backend, frontend, or QA agents.
+The planner reads `template-routing.md` first, then only the category templates needed for the slice. Templates are never passed to backend, frontend, or QA agents.
 
 ## Workflow rules
 
-See `.claude/agents/orchestrator.md` for Plan Mode steps, Minimal Slice Mode eligibility, compaction schedule, and routing rules.
+See `.claude/agents/planner.md` for Plan Mode steps, Minimal Slice Mode eligibility, and compaction schedule; `.claude/agents/challenger.md` for the 90 percent challenge gate; and `.claude/agents/orchestrator.md` for the plan/challenge loop and routing rules.
 

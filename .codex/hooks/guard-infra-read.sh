@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# PreToolUse guard for Read / Grep / Glob / LS. Non-orchestrator subagents may
-# not inspect agent infrastructure directly; they must work from orchestrator
-# handoffs and feature memory. Main-thread calls have no agent_type and pass.
+# PreToolUse guard for Read / Grep / Glob / LS. Implementer/QA subagents may not
+# inspect agent infrastructure directly; they must work from orchestrator handoffs
+# and feature memory. The coordination tier (orchestrator, planner, challenger) is
+# allowed, as is the main thread (no agent_type).
 set -uo pipefail
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,7 +14,7 @@ INPUT="${HOOK_INPUT_JSON:-}"
 AGENT="$(hook_json_get "$INPUT" "agent_type")"
 
 case "$AGENT" in
-  ""|orchestrator)
+  ""|orchestrator|planner|challenger)
     exit 0 ;;
 esac
 

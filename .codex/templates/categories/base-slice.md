@@ -6,8 +6,8 @@ Use for every non-minimal feature.
 # <slice>
 
 ## Status
-- State: active | BLOCKED | E2E CLEAN | E2E BUGS FOUND | QA APPROVED | QA BLOCKED
-- Current owner: orchestrator | backend-developer | frontend-developer | qa
+- State: active | NEEDS-INPUT | BLOCKED | E2E CLEAN | E2E BUGS FOUND | QA APPROVED | QA BLOCKED
+- Current owner: planner | challenger | backend-developer | frontend-developer | qa
 - Last updated:
 
 ## Request

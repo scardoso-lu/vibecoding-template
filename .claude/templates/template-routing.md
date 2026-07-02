@@ -1,6 +1,6 @@
 # Template Routing
 
-The orchestrator reads this file first in Plan Mode. Load only the category templates needed for
+The planner reads this file first in Plan Mode. Load only the category templates needed for
 the current slice. Do not load every template by default.
 
 | Slice need | Template file |
