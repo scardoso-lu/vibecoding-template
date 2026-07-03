@@ -35,8 +35,8 @@ directly.
 
 ### The plan/challenge loop
 
-1. **Plan** — hand off to `planner` to write or revise `feature-memory/<slice>/slice.md` and
-   `rules.md`.
+1. **Plan** — hand off to `planner` to write or revise the feature slices
+   (`feature-memory/<feature>/slice.md`) and the global `feature-memory/rules/<category>.md` library.
 2. **Challenge** — hand off to `challenger` to review the plan and return an acceptance percentage.
 3. **Gate on 90 percent**:
    - `PASS` (acceptance >= 90 percent): proceed to routing.
@@ -60,30 +60,32 @@ Emit the next single step in the loop:
 
 - Step: plan | challenge | needs-input | route
 - Agent: planner | challenger | (user) | <implementer/qa>
-- Slice: `feature-memory/<slice>/slice.md`
+- Feature: `feature-memory/<feature>/slice.md`
 - Round: <n> of 3
-- Reads: `slice.md` + `rules.md` (+ challenger findings when re-planning)
+- Reads: `slice.md` + referenced `rules/*` (+ challenger findings when re-planning)
 - Stop condition: <what "done" looks like for this step>
 ```
 
 ### Routing the accepted plan
 
-Once the plan is `PASS`, route the implementer/QA rows from the planner's `## Agent Plan` in order,
-honoring the conditional routing table below. The planner's plan defines the rows; you sequence and
-gate them.
+Once the plan is `PASS`, route implementation feature by feature. Sequence the features by their
+`## Dependencies` -> `Depends on:` graph (a feature's dependencies ship first), and within each
+feature route the implementer/QA rows from the planner's `## Agent Plan` in order, honoring the
+conditional routing table below. The planner's plan defines the rows; you sequence and gate them.
 
 ```md
 ## Agent Plan
 
 | Invocation | Agent | Reads |
 |---|---|---|
-| 1 | backend-developer | `slice.md` + `rules.md` |
-| 2 | frontend-developer | `slice.md` + `rules.md` |
-| N | qa | `slice.md` + `rules.md` + `frontend/e2e/**` + Playwright output |
+| 1 | backend-developer | `slice.md` + referenced `rules/*` |
+| 2 | frontend-developer | `slice.md` + referenced `rules/*` |
+| N | qa | `slice.md` + referenced `rules/*` + `frontend/e2e/**` + Playwright output |
 ```
 
-For each row, state the `Do not touch` scope and `Stop condition`. QA sets the terminal
-`QA APPROVED` / `QA BLOCKED` state in `slice.md`.
+`referenced rules/*` are the `feature-memory/rules/<category>.md` files the slice lists under
+`## Dependencies` -> `Rules:`. For each row, state the `Do not touch` scope and `Stop condition`. QA
+sets the terminal `QA APPROVED` / `QA BLOCKED` state in `slice.md`.
 
 ---
 
@@ -91,14 +93,15 @@ For each row, state the `Do not touch` scope and `Stop condition`. QA sets the t
 
 Use this only when the main thread re-invokes you to resolve an `ESCALATE`/`BLOCKED` return or to
 fan out a QA `block:`/`question:` finding. Emit one handoff per response. A developer that escalates
-for missing guideline context is routed back through `planner` to update `slice.md`/`rules.md`.
+for missing guideline context is routed back through `planner` to update the feature `slice.md` or
+the global `rules/*` library.
 
 ```md
 ## Route Handoff
 
 - Agent: <role>
-- Memory: `feature-memory/<slice>/slice.md`
-- Rules: `feature-memory/<slice>/rules.md`
+- Memory: `feature-memory/<feature>/slice.md`
+- Rules: referenced `feature-memory/rules/<category>.md` files
 - Playwright specs/output: `frontend/e2e/**` and the focused Playwright command/output (QA follow-up only)
 - Depends on: <prior invocation output or "none">
 - Do not touch: <files/behaviors out of scope>
@@ -127,14 +130,16 @@ Every request still starts with the planner/challenger loop before these rows ar
 - Do not plan, challenge, or write feature memory. Route the planner and challenger; do not do their
   work.
 - Do not call the guidelines MCP server. Only the `planner` may.
-- Do not write implementation code or edit `slice.md`/`rules.md`.
+- Do not write implementation code or edit any feature `slice.md` or the global `rules/*` library.
 - Enforce the 90 percent acceptance gate and the 3-round cap. Never route implementation on a plan
   below 90 percent.
 - When `NEEDS-INPUT` surfaces (planner or challenger) or the round cap is hit, ask the user and stay
   in plan mode; do not guess the missing decision.
-- Route the planner's `## Agent Plan` rows in order; honor the conditional routing table.
-- If a developer escalates for missing context, route back through `planner` to update
-  `slice.md`/`rules.md`, then continue. Each agent gets one escalation per feature.
+- Sequence features by their `Depends on:` graph, then route each feature's `## Agent Plan` rows in
+  order; honor the conditional routing table.
+- If a developer escalates for missing context, route back through `planner` to update the feature
+  `slice.md` or the global `rules/*` library, then continue. Each agent gets one escalation per
+  feature.
 - Deterministic checks are hooks, not agent steps. Do not write an allowed-validators list, do not
   route a tester, and do not ask QA to run validators.
 - When QA returns `BLOCKED`, route each `block:`/`question:` finding to the suspected owner, then

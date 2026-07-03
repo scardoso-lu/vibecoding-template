@@ -5,8 +5,8 @@ the current slice. Do not load every template by default.
 
 | Slice need | Template file |
 |---|---|
-| Every non-minimal feature | `.codex/templates/categories/base-slice.md` |
-| MCP rule bundle | `.codex/templates/categories/rules.md` |
+| Every non-minimal business feature | `.codex/templates/categories/base-slice.md` |
+| Global rules library (`feature-memory/rules/<category>.md`) | `.codex/templates/categories/rules.md` |
 | Repo layout, root tooling, bootstrap, app roots | `.codex/templates/categories/foundation.md` |
 | FastAPI/domain/API/migrations/backend tests | `.codex/templates/categories/backend.md` |
 | Next.js routes/components/actions/frontend tests | `.codex/templates/categories/frontend.md` |
@@ -16,7 +16,12 @@ the current slice. Do not load every template by default.
 | Docs/config/copy/one-file non-behavior change | `.codex/templates/template-minimal.md` |
 
 Rules:
-- Always write one `slice.md` and one `rules.md` for non-minimal feature work.
-- Never create role-specific markdown files or `00-shared/`.
-- The selected category templates provide sections to include in `slice.md`; they are not separate
-  output files.
+- Write one `slice.md` per business feature under `feature-memory/<feature>/`. Split the request
+  into features and link them through each slice's `## Dependencies`.
+- Keep rules global: write them under `feature-memory/rules/<category>.md`, one file per category,
+  and reference the ones a feature needs from that feature's `## Dependencies` -> `Rules:` line. Do
+  not write a per-slice `rules.md`.
+- Never create role-specific markdown files or `00-shared/`. `feature-memory/rules/` is the reserved
+  global rules area, not a slice.
+- The selected category templates provide sections to include in `slice.md`; except for the global
+  rules library, they are not separate output files.

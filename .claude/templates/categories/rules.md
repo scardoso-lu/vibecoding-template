@@ -1,30 +1,27 @@
 # Rules Template
 
-Write one `feature-memory/<slice>/rules.md`. Group fetched MCP rules by role. Every rule
-block must cite the source slug.
+Rules are **global** and shared across every slice. Write them under
+`feature-memory/rules/<category>.md` - one file per category concern - and reference the files a
+slice needs from that slice's `## Dependencies` section. Do not write a per-slice `rules.md`.
+
+Add or extend a category file only when the slice in front of you needs that concern. Reuse the
+existing category files across slices instead of duplicating rules. Every rule block must cite its
+source slug.
+
+Split categories by concern, e.g. `backend.md`, `frontend.md`, `qa.md`, `security.md`,
+`foundation.md`.
 
 ```md
-# <slice> - Rules
+# <Category> Rules
 
-All rules come from `get_guideline()` MCP calls made during this planning session.
+All rules come from `get_guideline()` MCP calls. Slices reference this file from their
+`## Dependencies` -> `Rules:` line.
 
-## Backend
-### `<slug>`
+## `<slug>`
 Source: get_guideline("<slug>")
 - Always ...
 
-## Frontend
-### `<slug>`
+## `<slug>`
 Source: get_guideline("<slug>")
 - Always ...
-
-## QA
-### `<slug>`
-Source: get_guideline("<slug>")
-- Always ...
-
-### `<user-facing/testing slug>`
-Source: get_guideline("<slug>")
-- Playwright spec generation, story coverage, and runner-output expectations ...
 ```
-

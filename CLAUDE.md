@@ -16,8 +16,9 @@ only from feature memory and MCP-backed rules.
 
 1. Use feature-slice memory for guidelines.
    The `fullstack-guidelines` MCP server is the source of truth. The `planner` fetches the
-   needed slugs once per slice, writes `feature-memory/<slice>/slice.md` and `rules.md`, and hands
-   those files to downstream agents. Developers and QA do not refetch guideline text.
+   needed slugs, writes one `feature-memory/<feature>/slice.md` per business feature plus the shared
+   `feature-memory/rules/<category>.md` library, and hands the relevant files to downstream agents.
+   Developers and QA do not refetch guideline text.
 
 2. Route work through the agent system.
    Start feature work with `orchestrator`. It sequences the plan/challenge loop: `planner` writes
@@ -59,27 +60,34 @@ Docs/config/copy/minimal changes can route straight to QA review. Foundation wor
 cross-cutting monorepo slice when it touches repo layout, root manifests, bootstrap scripts,
 workspace config, or both app roots.
 
-Slice by coherent user outcome, not by layer. Do not split one normal MVP request into scaffold,
-endpoint, CRUD, page, and test memories unless the user asks for phases, the outcomes can ship
-independently, a hard gate must land first, or the scope is too large for one QA review.
+Slice by business feature, not by layer. Write one `slice.md` per business feature (never split a
+single feature into scaffold, endpoint, CRUD, page, and test slices). When features depend on each
+other, keep them separate and link the ordering through each slice's `## Dependencies`.
 
 ## Feature Memory Contract
 
 The planner reads `.claude/templates/template-routing.md`, loads only the needed category
 templates, then writes:
 
-- `feature-memory/<slice>/slice.md`
-- `feature-memory/<slice>/rules.md`
+- One `feature-memory/<feature>/slice.md` per business feature.
+- The shared global rules library `feature-memory/rules/<category>.md`, one file per category
+  concern, reused across every feature. There is no per-slice `rules.md`.
 
-Full slices must include `Status`, `Request`, `Slice Boundary`, `Do Not Touch`, `Implementation
-Plan`, `Acceptance Criteria`, `QA Handoff`, and provenance. User-facing slices also need
-`E2E Test Stories`, with each row mapped to one Playwright `test(...)`. Acceptance criteria must use
-stable `AC-###` IDs, `Test Coverage` must map every criterion to backend/frontend-unit/E2E/harness
+Each `slice.md` links the rest of the plan through a `## Dependencies` section: `Depends on:` lists
+the sibling feature slices it needs first, and `Rules:` lists the global `feature-memory/rules/<category>.md`
+files it draws on. Every rule block in the library must cite `Source: get_guideline("<slug>")`, and
+the orchestrator sequences features by their `Depends on:` graph.
+
+Full slices must include `Status`, `Request`, `Slice Boundary`, `Dependencies`, `Do Not Touch`,
+`Implementation Plan`, `Acceptance Criteria`, `QA Handoff`, and provenance. User-facing slices also
+need `E2E Test Stories`, with each row mapped to one Playwright `test(...)`. Acceptance criteria must
+use stable `AC-###` IDs, `Test Coverage` must map every criterion to backend/frontend-unit/E2E/harness
 tests, and user-facing slices must include `e2e-coverage.json` mapping initial-prompt user stories
 to Playwright tests.
 
 Do not create role-specific feature-memory directories such as `00-shared/`, `backend/`,
-`frontend/`, or `qa/`. Do not put validator allow-lists in feature memory.
+`frontend/`, or `qa/`; `feature-memory/rules/` is the reserved global rules area. Do not put
+validator allow-lists in feature memory.
 
 ## Deterministic Enforcement
 

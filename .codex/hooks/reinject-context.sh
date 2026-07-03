@@ -11,8 +11,9 @@ cd "$ROOT" 2>/dev/null || true
 
 cat <<'EOF'
 [context refresh after compaction - vibecoding-template operating rules]
-1. Use guidelines through feature-slice memory: only the planner calls the
-   fullstack-guidelines MCP; it writes feature-memory/<slice>/slice.md and rules.md.
+1. Use guidelines through feature-slice memory: only the planner calls the fullstack-guidelines MCP;
+   it writes one feature-memory/<feature>/slice.md per business feature plus the shared global
+   feature-memory/rules/<category>.md library, linked via each slice's ## Dependencies.
 2. Route every request through the agent system (start with the orchestrator). It sequences the
    planner/challenger loop (challenger must accept at >=90% or the user is asked), then routes
    developers/QA. Do not implement features directly on the main thread.

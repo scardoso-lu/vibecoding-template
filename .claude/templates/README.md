@@ -1,6 +1,6 @@
 # Feature Memory Templates
 
-Feature memory lives under `feature-memory/<slice>/` (gitignored, runtime only). The planner writes it in Plan Mode; sub-agents read it, never write it. The exception is QA, which may set the terminal verdict in `slice.md`. User-facing E2E evidence is deterministic Playwright code under `frontend/e2e/**` plus Playwright runner output, not a separate prose E2E report artifact.
+Feature memory lives under `feature-memory/` (gitignored, runtime only). Each business feature is one `feature-memory/<feature>/slice.md`, and rules are a global library under `feature-memory/rules/<category>.md` shared across features. A slice links the sibling features and rule files it depends on in its `## Dependencies` section. The planner writes all of this in Plan Mode; sub-agents read it, never write it. The exception is QA, which may set the terminal verdict in `slice.md`. User-facing E2E evidence is deterministic Playwright code under `frontend/e2e/**` plus Playwright runner output, not a separate prose E2E report artifact.
 
 ## Templates
 

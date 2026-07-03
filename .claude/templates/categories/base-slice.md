@@ -1,9 +1,11 @@
 # Base Slice Template
 
-Use for every non-minimal feature.
+Use for every non-minimal feature. Write one `slice.md` per business feature under
+`feature-memory/<feature>/`, and link the sibling features and global rule files it needs in
+`## Dependencies`.
 
 ```md
-# <slice>
+# <feature>
 
 ## Status
 - State: active | NEEDS-INPUT | BLOCKED | E2E CLEAN | E2E BUGS FOUND | QA APPROVED | QA BLOCKED
@@ -11,13 +13,16 @@ Use for every non-minimal feature.
 - Last updated:
 
 ## Request
-<Original user request or precise summary.>
+<Original user request or precise summary of this business feature.>
 
 ## Slice Boundary
 - User outcome:
 - In scope:
 - Out of scope:
-- Split decision: one feature memory | split required because <reason>
+
+## Dependencies
+- Depends on: feature-memory/<other-feature>, ... | none
+- Rules: feature-memory/rules/<category>.md, ... | none
 
 ## Do Not Touch
 - Files/directories:
@@ -42,7 +47,7 @@ Use for every non-minimal feature.
 - Backend:
 - Frontend:
 - Scripted E2E:
-- Deterministic gate: `python scripts/validate/gate.py --root . --slice feature-memory/<slice>/slice.md`
+- Deterministic gate: `python scripts/validate/gate.py --root . --slice feature-memory/<feature>/slice.md`
 
 ## Provenance
 | Decision | Slug |
