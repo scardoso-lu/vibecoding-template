@@ -47,7 +47,7 @@ Use for every non-minimal feature. Write one `slice.md` per business feature und
 - Backend:
 - Frontend:
 - Scripted E2E:
-- Deterministic gate: `python scripts/validate/gate.py --root . --slice feature-memory/<feature>/slice.md`
+- Deterministic gate: `python scripts/validate/cli.py gate --root . --slice feature-memory/<feature>/slice.md`
 
 ## Provenance
 | Decision | Slug |

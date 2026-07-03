@@ -16,11 +16,11 @@ fi
 ROOT="${CODEX_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "$ROOT" 2>/dev/null || exit 0
 
-if [ ! -d "feature-memory" ] || [ ! -f "scripts/validate/compaction.py" ]; then
+if [ ! -d "feature-memory" ] || [ ! -f "scripts/validate/cli.py" ]; then
   exit 0
 fi
 
-out="$(python scripts/validate/compaction.py --root . --enforce 2>&1)"
+out="$(python scripts/validate/cli.py compaction --root . --enforce 2>&1)"
 code=$?
 if [ "$code" != "0" ]; then
   hook_json_stop_block "Feature-memory compaction is due. Write the review-only historical summary, move the listed QA-approved slice directories under feature-memory/history/, then finish again.\n${out}"

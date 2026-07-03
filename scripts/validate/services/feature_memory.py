@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from scripts.validate.common import (
+from scripts.validate.models import (
     Finding,
     acceptance_criteria_ids,
     has_heading,

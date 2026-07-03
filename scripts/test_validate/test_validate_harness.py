@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.harness import validate_harness
+from scripts.validate.services.harness import validate_harness
 
 
 def _write(path: Path, text: str, *, executable: bool = False) -> None:

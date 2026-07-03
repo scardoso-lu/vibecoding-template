@@ -16,7 +16,7 @@ fi
 
 ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "$ROOT" 2>/dev/null || exit 0
-[ -f "scripts/validate/workflow.py" ] || exit 0
+[ -f "scripts/validate/cli.py" ] || exit 0
 
 changed="$(git status --porcelain 2>/dev/null | sed 's/^...//' | sed 's#\\#/#g')"
 [ -n "$changed" ] || exit 0
@@ -43,30 +43,30 @@ matches_any() {
 }
 
 if matches_any '^(AGENTS\.md|CLAUDE\.md|\.codex/agents/|\.claude/agents/|\.codex/templates/|\.claude/templates/|\.codex/hooks/|\.claude/hooks/|scripts/validate/)'; then
-  run_validator "workflow" python scripts/validate/workflow.py --root .
+  run_validator "workflow" python scripts/validate/cli.py all --root .
 else
   if matches_any '^(feature-memory/|\.codex/templates/|\.claude/templates/)'; then
-    run_validator "feature-memory" python scripts/validate/feature-memory.py --root .
-    run_validator "test-coverage" python scripts/validate/test-coverage.py --root .
-    run_validator "e2e-coverage" python scripts/validate/e2e-coverage.py --root .
-    run_validator "qa-evidence" python scripts/validate/qa-evidence.py --root .
+    run_validator "feature-memory" python scripts/validate/cli.py feature-memory --root .
+    run_validator "test-coverage" python scripts/validate/cli.py test-coverage --root .
+    run_validator "e2e-coverage" python scripts/validate/cli.py e2e-coverage --root .
+    run_validator "qa-evidence" python scripts/validate/cli.py qa-evidence --root .
   fi
 
   if matches_any '^(feature-memory/|frontend/e2e/)'; then
-    run_validator "playwright-stories" python scripts/validate/playwright-stories.py --root .
-    run_validator "qa" python scripts/validate/qa.py --root .
+    run_validator "playwright-stories" python scripts/validate/cli.py playwright-stories --root .
+    run_validator "qa" python scripts/validate/cli.py qa --root .
   fi
 
   if matches_any '^(backend/|docker-compose[^/]*\.ya?ml$)'; then
-    run_validator "project-layout" python scripts/validate/project-layout.py --root .
-    run_validator "database" python scripts/validate/database.py --root .
-    run_validator "migrations" python scripts/validate/migrations.py --root .
-    run_validator "backend" python scripts/validate/backend.py --root .
+    run_validator "project-layout" python scripts/validate/cli.py project-layout --root .
+    run_validator "database" python scripts/validate/cli.py database --root .
+    run_validator "migrations" python scripts/validate/cli.py migrations --root .
+    run_validator "backend" python scripts/validate/cli.py backend --root .
   fi
 
   if matches_any '^(frontend/|docker-compose[^/]*\.ya?ml$)'; then
-    run_validator "project-layout" python scripts/validate/project-layout.py --root .
-    run_validator "frontend" python scripts/validate/frontend.py --root .
+    run_validator "project-layout" python scripts/validate/cli.py project-layout --root .
+    run_validator "frontend" python scripts/validate/cli.py frontend --root .
   fi
 fi
 

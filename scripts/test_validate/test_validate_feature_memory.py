@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.feature_memory import (
+from scripts.validate.services.feature_memory import (
     compaction_due_slices,
     global_rules_slugs,
     parse_dependencies,

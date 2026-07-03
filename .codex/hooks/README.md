@@ -15,7 +15,7 @@ every clone inherits them.
 | `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs stack-local validators, static checks, and available tests/coverage before a developer returns. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` | Scans the staged diff before a commit for private keys / AWS keys and blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
-| `compaction-watch.sh` | `Stop` | - | Runs `scripts/validate/compaction.py --enforce` and blocks when four or more active QA-approved feature memories require history compaction. |
+| `compaction-watch.sh` | `Stop` | - | Runs `scripts/validate/cli.py compaction --enforce` and blocks when four or more active QA-approved feature memories require history compaction. |
 | `workflow-watch.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, feature memory, backend, frontend, QA, and Playwright story contracts. |
 | `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 AGENTS.md rules + the deterministic-gate model + the active feature-memory slice states. |
 

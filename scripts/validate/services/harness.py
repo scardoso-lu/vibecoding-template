@@ -20,15 +20,10 @@ from __future__ import annotations
 import json
 import os
 import re
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT))
-
-from scripts.validate.common import (
+from scripts.validate.models import (
     Finding,
-    cli_main,
     hook_commands,
     hook_matchers,
     read_text,
@@ -182,10 +177,3 @@ def validate_harness(root: Path) -> list[Finding]:
 
     return findings
 
-
-def main() -> int:
-    return cli_main(validate_harness, name="harness")
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

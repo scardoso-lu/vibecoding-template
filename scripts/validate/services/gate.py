@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+"""Gate service: run the deterministic evidence commands and write qa-evidence.json."""
+
 from __future__ import annotations
 
-import argparse
 import json
 import subprocess
 from datetime import UTC, datetime
@@ -59,18 +59,12 @@ def read_frontend_coverage(root: Path) -> float | None:
     return float(value) if isinstance(value, (int, float)) else None
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, default=Path.cwd())
-    parser.add_argument("--slice", type=Path, required=True)
-    parser.add_argument("--coverage-threshold", type=float, default=80.0)
-    args = parser.parse_args()
-
-    root = args.root.resolve()
+def run_gate(root: Path, slice_arg: Path, coverage_threshold: float = 80.0) -> int:
+    root = root.resolve()
     slice_path = (
-        (root / args.slice).resolve()
-        if not args.slice.is_absolute()
-        else args.slice.resolve()
+        (root / slice_arg).resolve()
+        if not slice_arg.is_absolute()
+        else slice_arg.resolve()
     )
     slice_dir = slice_path.parent
     evidence_dir = slice_dir / "evidence"
@@ -86,7 +80,7 @@ def main() -> int:
         if (root / "frontend/package.json").exists():
             commands.append(
                 (
-                    f"python scripts/validate/runtime-smoke.py --config {runtime_smoke_config.relative_to(root).as_posix()}",
+                    f"python scripts/validate/cli.py runtime-smoke --config {runtime_smoke_config.relative_to(root).as_posix()}",
                     ".",
                     "runtime-smoke.txt",
                 )
@@ -127,7 +121,7 @@ def main() -> int:
         unit_coverage.append(
             {
                 "surface": "backend",
-                "minimum_percent": args.coverage_threshold,
+                "minimum_percent": coverage_threshold,
                 "actual_percent": backend_coverage,
                 "summary_path": "backend/coverage.json",
             }
@@ -137,7 +131,7 @@ def main() -> int:
         unit_coverage.append(
             {
                 "surface": "frontend",
-                "minimum_percent": args.coverage_threshold,
+                "minimum_percent": coverage_threshold,
                 "actual_percent": frontend_coverage,
                 "summary_path": "frontend/coverage/coverage-summary.json",
             }
@@ -147,10 +141,10 @@ def main() -> int:
     evidence = {
         "schema_version": 1,
         "slice": slice_path.relative_to(root).as_posix(),
-        "coverage_threshold": args.coverage_threshold,
+        "coverage_threshold": coverage_threshold,
         "generated_at": iso_now(),
         "generated_by": {
-            "command": f"python scripts/validate/gate.py --root . --slice {args.slice}",
+            "command": f"python scripts/validate/cli.py gate --root . --slice {slice_arg}",
             "cwd": ".",
         },
         "runs": runs,
@@ -162,6 +156,3 @@ def main() -> int:
     )
     return 1 if any(run["exit_code"] != 0 for run in runs) else 0
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())

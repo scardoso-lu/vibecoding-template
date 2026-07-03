@@ -188,7 +188,7 @@ QA sets the terminal `QA APPROVED` / `QA BLOCKED` state in `slice.md`.
 ### Compaction
 
 Do not count approved slices manually. The Stop hook runs
-`python scripts/validate/compaction.py --root . --enforce` and blocks when compaction is due.
+`python scripts/validate/cli.py compaction --root . --enforce` and blocks when compaction is due.
 When blocked, write one review-only historical summary under `feature-memory/history/`, move the
 three listed QA-approved slice directories there, and finish again. Blocked, in-progress,
 unreviewed, and QA-rejected features stay active.

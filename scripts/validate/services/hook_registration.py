@@ -6,7 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable, Sequence
 
-from scripts.validate.common import Finding, hook_commands, hook_matchers, read_text
+from scripts.validate.models import Finding, hook_commands, hook_matchers, read_text
 
 Runner = Callable[[Sequence[str], str], subprocess.CompletedProcess[str]]
 
@@ -107,3 +107,74 @@ def validate_hook_registration(root: Path, *, smoke: bool = True, runner: Runner
     return findings
 
 
+
+
+def find_bash() -> str | None:
+    import shutil
+
+    candidates: list[str] = []
+    env_bash = os.environ.get("GIT_BASH")
+    if env_bash:
+        candidates.append(env_bash)
+    candidates.extend(
+        [
+            r"C:\Program Files\Git\bin\bash.exe",
+            r"C:\Program Files\Git\usr\bin\bash.exe",
+            r"C:\Program Files (x86)\Git\bin\bash.exe",
+            r"C:\Program Files (x86)\Git\usr\bin\bash.exe",
+        ]
+    )
+    path_bash = shutil.which("bash")
+    if path_bash:
+        candidates.append(path_bash)
+    for candidate in candidates:
+        if Path(candidate).exists():
+            return candidate
+    return None
+
+
+def _compile_python(path: Path) -> str | None:
+    try:
+        compile(read_text(path), str(path), "exec")
+    except SyntaxError as exc:
+        return f"{exc.msg} at line {exc.lineno}"
+    return None
+
+
+def validate_hook_syntax(root: Path) -> list[Finding]:
+    """JSON config validity, launcher compile check, and bash -n on hook scripts."""
+    findings: list[Finding] = []
+    for rel in [".codex/hooks.json", ".claude/settings.json"]:
+        path = root / rel
+        if not path.exists():
+            findings.append(Finding(rel, "missing hook config"))
+            continue
+        try:
+            json.loads(read_text(path))
+        except json.JSONDecodeError as exc:
+            findings.append(Finding(rel, f"invalid JSON: {exc}"))
+
+    for rel in [".codex/hooks/run-hook.py", ".claude/hooks/run-hook.py"]:
+        if not (root / rel).exists():
+            findings.append(Finding(rel, "missing hook launcher"))
+            continue
+        error = _compile_python(root / rel)
+        if error is not None:
+            findings.append(Finding(rel, f"python compile failed: {error}"))
+
+    hook_scripts = sorted((root / ".codex/hooks").glob("*.sh")) + sorted(
+        (root / ".claude/hooks").glob("*.sh")
+    )
+    bash = find_bash()
+    if bash is None:
+        if hook_scripts:
+            findings.append(Finding("doctor", "bash not found; skipped hook shell syntax checks"))
+        return findings
+    for script in hook_scripts:
+        rel = script.relative_to(root).as_posix()
+        result = subprocess.run([bash, "-n", rel], cwd=root, capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            findings.append(
+                Finding(rel, f"bash syntax check failed: {result.stderr.strip() or result.stdout.strip() or 'no output'}")
+            )
+    return findings

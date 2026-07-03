@@ -40,13 +40,13 @@ package_has_script() {
 
 case "$AGENT" in
   backend-developer)
-    python scripts/validate/backend.py --root . >/dev/null 2>&1 || add_fail "backend contract validator reported findings"
+    python scripts/validate/cli.py backend --root . >/dev/null 2>&1 || add_fail "backend contract validator reported findings"
     if [ -f backend/pyproject.toml ]; then
       have ruff && ! (cd backend && ruff check . >/dev/null 2>&1) && add_fail "backend ruff check reported lint errors"
       have mypy && [ -d backend/src ] && ! (cd backend && mypy src >/dev/null 2>&1) && add_fail "backend mypy src reported type errors"
-      python scripts/validate/project-layout.py --root . >/dev/null 2>&1 || add_fail "project layout validator reported findings"
-      python scripts/validate/database.py --root . >/dev/null 2>&1 || add_fail "database policy validator reported findings"
-      python scripts/validate/migrations.py --root . >/dev/null 2>&1 || add_fail "migration validator reported findings"
+      python scripts/validate/cli.py project-layout --root . >/dev/null 2>&1 || add_fail "project layout validator reported findings"
+      python scripts/validate/cli.py database --root . >/dev/null 2>&1 || add_fail "database policy validator reported findings"
+      python scripts/validate/cli.py migrations --root . >/dev/null 2>&1 || add_fail "migration validator reported findings"
       ! run_validate_tools_project_layout && add_fail "validate-tools project-layout reported a compliance failure"
       if have uv; then
         (cd backend && run_ok_or_no_tests uv run pytest test -q) || add_fail "backend pytest (uv run) reported failing tests"
@@ -56,10 +56,10 @@ case "$AGENT" in
     fi
     ;;
   frontend-developer)
-    python scripts/validate/frontend.py --root . >/dev/null 2>&1 || add_fail "frontend contract validator reported findings"
+    python scripts/validate/cli.py frontend --root . >/dev/null 2>&1 || add_fail "frontend contract validator reported findings"
     if [ -f frontend/package.json ]; then
       [ -x frontend/node_modules/.bin/tsc ] && ! (cd frontend && node_modules/.bin/tsc --noEmit >/dev/null 2>&1) && add_fail "frontend tsc --noEmit reported type errors"
-      python scripts/validate/project-layout.py --root . >/dev/null 2>&1 || add_fail "project layout validator reported findings"
+      python scripts/validate/cli.py project-layout --root . >/dev/null 2>&1 || add_fail "project layout validator reported findings"
       ! run_validate_tools_project_layout && add_fail "validate-tools project-layout reported a compliance failure"
       if have pnpm; then
         if package_has_script "test:coverage"; then

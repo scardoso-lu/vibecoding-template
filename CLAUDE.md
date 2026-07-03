@@ -99,21 +99,21 @@ Workflow scripts own mechanical review:
 
 | Check | Command |
 |---|---|
-| Full workflow doctor | `python scripts/validate/doctor.py --root .` |
-| All workflow validators | `python scripts/validate/workflow.py --root .` |
-| Root/agent/template guidance | `python scripts/validate/agent-guidance.py --root .` |
-| Feature memory contract | `python scripts/validate/feature-memory.py --root .` |
-| Feature memory compaction | `python scripts/validate/compaction.py --root .` |
-| Hook registration and smoke paths | `python scripts/validate/hook-registration.py --root .` |
-| Harness parity and integrity (both runtimes) | `python scripts/validate/harness.py --root .` |
-| Playwright story contracts | `python scripts/validate/playwright-stories.py --root .` |
-| Acceptance/test coverage mapping | `python scripts/validate/test-coverage.py --root .` |
-| Initial-prompt E2E coverage mapping | `python scripts/validate/e2e-coverage.py --root .` |
-| Backend contract | `python scripts/validate/backend.py --root .` |
-| Frontend contract | `python scripts/validate/frontend.py --root .` |
-| QA contract | `python scripts/validate/qa.py --root .` |
-| Ownership / Do Not Touch | `python scripts/validate/ownership.py --root . --agent <agent> --slice <slice.md>` |
-| Deterministic gate evidence | `python scripts/validate/gate.py --root . --slice feature-memory/<slice>/slice.md` |
+| Full workflow doctor | `python scripts/validate/cli.py doctor --root .` |
+| All workflow validators | `python scripts/validate/cli.py all --root .` |
+| Root/agent/template guidance | `python scripts/validate/cli.py agent-guidance --root .` |
+| Feature memory contract | `python scripts/validate/cli.py feature-memory --root .` |
+| Feature memory compaction | `python scripts/validate/cli.py compaction --root .` |
+| Hook registration and smoke paths | `python scripts/validate/cli.py hook-registration --root .` |
+| Harness parity and integrity (both runtimes) | `python scripts/validate/cli.py harness --root .` |
+| Playwright story contracts | `python scripts/validate/cli.py playwright-stories --root .` |
+| Acceptance/test coverage mapping | `python scripts/validate/cli.py test-coverage --root .` |
+| Initial-prompt E2E coverage mapping | `python scripts/validate/cli.py e2e-coverage --root .` |
+| Backend contract | `python scripts/validate/cli.py backend --root .` |
+| Frontend contract | `python scripts/validate/cli.py frontend --root .` |
+| QA contract | `python scripts/validate/cli.py qa --root .` |
+| Ownership / Do Not Touch | `python scripts/validate/cli.py ownership --root . --agent <agent> --slice <slice.md>` |
+| Deterministic gate evidence | `python scripts/validate/cli.py gate --root . --slice feature-memory/<slice>/slice.md` |
 
 Hooks run the applicable script checks automatically. `validate-tools` runs inside the developer
 stop hook; it is not a QA step. QA evidence must be machine-readable `qa-evidence.json`, generated
