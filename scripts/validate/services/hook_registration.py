@@ -15,10 +15,21 @@ EXPECTED_HOOKS = [
     "guard-infra-read.sh",
     "guard-mcp.sh",
     "verify-subagent.sh",
+    "verify-qa.sh",
     "auto-format.sh",
     "format-changed.sh",
     "workflow-watch.sh",
     "notify-stop.sh",
+]
+
+EXPECTED_PROMPT_MATCHERS = [
+    "product-owner|business-challenger",
+    "software-architect|technical-challenger",
+    "qa",
+]
+
+EXPECTED_START_PROMPT_MATCHERS = [
+    "backend-developer|frontend-developer",
 ]
 
 
@@ -59,6 +70,40 @@ def validate_hook_registration(root: Path, *, smoke: bool = True, runner: Runner
             findings.append(Finding(config_rel, f"missing MCP matcher {mcp_matcher}"))
         if not any("backend-developer|frontend-developer" in matcher for matcher in matchers):
             findings.append(Finding(config_rel, "missing developer SubagentStop matcher"))
+        hooks_config = config.get("hooks", {}) if isinstance(config, dict) else {}
+        subagent_start_entries = hooks_config.get("SubagentStart", []) if isinstance(hooks_config, dict) else []
+        for prompt_matcher in EXPECTED_START_PROMPT_MATCHERS:
+            matching_entries = [
+                entry
+                for entry in subagent_start_entries
+                if isinstance(entry, dict) and entry.get("matcher") == prompt_matcher
+            ]
+            if not matching_entries:
+                findings.append(Finding(config_rel, f"missing start prompt matcher {prompt_matcher}"))
+                continue
+            if not any(
+                isinstance(hook, dict) and hook.get("type") == "prompt"
+                for entry in matching_entries
+                for hook in entry.get("hooks", [])
+            ):
+                findings.append(Finding(config_rel, f"missing start prompt hook for {prompt_matcher}"))
+
+        subagent_entries = hooks_config.get("SubagentStop", []) if isinstance(hooks_config, dict) else []
+        for prompt_matcher in EXPECTED_PROMPT_MATCHERS:
+            matching_entries = [
+                entry
+                for entry in subagent_entries
+                if isinstance(entry, dict) and entry.get("matcher") == prompt_matcher
+            ]
+            if not matching_entries:
+                findings.append(Finding(config_rel, f"missing planning prompt matcher {prompt_matcher}"))
+                continue
+            if not any(
+                isinstance(hook, dict) and hook.get("type") == "prompt"
+                for entry in matching_entries
+                for hook in entry.get("hooks", [])
+            ):
+                findings.append(Finding(config_rel, f"missing prompt hook for {prompt_matcher}"))
 
     codex_config = root / ".codex/config.toml"
     if codex_config.exists():

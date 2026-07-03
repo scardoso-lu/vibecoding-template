@@ -55,6 +55,15 @@ else:
   fi
 }
 
+hook_json_normalize_path() {
+  # Windows tool_input.file_path values use backslash separators (e.g.
+  # C:\Users\...\slice.md). Every path glob in these hooks is written with forward
+  # slashes, so normalize before matching or a Windows path silently fails to match
+  # a case pattern (either a false-deny of an allowed write, or worse, a false-allow
+  # of a path a guard is supposed to block).
+  printf '%s' "$1" | tr '\\' '/'
+}
+
 hook_json_pretool_deny() {
   local reason="$1"
   local py

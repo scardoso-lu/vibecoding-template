@@ -1,7 +1,7 @@
 # Rules Template
 
 Rules are **global** and never sliced. Keep every fetched guideline rule in one shared file,
-`feature-memory/rules.md`, with one block per guideline slug. Do not split rules by category
+`memory/rules.md`, with one block per guideline slug. Do not split rules by category
 (no `backend.md`/`frontend.md`/`qa.md`) and do not write a per-slice `rules.md`.
 
 Each feature links the rules it depends on from its `## Dependencies` -> `Rules:` line, which lists

@@ -14,6 +14,7 @@ INPUT="${HOOK_INPUT_JSON:-}"
 FP="$(hook_json_get "$INPUT" "tool_input.file_path")"
 AGENT="$(hook_json_get "$INPUT" "agent_type")"
 [ -z "$FP" ] && exit 0
+FP="$(hook_json_normalize_path "$FP")"
 
 deny() {
   hook_json_pretool_deny "$1"
@@ -23,8 +24,8 @@ deny() {
 # Compacted, QA-approved historical slices are review-only - never edited as active
 # handoffs (see orchestrator compaction rules in AGENTS.md).
 case "$FP" in
-  */feature-memory/history/*|feature-memory/history/*)
-    deny "'feature-memory/history/' is review-only (compacted QA-approved slices). Do not edit historical summaries." ;;
+  */memory/history/*|memory/history/*)
+    deny "'memory/history/' is review-only (compacted QA-approved slices). Do not edit historical summaries." ;;
 esac
 
 # Secrets files. .env.example is the tracked template and stays editable.
@@ -41,10 +42,10 @@ esac
 # orchestrator.
 if [ "$AGENT" = "qa" ]; then
   case "$FP" in
-    */frontend/e2e/*|frontend/e2e/*|*/feature-memory/*/slice.md|feature-memory/*/slice.md)
+    */frontend/e2e/*|frontend/e2e/*|*/memory/feature/*/slice.md|memory/feature/*/slice.md|*/memory/feature/*/qa-evidence.json|memory/feature/*/qa-evidence.json|*/agent-evidence/*/agent-evidence.json|agent-evidence/*/agent-evidence.json)
       : ;;  # allowed
     *)
-      deny "QA may write only frontend/e2e/** Playwright specs/helpers or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the orchestrator instead of editing '$FP'." ;;
+      deny "QA may write only frontend/e2e/** Playwright specs/helpers, agent-evidence/prompt-N/agent-evidence.json, memory feature QA evidence, or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the orchestrator instead of editing '$FP'." ;;
   esac
 fi
 

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import sys
 from pathlib import Path
@@ -58,7 +58,7 @@ def test_frontend_contract_rejects_brittle_e2e_and_missing_action_tests(tmp_path
 
 
 def test_qa_contract_reuses_playwright_story_validation(tmp_path: Path) -> None:
-    slice_dir = tmp_path / "feature-memory/inventory"
+    slice_dir = tmp_path / "memory/feature/inventory"
     write(
         slice_dir / "slice.md",
         """## Status
@@ -77,7 +77,7 @@ State: IN PROGRESS
 
 
 def test_test_coverage_mapping_requires_criteria_ids_and_full_mapping(tmp_path: Path) -> None:
-    slice_dir = tmp_path / "feature-memory/inventory"
+    slice_dir = tmp_path / "memory/feature/inventory"
     write(
         slice_dir / "slice.md",
         """## Status
@@ -106,7 +106,7 @@ State: IN PROGRESS
 
 
 def test_ownership_checks_agent_scope_pycache_and_do_not_touch(tmp_path: Path) -> None:
-    slice_md = tmp_path / "feature-memory/inventory/slice.md"
+    slice_md = tmp_path / "memory/feature/inventory/slice.md"
     write(
         slice_md,
         """## Do Not Touch

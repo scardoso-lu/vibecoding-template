@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # PreToolUse guard for Read / Grep / Glob / LS. Implementer/QA subagents may not
 # inspect agent infrastructure directly; they must work from orchestrator handoffs
-# and feature memory. The coordination tier (orchestrator, planner, challenger) is
-# allowed, as is the main thread (no agent_type).
+# and memory. The coordination tier is allowed, as is the main thread (no agent_type).
 set -uo pipefail
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,13 +13,14 @@ INPUT="${HOOK_INPUT_JSON:-}"
 AGENT="$(hook_json_get "$INPUT" "agent_type")"
 
 case "$AGENT" in
-  ""|orchestrator|planner|challenger)
+  ""|orchestrator|product-owner|software-architect|business-challenger|technical-challenger)
     exit 0 ;;
 esac
 
 PATH_VALUE="$(hook_json_get "$INPUT" "tool_input.file_path")"
 [ -n "$PATH_VALUE" ] || PATH_VALUE="$(hook_json_get "$INPUT" "tool_input.path")"
 [ -n "$PATH_VALUE" ] || exit 0
+PATH_VALUE="$(hook_json_normalize_path "$PATH_VALUE")"
 
 deny() {
   hook_json_pretool_deny "$1"

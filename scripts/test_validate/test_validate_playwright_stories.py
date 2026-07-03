@@ -10,7 +10,7 @@ from scripts.validate.services.playwright_stories import validate_playwright_sto
 
 
 def write_slice(tmp_path: Path, table_header: str, row_location: str) -> Path:
-    slice_dir = tmp_path / "feature-memory" / "story"
+    slice_dir = tmp_path / "memory" / "feature" / "story"
     slice_dir.mkdir(parents=True)
     (slice_dir / "slice.md").write_text(
         f"""# Slice
@@ -44,6 +44,41 @@ def test_valid_story_location_and_comment_pass(tmp_path: Path) -> None:
     )
 
     assert validate_playwright_stories(tmp_path) == []
+
+
+def test_as_an_user_story_shape_is_accepted(tmp_path: Path) -> None:
+    # "As an <role>" (vowel-initial role) is standard user-story grammar and must not
+    # be flagged as a non-standard shape alongside "As a <role>".
+    slice_dir = tmp_path / "memory" / "feature" / "story"
+    slice_dir.mkdir(parents=True)
+    (slice_dir / "slice.md").write_text(
+        """# Slice
+
+## E2E Test Stories
+| Story ID | User Story | Criteria | Test Location | Seed/Setup | Assertions | Slugs |
+|---|---|---|---|---|---|---|
+| e2e-001 | As an admin, I want to review signups, so that I can gauge demand. | AC-001 | frontend/e2e/save.spec.ts::save | fixture | visible | frontend/13-e2e-playwright |
+
+## QA Handoff
+- Playwright story tests required: yes
+- Focused Playwright command: pnpm e2e -- save
+""",
+        encoding="utf-8",
+    )
+    test_file = tmp_path / "frontend" / "e2e" / "save.spec.ts"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text(
+        "import { test } from '@playwright/test';\n"
+        "// Story: As an admin, I want to review signups, so that I can gauge demand.\n"
+        "test('save', async () => {\n"
+        "  // 1) open page\n"
+        "});\n",
+        encoding="utf-8",
+    )
+
+    findings = validate_playwright_stories(tmp_path)
+
+    assert not any("non-standard user story shape" in f.message for f in findings)
 
 
 def test_stale_spec_file_header_is_reported(tmp_path: Path) -> None:

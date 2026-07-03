@@ -14,7 +14,7 @@ def validate_qa_evidence(root: Path) -> list[Finding]:
     ]
     if (root / "docker-compose.yml").exists():
         required_commands.append("docker compose up")
-        if (root / "frontend").exists():
+        if (root / "frontend/package.json").exists():
             required_commands.append("cli.py runtime-smoke")
     for memory_root in feature_memory_roots(root):
         for slice_md in memory_root.rglob("slice.md"):
@@ -29,7 +29,7 @@ def validate_qa_evidence(root: Path) -> list[Finding]:
             rel = slice_dir.relative_to(root).as_posix()
             if (
                 (root / "docker-compose.yml").exists()
-                and (root / "frontend").exists()
+                and (root / "frontend/package.json").exists()
                 and not (slice_dir / "runtime-smoke.json").exists()
             ):
                 findings.append(
@@ -106,6 +106,19 @@ def validate_qa_evidence(root: Path) -> list[Finding]:
                                 f"QA evidence run {index} missing {key}",
                             )
                         )
+                output_path = run.get("output_path")
+                # scripts/validate/cli.py gate always writes real captured command
+                # output to output_path (see services/gate.py::run_command); an
+                # output_path that names a file which doesn't exist means this run
+                # entry was hand-authored rather than produced by the gate runner.
+                if isinstance(output_path, str) and output_path:
+                    if not (root / output_path).exists():
+                        findings.append(
+                            Finding(
+                                evidence_json.relative_to(root).as_posix(),
+                                f"QA evidence run {index} output_path does not exist: {output_path}",
+                            )
+                        )
                 if run.get("exit_code") != 0:
                     findings.append(
                         Finding(
@@ -138,7 +151,7 @@ def validate_qa_evidence(root: Path) -> list[Finding]:
                             "QA evidence missing backend test command running from ./backend",
                         )
                     )
-            if (root / "frontend").exists():
+            if (root / "frontend/package.json").exists():
                 frontend_commands = {
                     "frontend test": "--dir frontend test:coverage",
                     "frontend build": "--dir frontend build",
@@ -211,7 +224,7 @@ def validate_qa_evidence(root: Path) -> list[Finding]:
                             "QA evidence missing backend unit coverage",
                         )
                     )
-                if (root / "frontend").exists() and "frontend" not in seen_surfaces:
+                if (root / "frontend/package.json").exists() and "frontend" not in seen_surfaces:
                     findings.append(
                         Finding(
                             evidence_json.relative_to(root).as_posix(),

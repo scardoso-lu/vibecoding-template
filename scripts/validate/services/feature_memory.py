@@ -14,15 +14,19 @@ from scripts.validate.models import (
 )
 
 GLOBAL_RULES_FILE = "rules.md"
+MEMORY_DIR = "memory"
+FEATURE_DIR = "feature"
+PRD_DIR = "PRD"
+ADR_DIR = "ADR"
 
 
 def feature_memory_roots(root: Path) -> list[Path]:
-    path = root / "feature-memory"
+    path = root / MEMORY_DIR / FEATURE_DIR
     return [path] if path.exists() else []
 
 
 def global_rules_path(root: Path) -> Path:
-    return root / "feature-memory" / GLOBAL_RULES_FILE
+    return root / MEMORY_DIR / GLOBAL_RULES_FILE
 
 
 def global_rules_slugs(root: Path) -> set[str]:
@@ -33,31 +37,71 @@ def global_rules_slugs(root: Path) -> set[str]:
 
 
 def _ref_list(value: str) -> list[str]:
+    # Drop inline parenthetical annotations (e.g. "adr.md (ADR-001 foo, ADR-002 bar)")
+    # before splitting on commas, so an annotation's internal commas don't get read
+    # as extra (invalid) refs.
+    value = re.sub(r"\([^()]*\)", " ", value)
     refs: list[str] = []
     for part in re.split(r"[,\n]", value):
         token = part.strip().strip("`").strip()
-        if token and token.lower() != "none":
-            refs.append(token.replace("\\", "/"))
+        if not token:
+            continue
+        lowered = token.lower()
+        if lowered == "none" or lowered.startswith("none "):
+            continue
+        refs.append(token.replace("\\", "/"))
     return refs
 
 
-def parse_dependencies(text: str) -> tuple[list[str] | None, list[str] | None]:
-    """Return (depends_on, rules) ref lists from the ## Dependencies section.
+_DEPENDENCY_FIELD_PREFIXES = {
+    "prd": "prd:",
+    "adr": "adr:",
+    "depends_on": "depends on:",
+    "rules": "rules:",
+}
+
+
+def parse_dependencies(
+    text: str,
+) -> tuple[list[str] | None, list[str] | None, list[str] | None, list[str] | None]:
+    """Return (prd, adr, depends_on, rules) ref lists from ## Dependencies.
 
     A value of None means the corresponding line is absent entirely (a defect for
     full slices); an empty list means the line is present but resolves to `none`.
+
+    Each field's value may wrap across multiple physical lines (e.g. a long `Rules:`
+    list); continuation lines (any line that isn't itself a new `- <Field>:` bullet)
+    are appended to the current field so wrapping doesn't silently drop refs.
     """
     block = section_text(text, "Dependencies")
-    depends_on: list[str] | None = None
-    rules: list[str] | None = None
+    buffers: dict[str, str] = {key: "" for key in _DEPENDENCY_FIELD_PREFIXES}
+    seen: dict[str, bool] = {key: False for key in _DEPENDENCY_FIELD_PREFIXES}
+    current: str | None = None
     for raw in block.splitlines():
-        line = raw.strip().lstrip("-*").strip()
-        lowered = line.lower()
-        if lowered.startswith("depends on:"):
-            depends_on = _ref_list(line.split(":", 1)[1])
-        elif lowered.startswith("rules:"):
-            rules = _ref_list(line.split(":", 1)[1])
-    return depends_on, rules
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        if stripped.startswith(("-", "*")):
+            line = stripped.lstrip("-*").strip()
+            lowered = line.lower()
+            matched = None
+            for key, prefix in _DEPENDENCY_FIELD_PREFIXES.items():
+                if lowered.startswith(prefix):
+                    matched = key
+                    break
+            if matched:
+                current = matched
+                seen[matched] = True
+                buffers[matched] = line.split(":", 1)[1]
+            else:
+                current = None
+        elif current:
+            buffers[current] += ", " + stripped
+    prd = _ref_list(buffers["prd"]) if seen["prd"] else None
+    adr = _ref_list(buffers["adr"]) if seen["adr"] else None
+    depends_on = _ref_list(buffers["depends_on"]) if seen["depends_on"] else None
+    rules = _ref_list(buffers["rules"]) if seen["rules"] else None
+    return prd, adr, depends_on, rules
 
 
 def slice_state(slice_md: Path) -> str:
@@ -105,8 +149,8 @@ def validate_compaction(root: Path) -> list[Finding]:
         names = ", ".join(path.relative_to(root).as_posix() for path in due)
         findings.append(
             Finding(
-                "feature-memory",
-                f"compaction due: move the three oldest QA-approved slices to feature-memory/history/: {names}",
+                "memory/feature",
+                f"compaction due: move the three oldest QA-approved slices to memory/history/: {names}",
             )
         )
     return findings
@@ -125,7 +169,53 @@ def validate_feature_memory(root: Path) -> list[Finding]:
         "QA Handoff",
     ]
 
-    # Rules are one global file, feature-memory/rules.md, shared across every feature.
+    if (root / "feature-memory").exists():
+        findings.append(
+            Finding(
+                "feature-memory",
+                "legacy feature-memory directory is not allowed; use memory/PRD, memory/ADR, memory/feature, and memory/rules.md",
+            )
+        )
+    if (root / MEMORY_DIR).exists():
+        allowed_memory_entries = {PRD_DIR, ADR_DIR, FEATURE_DIR, "history", GLOBAL_RULES_FILE}
+        for entry in (root / MEMORY_DIR).iterdir():
+            if entry.name not in allowed_memory_entries:
+                findings.append(
+                    Finding(
+                        entry.relative_to(root).as_posix(),
+                        "memory may only contain PRD/, ADR/, feature/, history/, and rules.md",
+                    )
+                )
+    if (root / MEMORY_DIR / PRD_DIR).exists():
+        for prd in (root / MEMORY_DIR / PRD_DIR).rglob("prd.md"):
+            if len(prd.relative_to(root / MEMORY_DIR / PRD_DIR).parts) < 2:
+                findings.append(
+                    Finding(
+                        prd.relative_to(root).as_posix(),
+                        "PRDs must live under memory/PRD/<purpose>/prd.md",
+                    )
+                )
+    if (root / MEMORY_DIR / ADR_DIR).exists():
+        for adr in (root / MEMORY_DIR / ADR_DIR).rglob("adr.md"):
+            if len(adr.relative_to(root / MEMORY_DIR / ADR_DIR).parts) < 2:
+                findings.append(
+                    Finding(
+                        adr.relative_to(root).as_posix(),
+                        "ADRs must live under memory/ADR/<purpose>/adr.md",
+                    )
+                )
+    if (root / MEMORY_DIR).exists():
+        for slice_md in (root / MEMORY_DIR).rglob("slice.md"):
+            rel_parts = slice_md.relative_to(root / MEMORY_DIR).parts
+            if rel_parts[:1] not in [(FEATURE_DIR,), ("history",)]:
+                findings.append(
+                    Finding(
+                        slice_md.relative_to(root).as_posix(),
+                        "feature slices must live under memory/feature/<feature>/slice.md",
+                    )
+                )
+
+    # Rules are one global file, memory/rules.md, shared across every feature.
     # It must cite the guideline slugs it summarizes, and it is never split by category.
     rules_file = global_rules_path(root)
     if rules_file.exists() and 'Source: get_guideline("' not in read_text(rules_file):
@@ -139,7 +229,14 @@ def validate_feature_memory(root: Path) -> list[Finding]:
         findings.append(
             Finding(
                 "feature-memory/rules",
-                "rules must be a single global feature-memory/rules.md, not a category-split directory",
+                "rules must be a single global memory/rules.md, not a category-split directory",
+            )
+        )
+    if (root / MEMORY_DIR / "rules").is_dir():
+        findings.append(
+            Finding(
+                "memory/rules",
+                "rules must be a single global memory/rules.md, not a category-split directory",
             )
         )
     known_slugs = global_rules_slugs(root)
@@ -193,7 +290,7 @@ def validate_feature_memory(root: Path) -> list[Finding]:
                     findings.append(
                         Finding(
                             (slice_md.parent / forbidden).relative_to(root).as_posix(),
-                            "role-specific feature-memory directory is not allowed",
+                            "role-specific memory directory is not allowed",
                         )
                     )
             # Rules are one global file; a per-slice rules.md is a leftover from the old contract.
@@ -202,12 +299,26 @@ def validate_feature_memory(root: Path) -> list[Finding]:
                 findings.append(
                     Finding(
                         stray_rules.relative_to(root).as_posix(),
-                        "rules are global; keep them in feature-memory/rules.md and link the slugs from the slice ## Dependencies",
+                        "rules are global; keep them in memory/rules.md and link the slugs from the slice ## Dependencies",
                     )
                 )
 
             if not is_minimal:
-                depends_on, rules_refs = parse_dependencies(text)
+                prd_refs, adr_refs, depends_on, rules_refs = parse_dependencies(text)
+                if prd_refs is None:
+                    findings.append(
+                        Finding(
+                            rel,
+                            "## Dependencies must list a `PRD:` line under memory/PRD/<purpose>/prd.md",
+                        )
+                    )
+                if adr_refs is None:
+                    findings.append(
+                        Finding(
+                            rel,
+                            "## Dependencies must list an `ADR:` line under memory/ADR/<purpose>/adr.md",
+                        )
+                    )
                 if depends_on is None:
                     findings.append(
                         Finding(
@@ -219,15 +330,35 @@ def validate_feature_memory(root: Path) -> list[Finding]:
                     findings.append(
                         Finding(
                             rel,
-                            "## Dependencies must list a `Rules:` line of guideline slugs from feature-memory/rules.md (or none)",
+                            "## Dependencies must list a `Rules:` line of guideline slugs from memory/rules.md (or none)",
                         )
                     )
+                for ref in prd_refs or []:
+                    if not ref.startswith("memory/PRD/") or not ref.endswith("/prd.md"):
+                        findings.append(
+                            Finding(
+                                rel,
+                                f"PRD dependency must use memory/PRD/<purpose>/prd.md: {ref}",
+                            )
+                        )
+                    elif not (root / ref).exists():
+                        findings.append(Finding(ref, "linked PRD file not found"))
+                for ref in adr_refs or []:
+                    if not ref.startswith("memory/ADR/") or not ref.endswith("/adr.md"):
+                        findings.append(
+                            Finding(
+                                rel,
+                                f"ADR dependency must use memory/ADR/<purpose>/adr.md: {ref}",
+                            )
+                        )
+                    elif not (root / ref).exists():
+                        findings.append(Finding(ref, "linked ADR file not found"))
                 for slug in rules_refs or []:
                     if slug not in known_slugs:
                         findings.append(
                             Finding(
                                 rel,
-                                f"referenced rule slug not found in feature-memory/rules.md: {slug}",
+                                f"referenced rule slug not found in memory/rules.md: {slug}",
                             )
                         )
                 for ref in depends_on or []:

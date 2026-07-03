@@ -81,7 +81,54 @@
         ]
       }
     ],
+    "SubagentStart": [
+      {
+        "matcher": "backend-developer|frontend-developer",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Developer handoff gate for vibecoding-template. Before backend-developer or frontend-developer starts, review the orchestrator handoff against AGENTS.md. Block if it lacks a concrete memory slice path, linked PRD and ADR context, linked memory/rules.md slugs, an Agent Plan row for this agent, Do Not Touch scope, acceptance criteria, tests/evidence expectations, provenance, or explicit files/areas to read. Block if the agent would need to browse MCP, infer architecture rules, scan broad repo directories, or guess missing product/technical decisions. Return no output when the handoff is usable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific missing handoff context and whether product-owner or software-architect must fix it>\"}.",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
     "SubagentStop": [
+      {
+        "matcher": "product-owner|business-challenger",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Business planning gate for vibecoding-template. Review the just-finished product-owner/business-challenger output against AGENTS.md. Block if broad work skipped selectable PRD options, PRDs are not separate memory/PRD/<purpose>/prd.md artifacts, PRDs are mixed into feature slice files, PRDs lack problem/opportunity, target users/use cases, current journey or landscape when useful, elevator pitch, 2-3 measurable outcomes, P0/P1/P2 MVP requirements by journey/use case, non-goals, risks/dependencies, open questions, parent/component PRD links for large components, or agent-evidence/prompt-N records describing how the agent interpreted the user prompt with the prompt hash and propagated x_request_id. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific PRD problem and required product-owner fix or user question>\"}.",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "software-architect|technical-challenger",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Architecture planning gate for vibecoding-template. Review the just-finished software-architect/technical-challenger output against AGENTS.md. Block if accepted PRDs were not converted into separate memory/ADR/<purpose>/adr.md ADRs before feature slices, ADRs lack context/options/decision/consequences/components/enabled slices, memory slices lack PRD/ADR/Rules links, guideline rules are not in the single global memory/rules.md with Source: get_guideline(\"<slug>\"), large components are not split into useful component ADRs/slices, Agent Plan rows omit linked PRD/ADR context for downstream grep/read handoffs, or agent-evidence/prompt-N records do not explain how the prompt was interpreted with the prompt hash and propagated x_request_id. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific ADR/slice provenance problem and required software-architect fix or user question>\"}.",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "qa",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-qa.sh",
+            "statusMessage": "Running QA gate"
+          },
+          {
+            "type": "prompt",
+            "prompt": "QA judgment gate for vibecoding-template. Review the just-finished QA output against AGENTS.md. Block if QA approved without a clear slice verdict, omitted user-facing Playwright story coverage when required, failed to reference focused Playwright output for changed user behavior, ignored qa-evidence.json, agent-evidence/prompt-N evidence, or deterministic gate evidence, approved despite missing linked PRD/ADR/rules context, wrote app fixes instead of returning BLOCKED for implementers, or returned vague findings that cannot be routed by the orchestrator. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific QA judgment problem and required QA fix or routed owner question>\"}.",
+            "timeout": 120
+          }
+        ]
+      },
       {
         "matcher": "backend-developer|frontend-developer",
         "hooks": [
