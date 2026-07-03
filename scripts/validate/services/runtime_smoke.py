@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
+"""Runtime smoke service: GET a URL and assert required/forbidden body text."""
+
 from __future__ import annotations
 
-import argparse
 import json
 import sys
 from pathlib import Path
@@ -23,38 +23,46 @@ def load_config(path: Path) -> dict[str, object]:
     return data
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=Path)
-    parser.add_argument("--url")
-    parser.add_argument("--must-contain", action="append", default=[])
-    parser.add_argument("--forbid", action="append", default=[])
-    args = parser.parse_args()
+def run_smoke(
+    config_path: Path | None = None,
+    url: str | None = None,
+    must_contain: list[str] | None = None,
+    forbid: list[str] | None = None,
+) -> int:
+    must_contain = must_contain or []
+    forbid = forbid or []
 
     config: dict[str, object] = {}
-    if args.config:
+    if config_path:
         try:
-            config = load_config(args.config)
+            config = load_config(config_path)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             print(f"invalid runtime smoke config: {exc}", file=sys.stderr)
             return 1
 
-    url = args.url or config.get("url")
+    url = url or config.get("url")
     if not isinstance(url, str) or not url:
         print("runtime smoke requires --url or config.url", file=sys.stderr)
         return 1
 
     configured_required = config.get("must_contain", [])
-    if not isinstance(configured_required, list) or not all(isinstance(item, str) for item in configured_required):
-        print("runtime smoke config must_contain must be a list of strings", file=sys.stderr)
+    if not isinstance(configured_required, list) or not all(
+        isinstance(item, str) for item in configured_required
+    ):
+        print(
+            "runtime smoke config must_contain must be a list of strings",
+            file=sys.stderr,
+        )
         return 1
     configured_forbidden = config.get("forbid", [])
-    if not isinstance(configured_forbidden, list) or not all(isinstance(item, str) for item in configured_forbidden):
+    if not isinstance(configured_forbidden, list) or not all(
+        isinstance(item, str) for item in configured_forbidden
+    ):
         print("runtime smoke config forbid must be a list of strings", file=sys.stderr)
         return 1
 
-    required_text = [*configured_required, *args.must_contain]
-    forbidden_text = [*DEFAULT_FORBIDDEN_TEXT, *configured_forbidden, *args.forbid]
+    required_text = [*configured_required, *must_contain]
+    forbidden_text = [*DEFAULT_FORBIDDEN_TEXT, *configured_forbidden, *forbid]
 
     try:
         request = Request(url, headers={"User-Agent": "runtime-smoke/1.0"})
@@ -81,6 +89,3 @@ def main() -> int:
             failed = True
     return 1 if failed else 0
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())

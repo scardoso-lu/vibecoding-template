@@ -1,11 +1,23 @@
+"""Models layer: the Finding value object and pure parsing/domain helpers.
+
+No disk or git access lives here. Disk/git reads belong to `repository`; those
+functions are re-exported so services have a single import surface for data
+access plus the pure helpers that interpret already-loaded text.
+"""
+
 from __future__ import annotations
 
-import argparse
-import json
 import re
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Callable, Iterable
+
+# Re-export the repository's I/O so services import data access + models together.
+from scripts.validate.repository import (  # noqa: F401
+    git_changed_files,
+    iter_text_files,
+    load_json,
+    read_text,
+    repo_root_from,
+)
 
 
 @dataclass
@@ -17,34 +29,6 @@ class Finding:
     def format(self) -> str:
         suffix = f":{self.line}" if self.line is not None else ""
         return f"{self.path}{suffix}: {self.message}"
-
-
-def repo_root_from(start: Path | None = None) -> Path:
-    current = (start or Path.cwd()).resolve()
-    for path in (current, *current.parents):
-        if (path / ".git").exists() or (path / "AGENTS.md").exists():
-            return path
-    return current
-
-
-def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
-
-
-def iter_text_files(root: Path, paths: Iterable[str]) -> Iterable[Path]:
-    for rel in paths:
-        path = root / rel
-        if path.is_file():
-            yield path
-        elif path.is_dir():
-            yield from (
-                item
-                for item in path.rglob("*")
-                if item.is_file()
-                and item.suffix in {".md", ".toml", ".json", ".sh", ".py", ".txt"}
-                and ".venv" not in item.parts
-                and "node_modules" not in item.parts
-            )
 
 
 def line_number(text: str, index: int) -> int:
@@ -156,40 +140,3 @@ def hook_matchers(config: object) -> list[str]:
             if isinstance(entry, dict) and isinstance(entry.get("matcher"), str):
                 matchers.append(entry["matcher"])
     return matchers
-
-
-def cli_main(
-    validator: Callable[[Path], list[Finding]] | None = None,
-    *,
-    name: str | None = None,
-    validators: dict[str, Callable[[Path], list[Finding]]] | None = None,
-) -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--root", type=Path, default=repo_root_from())
-    parser.add_argument("--json", action="store_true", dest="json_output")
-    args = parser.parse_args()
-    root = args.root.resolve()
-    if validator is None:
-        if validators is None:
-            raise ValueError("validators are required when validator is None")
-        results = {
-            validator_name: fn(root) for validator_name, fn in validators.items()
-        }
-    else:
-        results = {name or "validator": validator(root)}
-    if args.json_output:
-        print(
-            json.dumps(
-                {k: [finding.__dict__ for finding in v] for k, v in results.items()},
-                indent=2,
-            )
-        )
-    else:
-        for validator_name, findings in results.items():
-            if findings:
-                print(f"{validator_name}: {len(findings)} finding(s)")
-                for finding in findings:
-                    print(f"  {finding.format()}")
-            else:
-                print(f"{validator_name}: ok")
-    return 1 if any(results.values()) else 0

@@ -1,12 +1,12 @@
 # Template Routing
 
-The orchestrator reads this file first in Plan Mode. Load only the category templates needed for
+The planner reads this file first in Plan Mode. Load only the category templates needed for
 the current slice. Do not load every template by default.
 
 | Slice need | Template file |
 |---|---|
-| Every non-minimal feature | `.codex/templates/categories/base-slice.md` |
-| MCP rule bundle | `.codex/templates/categories/rules.md` |
+| Every non-minimal business feature | `.codex/templates/categories/base-slice.md` |
+| Global rules file (`feature-memory/rules.md`) | `.codex/templates/categories/rules.md` |
 | Repo layout, root tooling, bootstrap, app roots | `.codex/templates/categories/foundation.md` |
 | FastAPI/domain/API/migrations/backend tests | `.codex/templates/categories/backend.md` |
 | Next.js routes/components/actions/frontend tests | `.codex/templates/categories/frontend.md` |
@@ -16,7 +16,11 @@ the current slice. Do not load every template by default.
 | Docs/config/copy/one-file non-behavior change | `.codex/templates/template-minimal.md` |
 
 Rules:
-- Always write one `slice.md` and one `rules.md` for non-minimal feature work.
+- Write one `slice.md` per business feature under `feature-memory/<feature>/`. Split the request
+  into features and link them through each slice's `## Dependencies`.
+- Keep rules global and unsliced: write every rule in the single `feature-memory/rules.md`, one
+  block per guideline slug, and link the slugs a feature needs from that feature's `## Dependencies`
+  -> `Rules:` line. Do not split rules by category and do not write a per-slice `rules.md`.
 - Never create role-specific markdown files or `00-shared/`.
-- The selected category templates provide sections to include in `slice.md`; they are not separate
-  output files.
+- The selected category templates provide sections to include in `slice.md`; except for the global
+  `feature-memory/rules.md`, they are not separate output files.

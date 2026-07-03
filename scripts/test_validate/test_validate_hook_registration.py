@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.hook_registration import default_runner, validate_hook_registration
+from scripts.validate.services.hook_registration import default_runner, validate_hook_registration
 
 
 def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> None:
@@ -21,7 +21,6 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
             "verify-subagent.sh",
             "auto-format.sh",
             "format-changed.sh",
-            "compaction-watch.sh",
             "workflow-watch.sh",
             "notify-stop.sh",
         ]:
@@ -33,7 +32,6 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
         "verify-subagent.sh",
         "auto-format.sh",
         "format-changed.sh",
-        "compaction-watch.sh",
         "workflow-watch.sh",
         "notify-stop.sh",
     ]
@@ -92,7 +90,6 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
                                             "verify-subagent.sh",
                                             "auto-format.sh",
                                             "format-changed.sh",
-                                            "compaction-watch.sh",
                                             "workflow-watch.sh",
                                             "notify-stop.sh",
                                         ]

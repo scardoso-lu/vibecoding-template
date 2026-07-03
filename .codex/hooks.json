@@ -113,11 +113,6 @@
           },
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/compaction-watch.sh",
-            "statusMessage": "Checking feature-memory compaction"
-          },
-          {
-            "type": "command",
             "command": "python .codex/hooks/run-hook.py .codex/hooks/workflow-watch.sh",
             "statusMessage": "Running workflow validators"
           },

@@ -7,16 +7,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.app_contracts import (
+from scripts.validate.services.app_contracts import (
     validate_database_policy,
     validate_migrations,
     validate_project_layout,
 )
-from scripts.validate.harness_quality import (
+from scripts.validate.services.harness_quality import (
     validate_qa_evidence,
     validate_tooling,
 )
-from scripts.validate.playwright_stories import validate_e2e_coverage
+from scripts.validate.services.playwright_stories import validate_e2e_coverage
 
 
 def write(path: Path, text: str = "") -> None:
@@ -199,7 +199,7 @@ Fullstack.
         json.dumps(
             {
                 "generated_by": {
-                    "command": "python scripts\\validate\\gate.py --root . --slice feature-memory\\inventory\\slice.md",
+                    "command": "python scripts\\validate\\cli.py gate --root . --slice feature-memory\\inventory\\slice.md",
                     "cwd": ".",
                 },
                 "runs": [
@@ -223,7 +223,7 @@ Fullstack.
     assert "validate-tools project-layout ." in messages
     assert "docker compose up" in messages
     assert "runtime-smoke.json" in messages
-    assert "runtime-smoke.py" in messages
+    assert "runtime-smoke" in messages
     assert "frontend test command" in messages
     assert "unit_coverage" in messages
 
@@ -276,7 +276,7 @@ Fullstack.
         json.dumps(
             {
                 "generated_by": {
-                    "command": "python scripts\\validate\\gate.py --root . --slice feature-memory\\inventory\\slice.md",
+                    "command": "python scripts\\validate\\cli.py gate --root . --slice feature-memory\\inventory\\slice.md",
                     "cwd": ".",
                 },
                 "runs": [
@@ -305,7 +305,7 @@ Fullstack.
                         "output_path": "feature-memory/inventory/evidence/docker-compose-up.txt",
                     },
                     {
-                        "command": "python scripts\\validate\\runtime-smoke.py --config feature-memory\\inventory\\runtime-smoke.json",
+                        "command": "python scripts\\validate\\cli.py runtime-smoke --config feature-memory\\inventory\\runtime-smoke.json",
                         "cwd": ".",
                         "exit_code": 0,
                         "started_at": "2026-06-29T00:00:03Z",

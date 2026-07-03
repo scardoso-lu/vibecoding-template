@@ -26,36 +26,41 @@ history, rewrites template references in `README.md`, and pushes the initial com
 
 ## Workflow Checks
 
-These scripts keep mechanical agent-workflow rules out of long prompts.
-`scripts/validate/` contains both the executable entrypoints (hyphenated filenames, e.g.
-`agent-guidance.py`) and the importable validator implementations (underscored filenames, e.g.
-`agent_guidance.py`) they call — hyphens are not valid in Python import statements, so the two
-names coexist in the same directory rather than in a separate package.
+These scripts keep mechanical agent-workflow rules out of long prompts. `scripts/validate/` is a
+small layered package with a single entrypoint:
+
+- `cli.py` — **view/entry**: the one CLI. `python scripts/validate/cli.py <check> [--root .] [--json]`.
+- `controller.py` — **controller**: the check registry and run orchestration (`all`, `doctor`).
+- `services/` — **service**: one module per check domain; each returns `Finding`s or an exit code.
+- `repository.py` — **repository**: all filesystem/git/config reads.
+- `models.py` — the `Finding` value object and pure parsing helpers.
+
+There are no per-check wrapper files; every check is a subcommand of `cli.py`.
 
 | Task | Command |
 |---|---|
-| Full workflow doctor | `python scripts/validate/doctor.py --root .` |
-| Run all workflow validators | `python scripts/validate/workflow.py --root .` |
-| Scan root/agent/template guidance | `python scripts/validate/agent-guidance.py --root .` |
-| Validate feature memories | `python scripts/validate/feature-memory.py --root .` |
-| Check feature-memory compaction threshold | `python scripts/validate/compaction.py --root .` |
-| Validate Playwright story-test contracts | `python scripts/validate/playwright-stories.py --root .` |
-| Validate hook registration and smoke paths | `python scripts/validate/hook-registration.py --root .` |
-| Validate stack-local project layout | `python scripts/validate/project-layout.py --root .` |
-| Validate backend database policy | `python scripts/validate/database.py --root .` |
-| Validate Alembic migration bodies | `python scripts/validate/migrations.py --root .` |
-| Validate backend mechanical contracts | `python scripts/validate/backend.py --root .` |
-| Validate frontend mechanical contracts | `python scripts/validate/frontend.py --root .` |
-| Validate QA Playwright workflow contracts | `python scripts/validate/qa.py --root .` |
-| Validate acceptance-criteria test mapping | `python scripts/validate/test-coverage.py --root .` |
-| Validate initial-prompt E2E coverage mapping | `python scripts/validate/e2e-coverage.py --root .` |
-| Validate deterministic QA evidence | `python scripts/validate/qa-evidence.py --root .` |
-| Validate hook/tool command shapes | `python scripts/validate/tooling.py --root .` |
-| Validate changed-file ownership and Do Not Touch | `python scripts/validate/ownership.py --root . --agent <agent> --slice <slice.md>` |
-| Execute deterministic gate and write QA evidence | `python scripts/validate/gate.py --root . --slice feature-memory/<slice>/slice.md` |
-| Summarize Playwright failure output | `python scripts/validate/playwright-output.py <output-file>` |
+| Full workflow doctor | `python scripts/validate/cli.py doctor --root .` |
+| Run all workflow validators | `python scripts/validate/cli.py all --root .` |
+| Scan root/agent/template guidance | `python scripts/validate/cli.py agent-guidance --root .` |
+| Validate feature memories | `python scripts/validate/cli.py feature-memory --root .` |
+| Check feature-memory compaction threshold | `python scripts/validate/cli.py compaction --root .` |
+| Validate Playwright story-test contracts | `python scripts/validate/cli.py playwright-stories --root .` |
+| Validate hook registration and smoke paths | `python scripts/validate/cli.py hook-registration --root .` |
+| Validate stack-local project layout | `python scripts/validate/cli.py project-layout --root .` |
+| Validate backend database policy | `python scripts/validate/cli.py database --root .` |
+| Validate Alembic migration bodies | `python scripts/validate/cli.py migrations --root .` |
+| Validate backend mechanical contracts | `python scripts/validate/cli.py backend --root .` |
+| Validate frontend mechanical contracts | `python scripts/validate/cli.py frontend --root .` |
+| Validate QA Playwright workflow contracts | `python scripts/validate/cli.py qa --root .` |
+| Validate acceptance-criteria test mapping | `python scripts/validate/cli.py test-coverage --root .` |
+| Validate initial-prompt E2E coverage mapping | `python scripts/validate/cli.py e2e-coverage --root .` |
+| Validate deterministic QA evidence | `python scripts/validate/cli.py qa-evidence --root .` |
+| Validate hook/tool command shapes | `python scripts/validate/cli.py tooling --root .` |
+| Validate changed-file ownership and Do Not Touch | `python scripts/validate/cli.py ownership --root . --agent <agent> --slice <slice.md>` |
+| Execute deterministic gate and write QA evidence | `python scripts/validate/cli.py gate --root . --slice feature-memory/<slice>/slice.md` |
+| Summarize Playwright failure output | `python scripts/validate/cli.py playwright-output --file <output-file>` |
 
-Most validators accept `--root <path>` and `--json`. `doctor.py` also checks hook JSON, hook
+Most validators accept `--root <path>` and `--json`. `cli.py doctor` also checks hook JSON, hook
 launcher syntax, shell hook syntax, and registered smoke paths. The Stop and SubagentStop hooks run
 the applicable validators automatically; run these commands manually only when debugging or before
 committing workflow changes.

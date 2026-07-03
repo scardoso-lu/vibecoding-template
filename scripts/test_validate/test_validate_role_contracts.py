@@ -6,11 +6,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from scripts.validate.app_contracts import validate_backend_contract, validate_frontend_contract
-from scripts.validate.feature_memory import validate_test_coverage_mapping
-from scripts.validate.ownership import validate_ownership
-from scripts.validate.playwright_output import summarize_playwright_output
-from scripts.validate.playwright_stories import validate_qa_contract
+from scripts.validate.services.app_contracts import validate_backend_contract, validate_frontend_contract
+from scripts.validate.services.feature_memory import validate_test_coverage_mapping
+from scripts.validate.services.ownership import validate_ownership
+from scripts.validate.services.playwright_output import summarize_playwright_output
+from scripts.validate.services.playwright_stories import validate_qa_contract
 
 
 def write(path: Path, text: str = "") -> None:
