@@ -13,6 +13,7 @@ from typing import Callable, Iterable
 
 from scripts.validate.models import Finding
 from scripts.validate.services import (
+    agent_evidence,
     agent_guidance,
     app_contracts,
     feature_memory,
@@ -26,7 +27,8 @@ from scripts.validate.services import (
 # check name -> validator(root) -> list[Finding]
 VALIDATORS: dict[str, Callable[[Path], list[Finding]]] = {
     "agent-guidance": agent_guidance.validate_agent_guidance,
-    "feature-memory": feature_memory.validate_feature_memory,
+    "agent-evidence": agent_evidence.validate_agent_evidence,
+    "memory": feature_memory.validate_feature_memory,
     "playwright-stories": playwright_stories.validate_playwright_stories,
     "test-coverage": feature_memory.validate_test_coverage_mapping,
     "e2e-coverage": playwright_stories.validate_e2e_coverage,

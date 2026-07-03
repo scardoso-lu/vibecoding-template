@@ -92,7 +92,7 @@ def validate_ownership(
                     )
                 )
     elif agent == "qa":
-        allowed_prefixes = ("frontend/e2e/", "feature-memory/")
+        allowed_prefixes = ("frontend/e2e/", "memory/feature/")
         for changed in files:
             if changed and not changed.startswith(allowed_prefixes):
                 findings.append(

@@ -19,6 +19,7 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
             "guard-infra-read.sh",
             "guard-mcp.sh",
             "verify-subagent.sh",
+            "verify-qa.sh",
             "auto-format.sh",
             "format-changed.sh",
             "workflow-watch.sh",
@@ -30,6 +31,7 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
         "guard-edits.sh",
         "guard-infra-read.sh",
         "verify-subagent.sh",
+        "verify-qa.sh",
         "auto-format.sh",
         "format-changed.sh",
         "workflow-watch.sh",
@@ -55,7 +57,25 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
                             "hooks": claude_pretool_hooks,
                         }
                     ],
+                    "SubagentStart": [
+                        {
+                            "matcher": "backend-developer|frontend-developer",
+                            "hooks": [{"type": "prompt", "prompt": "developer handoff gate"}],
+                        }
+                    ],
                     "SubagentStop": [
+                        {
+                            "matcher": "product-owner|business-challenger",
+                            "hooks": [{"type": "prompt", "prompt": "business planning gate"}],
+                        },
+                        {
+                            "matcher": "software-architect|technical-challenger",
+                            "hooks": [{"type": "prompt", "prompt": "architecture planning gate"}],
+                        },
+                        {
+                            "matcher": "qa",
+                            "hooks": [{"type": "prompt", "prompt": "qa judgment gate"}],
+                        },
                         {
                             "matcher": "backend-developer|frontend-developer",
                             "hooks": [
@@ -88,6 +108,7 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
                                             "guard-infra-read.sh",
                                             "guard-mcp.sh",
                                             "verify-subagent.sh",
+                                            "verify-qa.sh",
                                             "auto-format.sh",
                                             "format-changed.sh",
                                             "workflow-watch.sh",
@@ -98,7 +119,27 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
                             ],
                         }
                     ],
-                    "SubagentStop": [{"matcher": "backend-developer|frontend-developer", "hooks": []}],
+                    "SubagentStart": [
+                        {
+                            "matcher": "backend-developer|frontend-developer",
+                            "hooks": [{"type": "prompt", "prompt": "developer handoff gate"}],
+                        }
+                    ],
+                    "SubagentStop": [
+                        {
+                            "matcher": "product-owner|business-challenger",
+                            "hooks": [{"type": "prompt", "prompt": "business planning gate"}],
+                        },
+                        {
+                            "matcher": "software-architect|technical-challenger",
+                            "hooks": [{"type": "prompt", "prompt": "architecture planning gate"}],
+                        },
+                        {
+                            "matcher": "qa",
+                            "hooks": [{"type": "prompt", "prompt": "qa judgment gate"}],
+                        },
+                        {"matcher": "backend-developer|frontend-developer", "hooks": []},
+                    ],
                 }
             }
         ),
@@ -122,6 +163,38 @@ def test_missing_hook_registration_is_reported(tmp_path: Path) -> None:
     findings = validate_hook_registration(tmp_path, smoke=False)
 
     assert any("missing hook registration for guard-mcp.sh" in f.message for f in findings)
+
+
+def test_missing_planning_prompt_hook_is_reported(tmp_path: Path) -> None:
+    write_hook_fixture(tmp_path)
+    codex = json.loads((tmp_path / ".codex" / "hooks.json").read_text())
+    codex["hooks"]["SubagentStop"] = [
+        entry
+        for entry in codex["hooks"]["SubagentStop"]
+        if entry.get("matcher") != "software-architect|technical-challenger"
+    ]
+    (tmp_path / ".codex" / "hooks.json").write_text(json.dumps(codex), encoding="utf-8")
+
+    findings = validate_hook_registration(tmp_path, smoke=False)
+
+    assert any(
+        "missing planning prompt matcher software-architect|technical-challenger" in f.message
+        for f in findings
+    )
+
+
+def test_missing_start_prompt_hook_is_reported(tmp_path: Path) -> None:
+    write_hook_fixture(tmp_path)
+    claude = json.loads((tmp_path / ".claude" / "settings.json").read_text())
+    claude["hooks"].pop("SubagentStart")
+    (tmp_path / ".claude" / "settings.json").write_text(json.dumps(claude), encoding="utf-8")
+
+    findings = validate_hook_registration(tmp_path, smoke=False)
+
+    assert any(
+        "missing start prompt matcher backend-developer|frontend-developer" in f.message
+        for f in findings
+    )
 
 
 def test_default_smoke_runner_does_not_leak_hook_input_env(monkeypatch) -> None:

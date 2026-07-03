@@ -22,11 +22,17 @@ STALE_TERMS: dict[str, str] = {
 
 def normalize_runtime_text(text: str) -> str:
     replacements = {
-        "claude": "runtime",
-        "codex": "runtime",
+        "claude code (claude.ai/code)": "runtime",
+        "claude code (runtime)": "runtime",
+        "agents.md": "runtime.md",
+        "claude.md": "runtime.md",
+        "hooks.json` and enabled by `.codex/config.toml": "settings.json",
+        "hooks.json` and enabled by `.runtime/config.toml": "settings.json",
         ".claude": ".runtime",
         ".codex": ".runtime",
         "claude.ai/code": "runtime",
+        "claude": "runtime",
+        "codex": "runtime",
     }
     normalized = text.lower()
     for source, target in replacements.items():
@@ -100,8 +106,19 @@ def validate_agent_guidance(root: Path) -> list[Finding]:
             ".codex/agents/frontend-developer.toml",
         ),
         (".claude/agents/orchestrator.md", ".codex/agents/orchestrator.toml"),
-        (".claude/agents/planner.md", ".codex/agents/planner.toml"),
-        (".claude/agents/challenger.md", ".codex/agents/challenger.toml"),
+        (".claude/agents/product-owner.md", ".codex/agents/product-owner.toml"),
+        (
+            ".claude/agents/software-architect.md",
+            ".codex/agents/software-architect.toml",
+        ),
+        (
+            ".claude/agents/business-challenger.md",
+            ".codex/agents/business-challenger.toml",
+        ),
+        (
+            ".claude/agents/technical-challenger.md",
+            ".codex/agents/technical-challenger.toml",
+        ),
         (".claude/agents/qa.md", ".codex/agents/qa.toml"),
         (".claude/guideline-routing.md", ".codex/guideline-routing.md"),
         (
@@ -112,6 +129,8 @@ def validate_agent_guidance(root: Path) -> list[Finding]:
             ".claude/templates/template-minimal.md",
             ".codex/templates/template-minimal.md",
         ),
+        (".claude/templates/product-prd.md", ".codex/templates/product-prd.md"),
+        (".claude/templates/adr.md", ".codex/templates/adr.md"),
         (".claude/hooks/README.md", ".codex/hooks/README.md"),
     ]
     for left, right in mirror_pairs:
@@ -137,14 +156,22 @@ def validate_agent_guidance(root: Path) -> list[Finding]:
     for rel in [
         ".claude/agents/orchestrator.md",
         ".codex/agents/orchestrator.toml",
-        ".claude/agents/planner.md",
-        ".codex/agents/planner.toml",
-        ".claude/agents/challenger.md",
-        ".codex/agents/challenger.toml",
+        ".claude/agents/product-owner.md",
+        ".codex/agents/product-owner.toml",
+        ".claude/agents/software-architect.md",
+        ".codex/agents/software-architect.toml",
+        ".claude/agents/business-challenger.md",
+        ".codex/agents/business-challenger.toml",
+        ".claude/agents/technical-challenger.md",
+        ".codex/agents/technical-challenger.toml",
         ".claude/agents/qa.md",
         ".codex/agents/qa.toml",
         ".claude/templates/categories/e2e.md",
         ".codex/templates/categories/e2e.md",
+        ".claude/templates/product-prd.md",
+        ".codex/templates/product-prd.md",
+        ".claude/templates/adr.md",
+        ".codex/templates/adr.md",
     ]:
         if not (root / rel).exists():
             findings.append(Finding(rel, "missing mirrored workflow artifact"))

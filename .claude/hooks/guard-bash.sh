@@ -47,10 +47,9 @@ if printf '%s' "$CMD" | grep -Eq 'git[[:space:]]+push' \
 fi
 
 # Implementer/QA subagents may not read agent infrastructure through shell commands
-# either. Main thread has no agent_type; the coordination tier (orchestrator, planner,
-# challenger) is allowed.
+# either. Main thread has no agent_type; the coordination tier is allowed.
 case "$AGENT" in
-  ""|orchestrator|planner|challenger)
+  ""|orchestrator|product-owner|software-architect|business-challenger|technical-challenger)
     : ;;
   *)
     if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \

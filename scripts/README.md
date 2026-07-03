@@ -42,8 +42,10 @@ There are no per-check wrapper files; every check is a subcommand of `cli.py`.
 | Full workflow doctor | `python scripts/validate/cli.py doctor --root .` |
 | Run all workflow validators | `python scripts/validate/cli.py all --root .` |
 | Scan root/agent/template guidance | `python scripts/validate/cli.py agent-guidance --root .` |
-| Validate feature memories | `python scripts/validate/cli.py feature-memory --root .` |
-| Check feature-memory compaction threshold | `python scripts/validate/cli.py compaction --root .` |
+| Validate memory contracts | `python scripts/validate/cli.py memory --root .` |
+| Validate agent prompt interpretation evidence | `python scripts/validate/cli.py agent-evidence --root .` |
+| Generate agent evidence hashes | `python scripts/validate/cli.py agent-evidence-hash --root . --file agent-evidence/prompt-N/agent-evidence.json --write` |
+| Check memory compaction threshold | `python scripts/validate/cli.py compaction --root .` |
 | Validate Playwright story-test contracts | `python scripts/validate/cli.py playwright-stories --root .` |
 | Validate hook registration and smoke paths | `python scripts/validate/cli.py hook-registration --root .` |
 | Validate stack-local project layout | `python scripts/validate/cli.py project-layout --root .` |
@@ -57,7 +59,7 @@ There are no per-check wrapper files; every check is a subcommand of `cli.py`.
 | Validate deterministic QA evidence | `python scripts/validate/cli.py qa-evidence --root .` |
 | Validate hook/tool command shapes | `python scripts/validate/cli.py tooling --root .` |
 | Validate changed-file ownership and Do Not Touch | `python scripts/validate/cli.py ownership --root . --agent <agent> --slice <slice.md>` |
-| Execute deterministic gate and write QA evidence | `python scripts/validate/cli.py gate --root . --slice feature-memory/<slice>/slice.md` |
+| Execute deterministic gate and write QA evidence | `python scripts/validate/cli.py gate --root . --slice memory/feature/<slice>/slice.md` |
 | Summarize Playwright failure output | `python scripts/validate/cli.py playwright-output --file <output-file>` |
 
 Most validators accept `--root <path>` and `--json`. `cli.py doctor` also checks hook JSON, hook

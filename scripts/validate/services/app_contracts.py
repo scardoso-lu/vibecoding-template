@@ -17,10 +17,27 @@ def _file_contains(path: Path, patterns: Sequence[str]) -> bool:
     return all(pattern in text for pattern in patterns)
 
 
+def _has_frontend_app(root: Path) -> bool:
+    frontend_root = root / "frontend"
+    return any(
+        (frontend_root / rel).exists()
+        for rel in [
+            "package.json",
+            "src/app",
+            "src/components",
+            "src/services",
+            "src/actions",
+            "app",
+            "pages",
+        ]
+    )
+
+
 def validate_project_layout(root: Path) -> list[Finding]:
     findings: list[Finding] = []
     backend_root = root / "backend"
     frontend_root = root / "frontend"
+    frontend_app = _has_frontend_app(root)
     compose = root / "docker-compose.yml"
     if backend_root.exists():
         for rel in [
@@ -35,7 +52,7 @@ def validate_project_layout(root: Path) -> list[Finding]:
         dockerfile_test = root / "backend/Dockerfile.test"
         if dockerfile_test.exists() and "COPY test" not in read_text(dockerfile_test):
             findings.append(Finding("backend/Dockerfile.test", "backend test image must copy test/ before running pytest"))
-    if frontend_root.exists():
+    if frontend_app:
         if (frontend_root / "app").exists() and (frontend_root / "src/app").exists():
             findings.append(
                 Finding(
@@ -79,13 +96,13 @@ def validate_project_layout(root: Path) -> list[Finding]:
     for rel in ["pnpm-lock.yaml", "pnpm-workspace.yaml"]:
         if (root / rel).exists():
             findings.append(Finding(rel, "stack artifact must live under frontend/, not repo root"))
-    if backend_root.exists() and frontend_root.exists() and not compose.exists():
+    if backend_root.exists() and frontend_app and not compose.exists():
         findings.append(Finding("docker-compose.yml", "fullstack app needs a compose runtime path"))
     if compose.exists():
         text = read_text(compose)
         if backend_root.exists() and "./backend/.env" not in text:
             findings.append(Finding("docker-compose.yml", "backend service must use stack-local env file ./backend/.env"))
-        if frontend_root.exists() and "./frontend/.env" not in text:
+        if frontend_app and "./frontend/.env" not in text:
             findings.append(Finding("docker-compose.yml", "frontend service must use stack-local env file ./frontend/.env"))
     return findings
 
@@ -239,15 +256,16 @@ def validate_frontend_contract(root: Path) -> list[Finding]:
     frontend_root = root / "frontend"
     if not frontend_root.exists():
         return findings
+    frontend_app = _has_frontend_app(root)
 
-    if (frontend_root / "app").exists() and (frontend_root / "src/app").exists():
+    if frontend_app and (frontend_root / "app").exists() and (frontend_root / "src/app").exists():
         findings.append(
             Finding(
                 "frontend/app",
                 "duplicate Next App Router roots; use frontend/src/app and remove frontend/app",
             )
         )
-    if (frontend_root / "pages").exists() and (frontend_root / "src/app").exists():
+    if frontend_app and (frontend_root / "pages").exists() and (frontend_root / "src/app").exists():
         findings.append(
             Finding(
                 "frontend/pages",
@@ -255,18 +273,19 @@ def validate_frontend_contract(root: Path) -> list[Finding]:
             )
         )
 
-    findings.extend(
-        _existing_dirs(
-            root,
-            [
-                "frontend/src/app",
-                "frontend/src/components",
-                "frontend/src/services",
-                "frontend/src/actions",
-                "frontend/e2e",
-            ],
+    if frontend_app:
+        findings.extend(
+            _existing_dirs(
+                root,
+                [
+                    "frontend/src/app",
+                    "frontend/src/components",
+                    "frontend/src/services",
+                    "frontend/src/actions",
+                    "frontend/e2e",
+                ],
+            )
         )
-    )
 
     e2e_root = root / "frontend/e2e"
     selector_patterns = [

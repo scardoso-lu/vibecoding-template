@@ -224,7 +224,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Runtime-generated feature memory (planner writes these; tracked templates live in .claude/templates/)
-feature-memory/
+memory/
+agent-evidence/
 
 # Per-stack environment files (use .env.example in each service dir as the template)
 backend/.env

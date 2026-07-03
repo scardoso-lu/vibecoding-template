@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import stat
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -54,8 +57,8 @@ def make_harness(root: Path) -> None:
             "#!/usr/bin/env bash\nexit 0\n",
             executable=True,
         )
-    _write(root / ".claude/agents/planner.md", "planner\n")
-    _write(root / ".codex/agents/planner.toml", "name = 'planner'\n")
+    _write(root / ".claude/agents/software-architect.md", "software-architect\n")
+    _write(root / ".codex/agents/software-architect.toml", "name = 'software-architect'\n")
     _write(
         root / ".codex/config.toml",
         "hooks = true\n\n[mcp_servers.fullstack-guidelines]\nenabled = true\n",
@@ -67,6 +70,7 @@ def test_clean_harness_passes(tmp_path: Path) -> None:
     assert validate_harness(tmp_path) == []
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows os.access(X_OK) ignores chmod bits")
 def test_non_executable_registered_hook_is_reported(tmp_path: Path) -> None:
     make_harness(tmp_path)
     (tmp_path / ".codex/hooks/guard-bash.sh").chmod(0o644)
@@ -142,12 +146,12 @@ def test_hook_file_set_parity_is_enforced(tmp_path: Path) -> None:
 
 def test_agent_set_parity_is_enforced(tmp_path: Path) -> None:
     make_harness(tmp_path)
-    _write(tmp_path / ".claude/agents/challenger.md", "challenger\n")
+    _write(tmp_path / ".claude/agents/business-challenger.md", "business-challenger\n")
 
     findings = validate_harness(tmp_path)
 
     assert any(
-        f.path == ".codex/agents/challenger.toml"
+        f.path == ".codex/agents/business-challenger.toml"
         and "missing Codex mirror" in f.message
         for f in findings
     )

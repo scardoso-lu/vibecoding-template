@@ -8,15 +8,20 @@ every clone inherits them.
 |---|---|---|---|
 | `session-start.sh` | `SessionStart` | - | Installs backend/frontend deps (`uv sync`, `pnpm install`) when their manifests exist, so tests and linters are ready in a fresh remote container. |
 | `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, and implementer/QA shell reads of agent infrastructure. |
-| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to review-only `feature-memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Also confines **QA** to writing `frontend/e2e/**` Playwright specs/helpers and the slice verdict. |
-| `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks implementer/QA subagents from reading `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `scripts/`, hooks, settings, and agent templates. Main-thread and coordination-tier (orchestrator/planner/challenger) reads pass through. |
-| `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the planner may call the guidelines server**; other roles are denied and told to request context through the orchestrator. |
+| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to review-only `memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Also confines **QA** to writing `frontend/e2e/**` Playwright specs/helpers and the slice verdict. |
+| `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks implementer/QA subagents from reading `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `scripts/`, hooks, settings, and agent templates. Main-thread and coordination-tier reads pass through. |
+| `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the software-architect may call the guidelines server**; other roles are denied and told to request context through the orchestrator. |
+| developer handoff prompt gate | `SubagentStart` | `backend-developer\|frontend-developer` | Model-checks implementer handoffs before code starts: slice path, linked PRD/ADR/rules context, Agent Plan row, Do Not Touch, ACs, tests/evidence expectations, provenance, and narrow read scope. |
+| business planning prompt gate | `SubagentStop` | `product-owner\|business-challenger` | Model-checks the PRD phase: selectable options for broad work, complete PRDs under `memory/PRD/<purpose>/prd.md`, P0/P1/P2 MVP requirements by journey/use case, and parent/component PRD links for large components. |
+| architecture planning prompt gate | `SubagentStop` | `software-architect\|technical-challenger` | Model-checks the architecture phase: accepted PRDs become ADRs under `memory/ADR/<purpose>/adr.md`, slices link `PRD:`/`ADR:`/`Rules:`, rules stay in global `memory/rules.md`, and Agent Plan handoffs include larger component context. |
+| QA judgment prompt gate | `SubagentStop` | `qa` | Model-checks QA's final judgment: clear slice verdict, required Playwright story coverage/output, deterministic gate evidence, linked PRD/ADR/rules context, and routable `BLOCKED` findings instead of app fixes. |
 | `auto-format.sh` | `PostToolUse` | `Edit\|Write\|MultiEdit` | Formats the file Claude just wrote (`ruff` for `.py`, locally-installed `prettier` for JS/TS/JSON/CSS/YAML). No-op when the tool isn't installed; never triggers a network install. |
 | `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs stack-local validators, static checks, and available tests/coverage before a developer returns. |
+| `verify-qa.sh` | `SubagentStop` | `qa` | Deterministic QA artifact gate: runs QA, agent evidence, Playwright story, test coverage, E2E coverage, and QA evidence validators before QA returns. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys / AWS keys and blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
-| `workflow-watch.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, feature memory, backend, frontend, QA, and Playwright story contracts. |
-| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 CLAUDE.md rules + the deterministic-gate model + the active feature-memory slice states. |
+| `workflow-watch.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, memory, backend, frontend, QA, and Playwright story contracts. |
+| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 CLAUDE.md rules + the deterministic-gate model + the active memory slice states. |
 
 ## How blocking works
 
@@ -47,13 +52,14 @@ subagent:
 The guards read `agent_type` to enforce role-scoped contracts that used to live only in
 the agent prompts:
 
-- **MCP is planner-only** (`guard-mcp.sh`): calls to `mcp__fullstack-guidelines__*`
-  from `backend-developer` / `frontend-developer` / `qa` / `challenger` / `orchestrator` are
-  denied. The planner (and the main thread, which has no `agent_type`) pass through.
+- **MCP is software-architect-only** (`guard-mcp.sh`): calls to `mcp__fullstack-guidelines__*`
+  from `backend-developer` / `frontend-developer` / `qa` / `product-owner` /
+  `business-challenger` / `technical-challenger` / `orchestrator` are denied. The
+  software-architect (and the main thread, which has no `agent_type`) pass through.
 - **Agent infrastructure reads are coordination-tier-only** (`guard-infra-read.sh`): direct
   `Read`/`Grep`/`Glob`/`LS` calls against root guidance, `.claude/`, `.codex/`, or
-  `scripts/` are denied for implementer/QA subagents. Orchestrator, planner, and challenger
-  pass through. The Bash guard also blocks obvious shell reads/searches of those paths.
+  `scripts/` are denied for implementer/QA subagents. The coordination tier passes through. The
+  Bash guard also blocks obvious shell reads/searches of those paths.
   Narrow exception: QA may read `.claude/skills/playwright-cli/**` for Playwright spec
   generation/healing.
 - **QA write scope** (`guard-edits.sh`): when `agent_type` is `qa`, writes are allowed only under
@@ -90,17 +96,17 @@ Five hooks cover paths the per-edit hooks miss:
   blocks; loop-safe via `stop_hook_active`; a no-op when no formatter is installed.
 
 - Feature-memory compaction is advisory, not a hook: run `scripts/validate/cli.py compaction` on
-  demand to see which QA-approved slices are oldest, then move them under `feature-memory/history/`.
+  demand to see which QA-approved slices are oldest, then move them under `memory/history/`.
   No Stop hook blocks on it.
 
 - **`workflow-watch.sh` (`Stop`)** - runs one aggregate workflow check for workflow-infrastructure
   changes, otherwise runs only the relevant targeted validators based on `git status`. This keeps
-  guidance drift, hook registration, feature-memory, Playwright story, backend, frontend, and QA
+  guidance drift, hook registration, memory, Playwright story, backend, frontend, and QA
   mechanical checks out of agent prompts without repeatedly fanning out through overlapping wrappers.
 
 - **`reinject-context.sh` (`SessionStart`, matcher `compact`)** - compaction can drop the operating
   rules. Anything it prints to stdout is added back to context, so it restates the four CLAUDE.md
-  rules, the "deterministic work is a hook" model, and lists the active feature-memory slices with
+  rules, the "deterministic work is a hook" model, and lists the active memory slices with
   their QA `State`. It summarizes; it does not dump CLAUDE.md.
 
 - **`guard-commit.sh` (`PreToolUse` Bash, `if: Bash(git commit *)`)** - the `SubagentStop` gate only
@@ -113,8 +119,29 @@ Five hooks cover paths the per-edit hooks miss:
 
 ## Deterministic verification (PostToolUse + SubagentStop)
 
-Two hooks move work out of "the agent should remember to do this" and into "this always
+Seven hooks move work out of "the agent should remember to do this" and into "this always
 happens":
+
+- **Developer handoff prompt gate (`SubagentStart`, matcher
+  `backend-developer|frontend-developer`)** reviews the orchestrator handoff before code starts. It
+  blocks when the implementer lacks a concrete slice, linked PRD/ADR/rules context, Do Not Touch,
+  ACs, tests/evidence expectations, provenance, or narrow read scope.
+
+- **Business planning prompt gate (`SubagentStop`, matcher
+  `product-owner|business-challenger`)** reviews the PRD phase before architecture starts. It blocks
+  when broad work skipped opinionated options, PRDs are not separate proposal folders, PRDs are mixed into feature slice files, PRDs lack
+  the required product sections, or large components are not split into linked parent/component PRDs.
+
+- **Architecture planning prompt gate (`SubagentStop`, matcher
+  `software-architect|technical-challenger`)** reviews the ADR/slice phase before implementation
+  starts. It blocks when accepted PRDs were not converted into ADR proposal folders, slices lack `PRD:` / `ADR:` /
+  `Rules:` links, rules are not in the single global `memory/rules.md`, component splits are
+  too broad, or Agent Plan rows omit the linked PRD/ADR context downstream agents may grep/read.
+
+- **QA judgment prompt gate (`SubagentStop`, matcher `qa`)** reviews the QA return before the main
+  thread accepts it. It blocks approvals without a clear slice verdict, missing Playwright story
+  coverage/output for user-facing changes, missing deterministic gate evidence or agent evidence, missing linked
+  PRD/ADR/rules context, app-code fixes made by QA, or vague findings the orchestrator cannot route.
 
 - **`auto-format.sh` (`PostToolUse`)** runs after every `Edit`/`Write`. It formats the exact
   file Claude wrote using whatever formatter is installed locally - `ruff format` + `ruff check
@@ -132,6 +159,11 @@ happens":
   hand back. It is **fail-safe** (no manifest or tool -> allow, so it's a no-op on the scaffold) and
   **loop-safe** (honors `stop_hook_active`, and Claude Code caps consecutive Stop-blocks at 8).
 
+- **`verify-qa.sh` (`SubagentStop`, matcher `qa`)** runs the mechanical QA validators before QA can
+  return: QA contract, agent prompt interpretation evidence, Playwright story shape,
+  acceptance/test coverage, initial-prompt E2E coverage, and machine-readable QA evidence. The QA
+  prompt keeps judgment; this hook owns artifact mechanics.
+
 ## Hooks vs subagents - the division of labor
 
 The principle (CLAUDE.md rule 3): **if a step can be made deterministic, it is a hook and is
@@ -146,8 +178,10 @@ deleted from the agents.** Applied here:
 
 This split is why the **`tester` agent was removed** (developers author tests; the SubagentStop
 gate runs them) and the **`qa` agent was slimmed to judgment only** (it no longer runs
-`validate-tools` - the gate does). The agents that remain - orchestrator, planner, challenger, the
-two developers, qa - each do something a script cannot.
+`validate-tools` - the gate does). The agents that remain - orchestrator, product-owner,
+software-architect, business-challenger, technical-challenger, the two developers, qa - each do
+something a script cannot. The planning prompt gates are intentionally model-backed because PRD and
+ADR quality is judgment work; deterministic validators only check registration and artifact shape.
 
 **Opt-in: an LLM-backed Stop gate.** For an even stronger finish condition, Claude Code supports
 `type: "prompt"` and `type: "agent"` hooks that call a model. For example, an agent-based `Stop`

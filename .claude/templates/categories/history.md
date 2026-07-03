@@ -1,6 +1,6 @@
 # History Template
 
-Historical summaries are review-only and live under `feature-memory/history/`. They are
+Historical summaries are review-only and live under `memory/history/`. They are
 never active implementation handoffs.
 
 ```md

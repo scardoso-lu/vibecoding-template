@@ -96,7 +96,7 @@ def validate_playwright_stories(root: Path) -> list[Finding]:
                         )
                     )
                 story = row.get("User Story", "")
-                if not re.search(r"\bAs a\b.+\bI want\b.+\bso\b", story, re.IGNORECASE):
+                if not re.search(r"\bAs an?\b.+\bI want\b.+\bso\b", story, re.IGNORECASE):
                     findings.append(
                         Finding(
                             rel,

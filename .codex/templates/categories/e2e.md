@@ -1,7 +1,7 @@
 # Code-First Playwright QA Sections
 
 Include these sections in `slice.md` only for user-facing slices. QA generates or heals
-deterministic Playwright story tests. E2E coverage is tracked in `feature-memory/<slice>/e2e-coverage.json`;
+deterministic Playwright story tests. E2E coverage is tracked in `memory/feature/<slice>/e2e-coverage.json`;
 do not create or route a separate prose E2E report artifact.
 
 The example below is the only pattern to follow. Keep the table shape, keep the `// Story:`
@@ -43,7 +43,7 @@ Only if the browser fails to launch inside a sandboxed Linux CI/cloud container 
 pre-installed browser at a fixed path, see the "Sandboxed/pre-installed browser environments" note
 in `spec-driven-testing.md` section 1.1 for the `executablePath`/`--no-sandbox` fix.
 
-Also write `feature-memory/<slice>/e2e-coverage.json`:
+Also write `memory/feature/<slice>/e2e-coverage.json`:
 
 ```json
 {

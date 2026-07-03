@@ -4,7 +4,7 @@
     python scripts/validate/cli.py <check> [--root .] [--json]
     python scripts/validate/cli.py all               # every workflow validator
     python scripts/validate/cli.py doctor            # all + hook syntax/registration
-    python scripts/validate/cli.py gate --slice feature-memory/<feature>/slice.md
+    python scripts/validate/cli.py gate --slice memory/feature/<feature>/slice.md
     python scripts/validate/cli.py compaction [--enforce] [--json]
     python scripts/validate/cli.py ownership [--agent A] [--slice S] [--changed-file F ...]
     python scripts/validate/cli.py runtime-smoke [--config C] [--url U] [--must-contain T ...] [--forbid T ...]
@@ -27,6 +27,7 @@ from scripts.validate import view
 from scripts.validate.controller import VALIDATORS, run_doctor, run_validators
 from scripts.validate.models import repo_root_from
 from scripts.validate.services import (
+    agent_evidence,
     feature_memory,
     gate,
     ownership,
@@ -34,7 +35,14 @@ from scripts.validate.services import (
     runtime_smoke,
 )
 
-SPECIAL = {"gate", "compaction", "ownership", "runtime-smoke", "playwright-output"}
+SPECIAL = {
+    "gate",
+    "compaction",
+    "ownership",
+    "runtime-smoke",
+    "playwright-output",
+    "agent-evidence-hash",
+}
 
 
 def _emit(results: dict, as_json: bool) -> int:
@@ -88,6 +96,10 @@ def build_parser() -> argparse.ArgumentParser:
     po_p = add("playwright-output")
     po_p.add_argument("--file", type=Path)
 
+    aeh_p = add("agent-evidence-hash")
+    aeh_p.add_argument("--file", type=Path, required=True)
+    aeh_p.add_argument("--write", action="store_true")
+
     return parser
 
 
@@ -98,14 +110,14 @@ def _compaction(root: Path, *, enforce: bool, as_json: bool) -> int:
         "approved_active_count": len(approved),
         "compaction_due": bool(due),
         "compact": [path.relative_to(root).as_posix() for path in due],
-        "history_target": "feature-memory/history/",
+        "history_target": "memory/history/",
     }
     if as_json:
         print(json.dumps(payload, indent=2))
     elif due:
         print(
             "compaction: due - move the three oldest QA-approved slices to "
-            "feature-memory/history/:"
+            "memory/history/:"
         )
         for rel in payload["compact"]:
             print(f"  - {rel}")
@@ -133,6 +145,18 @@ def main(argv: list[str] | None = None) -> int:
         )
         for line in playwright_output.summarize_playwright_output(text):
             print(line)
+        return 0
+    if check == "agent-evidence-hash":
+        path = _resolve(root, args.file)
+        if path is None:
+            raise SystemExit("--file is required")
+        if args.write:
+            agent_evidence.write_hashed_evidence(path)
+            print(f"agent-evidence-hash: wrote {path.relative_to(root).as_posix()}")
+        else:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            hashed = agent_evidence.apply_hashes(data)
+            print(hashed["evidence_hash"])
         return 0
     if check == "compaction":
         return _compaction(root, enforce=args.enforce, as_json=args.json_output)

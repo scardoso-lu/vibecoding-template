@@ -45,14 +45,15 @@ matches_any() {
 if matches_any '^(AGENTS\.md|CLAUDE\.md|\.codex/agents/|\.claude/agents/|\.codex/templates/|\.claude/templates/|\.codex/hooks/|\.claude/hooks/|scripts/validate/)'; then
   run_validator "workflow" python scripts/validate/cli.py all --root .
 else
-  if matches_any '^(feature-memory/|\.codex/templates/|\.claude/templates/)'; then
-    run_validator "feature-memory" python scripts/validate/cli.py feature-memory --root .
+  if matches_any '^(memory/|agent-evidence/|\.codex/templates/|\.claude/templates/)'; then
+    run_validator "memory" python scripts/validate/cli.py memory --root .
+    run_validator "agent-evidence" python scripts/validate/cli.py agent-evidence --root .
     run_validator "test-coverage" python scripts/validate/cli.py test-coverage --root .
     run_validator "e2e-coverage" python scripts/validate/cli.py e2e-coverage --root .
     run_validator "qa-evidence" python scripts/validate/cli.py qa-evidence --root .
   fi
 
-  if matches_any '^(feature-memory/|frontend/e2e/)'; then
+  if matches_any '^(memory/|agent-evidence/|frontend/e2e/)'; then
     run_validator "playwright-stories" python scripts/validate/cli.py playwright-stories --root .
     run_validator "qa" python scripts/validate/cli.py qa --root .
   fi

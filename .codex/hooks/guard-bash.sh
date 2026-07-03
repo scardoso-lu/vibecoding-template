@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse guard for Bash — blocks operations this project forbids or that are
+# PreToolUse guard for Bash - blocks operations this project forbids or that are
 # plainly destructive. Emits the documented PreToolUse deny decision as JSON.
 # Fails open (exit 0, no decision) if JSON parsing is unavailable so it never bricks a session.
 set -uo pipefail
@@ -22,7 +22,7 @@ deny() {
 # Project rule: Chromium + Playwright are pre-installed at $PLAYWRIGHT_BROWSERS_PATH.
 # Never re-fetch the browser bundle.
 if printf '%s' "$CMD" | grep -Eq '(^|[^[:alnum:]])playwright[[:space:]]+install'; then
-  deny "'playwright install' is forbidden — Chromium is pre-installed at \$PLAYWRIGHT_BROWSERS_PATH; drive the existing browser."
+  deny "'playwright install' is forbidden - Chromium is pre-installed at \$PLAYWRIGHT_BROWSERS_PATH; drive the existing browser."
 fi
 
 # Catastrophic recursive force-deletes of a root / home / cwd target.
@@ -32,7 +32,7 @@ has_rmrf() {
   printf '%s' "$1" | grep -Eq 'rm[[:space:]]+-[a-zA-Z]*r[a-zA-Z]*f|rm[[:space:]]+-[a-zA-Z]*f[a-zA-Z]*r|rm[[:space:]]+-[rf][[:space:]]+-[rf]'
 }
 hits_root() {
-  # A target that is the whole root, home, or cwd — bare, with an optional single
+  # A target that is the whole root, home, or cwd - bare, with an optional single
   # trailing slash, at a word boundary. Subdir targets like ./build or ~/x are allowed.
   printf '%s' "$1" | grep -Eq '[[:space:]](/|\.|~|\$HOME|\$\{HOME\}|\$PWD|\$\{PWD\}|/\*)/?([[:space:]]|$)'
 }
@@ -47,10 +47,9 @@ if printf '%s' "$CMD" | grep -Eq 'git[[:space:]]+push' \
 fi
 
 # Implementer/QA subagents may not read agent infrastructure through shell commands
-# either. Main thread has no agent_type; the coordination tier (orchestrator, planner,
-# challenger) is allowed.
+# either. Main thread has no agent_type; the coordination tier is allowed.
 case "$AGENT" in
-  ""|orchestrator|planner|challenger)
+  ""|orchestrator|product-owner|software-architect|business-challenger|technical-challenger)
     : ;;
   *)
     if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \
