@@ -21,7 +21,6 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
             "verify-subagent.sh",
             "auto-format.sh",
             "format-changed.sh",
-            "compaction-watch.sh",
             "workflow-watch.sh",
             "notify-stop.sh",
         ]:
@@ -33,7 +32,6 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
         "verify-subagent.sh",
         "auto-format.sh",
         "format-changed.sh",
-        "compaction-watch.sh",
         "workflow-watch.sh",
         "notify-stop.sh",
     ]
@@ -92,7 +90,6 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
                                             "verify-subagent.sh",
                                             "auto-format.sh",
                                             "format-changed.sh",
-                                            "compaction-watch.sh",
                                             "workflow-watch.sh",
                                             "notify-stop.sh",
                                         ]

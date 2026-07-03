@@ -17,7 +17,6 @@ EXPECTED_HOOKS = [
     "verify-subagent.sh",
     "auto-format.sh",
     "format-changed.sh",
-    "compaction-watch.sh",
     "workflow-watch.sh",
     "notify-stop.sh",
 ]

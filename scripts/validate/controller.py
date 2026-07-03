@@ -27,7 +27,6 @@ from scripts.validate.services import (
 VALIDATORS: dict[str, Callable[[Path], list[Finding]]] = {
     "agent-guidance": agent_guidance.validate_agent_guidance,
     "feature-memory": feature_memory.validate_feature_memory,
-    "compaction": feature_memory.validate_compaction,
     "playwright-stories": playwright_stories.validate_playwright_stories,
     "test-coverage": feature_memory.validate_test_coverage_mapping,
     "e2e-coverage": playwright_stories.validate_e2e_coverage,

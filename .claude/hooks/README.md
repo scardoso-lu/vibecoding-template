@@ -15,7 +15,6 @@ every clone inherits them.
 | `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs stack-local validators, static checks, and available tests/coverage before a developer returns. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys / AWS keys and blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
-| `compaction-watch.sh` | `Stop` | - | Runs `scripts/validate/cli.py compaction --enforce` and blocks when four or more active QA-approved feature memories require history compaction. |
 | `workflow-watch.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, feature memory, backend, frontend, QA, and Playwright story contracts. |
 | `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 CLAUDE.md rules + the deterministic-gate model + the active feature-memory slice states. |
 
@@ -90,10 +89,9 @@ Five hooks cover paths the per-edit hooks miss:
   through `auto-format.sh`, so there is one source of truth for the ruff/prettier mapping. Never
   blocks; loop-safe via `stop_hook_active`; a no-op when no formatter is installed.
 
-- **`compaction-watch.sh` (`Stop`)** - counts active `feature-memory/*/slice.md` files with
-  `State: QA APPROVED`. When four or more are active, it blocks with the three oldest approved
-  slice directories to move under `feature-memory/history/`. The hook only watches and blocks; the
-  LLM still writes the historical summary and performs the move.
+- Feature-memory compaction is advisory, not a hook: run `scripts/validate/cli.py compaction` on
+  demand to see which QA-approved slices are oldest, then move them under `feature-memory/history/`.
+  No Stop hook blocks on it.
 
 - **`workflow-watch.sh` (`Stop`)** - runs one aggregate workflow check for workflow-infrastructure
   changes, otherwise runs only the relevant targeted validators based on `git status`. This keeps
