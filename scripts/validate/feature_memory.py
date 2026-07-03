@@ -13,12 +13,23 @@ from scripts.validate.common import (
     split_ids,
 )
 
-RULES_DIRNAME = "rules"
+GLOBAL_RULES_FILE = "rules.md"
 
 
 def feature_memory_roots(root: Path) -> list[Path]:
     path = root / "feature-memory"
     return [path] if path.exists() else []
+
+
+def global_rules_path(root: Path) -> Path:
+    return root / "feature-memory" / GLOBAL_RULES_FILE
+
+
+def global_rules_slugs(root: Path) -> set[str]:
+    path = global_rules_path(root)
+    if not path.exists():
+        return set()
+    return set(re.findall(r'get_guideline\("([^"]+)"\)', read_text(path)))
 
 
 def _ref_list(value: str) -> list[str]:
@@ -47,13 +58,6 @@ def parse_dependencies(text: str) -> tuple[list[str] | None, list[str] | None]:
         elif lowered.startswith("rules:"):
             rules = _ref_list(line.split(":", 1)[1])
     return depends_on, rules
-
-
-def global_rules_files(root: Path) -> list[Path]:
-    rules_dir = root / "feature-memory" / RULES_DIRNAME
-    if not rules_dir.exists():
-        return []
-    return sorted(rules_dir.glob("*.md"))
 
 
 def slice_state(slice_md: Path) -> str:
@@ -121,25 +125,32 @@ def validate_feature_memory(root: Path) -> list[Finding]:
         "QA Handoff",
     ]
 
-    # Global rules library: feature-memory/rules/<category>.md is shared across every slice.
-    # Each category file must cite the guideline slugs it summarizes.
-    for rules_file in global_rules_files(root):
-        rel_rules = rules_file.relative_to(root).as_posix()
-        if 'Source: get_guideline("' not in read_text(rules_file):
-            findings.append(
-                Finding(
-                    rel_rules,
-                    'global rules file missing Source: get_guideline("<slug>") provenance',
-                )
+    # Rules are one global file, feature-memory/rules.md, shared across every feature.
+    # It must cite the guideline slugs it summarizes, and it is never split by category.
+    rules_file = global_rules_path(root)
+    if rules_file.exists() and 'Source: get_guideline("' not in read_text(rules_file):
+        findings.append(
+            Finding(
+                rules_file.relative_to(root).as_posix(),
+                'global rules.md missing Source: get_guideline("<slug>") provenance',
             )
+        )
+    if (root / "feature-memory" / "rules").is_dir():
+        findings.append(
+            Finding(
+                "feature-memory/rules",
+                "rules must be a single global feature-memory/rules.md, not a category-split directory",
+            )
+        )
+    known_slugs = global_rules_slugs(root)
 
     for memory_root in feature_memory_roots(root):
         for slice_md in memory_root.rglob("slice.md"):
             relative_parts = slice_md.relative_to(memory_root).parts
             if "history" in relative_parts:
                 continue
-            if relative_parts and relative_parts[0] == RULES_DIRNAME:
-                # Reserved global rules area, not a slice.
+            if relative_parts and relative_parts[0] == "rules":
+                # Reserved global rules area, not a feature slice.
                 continue
             rel = slice_md.relative_to(root).as_posix()
             text = read_text(slice_md)
@@ -185,13 +196,13 @@ def validate_feature_memory(root: Path) -> list[Finding]:
                             "role-specific feature-memory directory is not allowed",
                         )
                     )
-            # Rules are global now; a per-slice rules.md is a leftover from the old contract.
+            # Rules are one global file; a per-slice rules.md is a leftover from the old contract.
             stray_rules = slice_md.parent / "rules.md"
             if stray_rules.exists():
                 findings.append(
                     Finding(
                         stray_rules.relative_to(root).as_posix(),
-                        "rules are global; move them to feature-memory/rules/<category>.md and reference them from the slice ## Dependencies",
+                        "rules are global; keep them in feature-memory/rules.md and link the slugs from the slice ## Dependencies",
                     )
                 )
 
@@ -208,22 +219,15 @@ def validate_feature_memory(root: Path) -> list[Finding]:
                     findings.append(
                         Finding(
                             rel,
-                            "## Dependencies must list a `Rules:` line referencing feature-memory/rules/<category>.md (or none)",
+                            "## Dependencies must list a `Rules:` line of guideline slugs from feature-memory/rules.md (or none)",
                         )
                     )
-                for ref in rules_refs or []:
-                    ref_path = (
-                        (root / ref) if not Path(ref).is_absolute() else Path(ref)
-                    )
-                    if not ref_path.exists():
-                        findings.append(
-                            Finding(rel, f"referenced rules file not found: {ref}")
-                        )
-                    elif f"/{RULES_DIRNAME}/" not in f"/{ref}":
+                for slug in rules_refs or []:
+                    if slug not in known_slugs:
                         findings.append(
                             Finding(
                                 rel,
-                                f"referenced rules file must live under feature-memory/{RULES_DIRNAME}/: {ref}",
+                                f"referenced rule slug not found in feature-memory/rules.md: {slug}",
                             )
                         )
                 for ref in depends_on or []:

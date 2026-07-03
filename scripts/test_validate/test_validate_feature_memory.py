@@ -8,13 +8,16 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.validate.feature_memory import (
     compaction_due_slices,
+    global_rules_slugs,
     parse_dependencies,
     validate_compaction,
     validate_feature_memory,
 )
 
 
-FULL_SLICE = """# Slice
+SLUG = "frontend/13-e2e-playwright"
+
+FULL_SLICE = f"""# Slice
 
 ## Status
 active
@@ -24,7 +27,7 @@ Build user-facing thing
 One outcome
 ## Dependencies
 - Depends on: none
-- Rules: feature-memory/rules/qa.md
+- Rules: {SLUG}
 ## Do Not Touch
 Nothing else
 ## Implementation Plan
@@ -36,7 +39,7 @@ Rows
 ## E2E Test Stories
 | Story ID | User Story | Criteria | Test Location | Seed/Setup | Assertions | Slugs |
 |---|---|---|---|---|---|---|
-| e2e-001 | As a user, I want save, so data persists. | AC-001 | frontend/e2e/save.spec.ts::save | fixture | visible | frontend/13-e2e-playwright |
+| e2e-001 | As a user, I want save, so data persists. | AC-001 | frontend/e2e/save.spec.ts::save | fixture | visible | {SLUG} |
 ## Test Coverage
 | Criteria | Test Type | Test Location |
 |---|---|---|
@@ -44,19 +47,17 @@ Rows
 ## QA Handoff
 - Playwright story tests required: yes
 ## Provenance
-- frontend/13-e2e-playwright
+- {SLUG}
 """
 
 
-def write_global_rules(
-    root: Path, category: str = "qa", slug: str = "frontend/13-e2e-playwright"
-) -> None:
-    rules_dir = root / "feature-memory" / "rules"
-    rules_dir.mkdir(parents=True, exist_ok=True)
-    (rules_dir / f"{category}.md").write_text(
-        f'## {category}\nSource: get_guideline("{slug}")\n- Always ...\n',
-        encoding="utf-8",
-    )
+def write_global_rules(root: Path, *slugs: str) -> None:
+    slugs = slugs or (SLUG,)
+    body = "# Rules\n\n"
+    for slug in slugs:
+        body += f'### `{slug}`\nSource: get_guideline("{slug}")\n- Always ...\n\n'
+    (root / "feature-memory").mkdir(parents=True, exist_ok=True)
+    (root / "feature-memory" / "rules.md").write_text(body, encoding="utf-8")
 
 
 def write_slice(root: Path, name: str, body: str = FULL_SLICE) -> Path:
@@ -74,16 +75,24 @@ def write_e2e_test(root: Path) -> None:
     )
 
 
-def test_parse_dependencies_reads_refs() -> None:
+def test_parse_dependencies_reads_slug_refs() -> None:
     depends_on, rules = parse_dependencies(FULL_SLICE)
     assert depends_on == []  # "none"
-    assert rules == ["feature-memory/rules/qa.md"]
+    assert rules == [SLUG]
 
 
 def test_parse_dependencies_missing_lines_return_none() -> None:
     depends_on, rules = parse_dependencies("## Dependencies\n(nothing)\n")
     assert depends_on is None
     assert rules is None
+
+
+def test_global_rules_slugs_extracts_from_single_file(tmp_path: Path) -> None:
+    write_global_rules(tmp_path, "backend/01-architecture", "frontend/05-forms")
+    assert global_rules_slugs(tmp_path) == {
+        "backend/01-architecture",
+        "frontend/05-forms",
+    }
 
 
 def test_valid_full_slice_with_global_rules_passes(tmp_path: Path) -> None:
@@ -104,14 +113,15 @@ def test_missing_dependencies_section_is_reported(tmp_path: Path) -> None:
     assert "missing required section ## Dependencies" in messages
 
 
-def test_referenced_rules_file_must_exist(tmp_path: Path) -> None:
-    # No global rules file written, but the slice references one.
+def test_referenced_slug_must_exist_in_global_rules(tmp_path: Path) -> None:
+    # Global rules exists but does not define the slug the slice references.
+    write_global_rules(tmp_path, "backend/01-architecture")
     write_slice(tmp_path, "save")
     write_e2e_test(tmp_path)
 
     findings = validate_feature_memory(tmp_path)
 
-    assert any("referenced rules file not found" in f.message for f in findings)
+    assert any("referenced rule slug not found" in f.message for f in findings)
 
 
 def test_unknown_dependency_feature_is_reported(tmp_path: Path) -> None:
@@ -128,15 +138,25 @@ def test_unknown_dependency_feature_is_reported(tmp_path: Path) -> None:
 
 
 def test_global_rules_missing_provenance_is_reported(tmp_path: Path) -> None:
-    rules_dir = tmp_path / "feature-memory" / "rules"
-    rules_dir.mkdir(parents=True)
-    (rules_dir / "backend.md").write_text(
-        "## Backend\n- Always ...\n", encoding="utf-8"
+    (tmp_path / "feature-memory").mkdir(parents=True)
+    (tmp_path / "feature-memory" / "rules.md").write_text(
+        "# Rules\n\n### backend\n- Always ...\n", encoding="utf-8"
     )
 
     findings = validate_feature_memory(tmp_path)
 
-    assert any("global rules file missing" in f.message for f in findings)
+    assert any("global rules.md missing" in f.message for f in findings)
+
+
+def test_category_split_rules_directory_is_reported(tmp_path: Path) -> None:
+    write_global_rules(tmp_path)
+    write_slice(tmp_path, "save")
+    write_e2e_test(tmp_path)
+    (tmp_path / "feature-memory" / "rules").mkdir(parents=True)
+
+    findings = validate_feature_memory(tmp_path)
+
+    assert any("not a category-split directory" in f.message for f in findings)
 
 
 def test_stray_per_slice_rules_md_is_reported(tmp_path: Path) -> None:

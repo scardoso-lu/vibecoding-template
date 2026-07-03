@@ -1,27 +1,24 @@
 # Rules Template
 
-Rules are **global** and shared across every slice. Write them under
-`feature-memory/rules/<category>.md` - one file per category concern - and reference the files a
-slice needs from that slice's `## Dependencies` section. Do not write a per-slice `rules.md`.
+Rules are **global** and never sliced. Keep every fetched guideline rule in one shared file,
+`feature-memory/rules.md`, with one block per guideline slug. Do not split rules by category
+(no `backend.md`/`frontend.md`/`qa.md`) and do not write a per-slice `rules.md`.
 
-Add or extend a category file only when the slice in front of you needs that concern. Reuse the
-existing category files across slices instead of duplicating rules. Every rule block must cite its
-source slug.
-
-Split categories by concern, e.g. `backend.md`, `frontend.md`, `qa.md`, `security.md`,
-`foundation.md`.
+Each feature links the rules it depends on from its `## Dependencies` -> `Rules:` line, which lists
+the slugs it uses. Reuse and extend the existing blocks across features instead of duplicating
+rules. Every block must cite its source slug.
 
 ```md
-# <Category> Rules
+# Rules
 
-All rules come from `get_guideline()` MCP calls. Slices reference this file from their
+All rules come from `get_guideline()` MCP calls. Features link the slugs they need from their
 `## Dependencies` -> `Rules:` line.
 
-## `<slug>`
+### `<slug>`
 Source: get_guideline("<slug>")
 - Always ...
 
-## `<slug>`
+### `<slug>`
 Source: get_guideline("<slug>")
 - Always ...
 ```

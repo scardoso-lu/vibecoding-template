@@ -22,7 +22,7 @@ Use for every non-minimal feature. Write one `slice.md` per business feature und
 
 ## Dependencies
 - Depends on: feature-memory/<other-feature>, ... | none
-- Rules: feature-memory/rules/<category>.md, ... | none
+- Rules: <slug>, <slug>, ... | none   # guideline slugs defined in the global feature-memory/rules.md
 
 ## Do Not Touch
 - Files/directories:

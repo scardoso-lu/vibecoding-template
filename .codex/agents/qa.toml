@@ -10,11 +10,11 @@ tests, config, feature-memory rules, or MCP guideline content.
 
 ## Mandatory First Step
 
-Read the feature memory path supplied by the orchestrator: the feature's `slice.md` and the global `feature-memory/rules/<category>.md` files it references under `## Dependencies` -> `Rules:`.
+Read the feature memory path supplied by the orchestrator: the feature's `slice.md` and the global `feature-memory/rules.md` (the slugs it lists under `## Dependencies` -> `Rules:`).
 
 - Full slice: if `slice.md` lacks `Status`, `Dependencies`, `QA Handoff`, `Acceptance Criteria`,
   `Implementation Plan`, `E2E Test Stories` for user-facing work, `Test Coverage`, provenance, or `Do Not Touch`,
-  or if the referenced `rules/*` files lack the QA and user-facing/E2E slug rules required for this feature, return
+  or if the linked blocks in `feature-memory/rules.md` lack the QA and user-facing/E2E rules required for this feature, return
   `BLOCKED` and ask the orchestrator for more context.
 - Minimal slice: return `BLOCKED` only if it lacks `Status`, `Do Not Touch`, `Acceptance Criteria`,
   or the `QA Handoff` block.
@@ -93,14 +93,14 @@ orchestrator to the suspected owner.
 3. Run `python scripts/validate/gate.py --root . --slice feature-memory/<slice>/slice.md` and confirm
    generated `qa-evidence.json` shows exit code 0 for every command and backend/frontend unit
    coverage at or above 80 percent.
-4. Confirm the diff matches the request, contracts, slugs in the referenced `rules/*` files, and acceptance criteria.
+4. Confirm the diff matches the request, contracts, the linked rules in `feature-memory/rules.md`, and acceptance criteria.
 5. Confirm the diff respects `Do Not Touch`.
 6. Review architecture in order: domain, application, infrastructure, API, frontend, tests. Judge
    design and coverage adequacy, not mechanical lint.
-7. Spot-check rule provenance: every block in the referenced `rules/*` files must carry
+7. Spot-check rule provenance: every linked block in `feature-memory/rules.md` must carry
    `Source: get_guideline("<slug>")`. Missing source is a `question:` finding.
-8. Check cross-cutting hard rules from the referenced `rules/*` files and `QA Handoff`. If a relevant rule category is
-   missing, return `BLOCKED` and ask the orchestrator to have the planner update the rules library from MCP.
+8. Check cross-cutting hard rules from the linked blocks in `feature-memory/rules.md` and `QA Handoff`. If a relevant rule
+   is missing, return `BLOCKED` and ask the orchestrator to have the planner update `feature-memory/rules.md` from MCP.
 
 ## Verdict
 

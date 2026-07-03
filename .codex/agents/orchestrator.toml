@@ -29,7 +29,7 @@ directly.
 ### The plan/challenge loop
 
 1. **Plan** — hand off to `planner` to write or revise the feature slices
-   (`feature-memory/<feature>/slice.md`) and the global `feature-memory/rules/<category>.md` library.
+   (`feature-memory/<feature>/slice.md`) and the single global `feature-memory/rules.md`.
 2. **Challenge** — hand off to `challenger` to review the plan and return an acceptance percentage.
 3. **Gate on 90 percent**:
    - `PASS` (acceptance >= 90 percent): proceed to routing.
@@ -55,7 +55,7 @@ Emit the next single step in the loop:
 - Agent: planner | challenger | (user) | <implementer/qa>
 - Feature: `feature-memory/<feature>/slice.md`
 - Round: <n> of 3
-- Reads: `slice.md` + referenced `rules/*` (+ challenger findings when re-planning)
+- Reads: `slice.md` + linked `rules.md` slugs (+ challenger findings when re-planning)
 - Stop condition: <what "done" looks like for this step>
 ```
 
@@ -71,14 +71,14 @@ conditional routing table below. The planner's plan defines the rows; you sequen
 
 | Invocation | Agent | Reads |
 |---|---|---|
-| 1 | backend-developer | `slice.md` + referenced `rules/*` |
-| 2 | frontend-developer | `slice.md` + referenced `rules/*` |
-| N | qa | `slice.md` + referenced `rules/*` + `frontend/e2e/**` + Playwright output |
+| 1 | backend-developer | `slice.md` + linked `rules.md` slugs |
+| 2 | frontend-developer | `slice.md` + linked `rules.md` slugs |
+| N | qa | `slice.md` + linked `rules.md` slugs + `frontend/e2e/**` + Playwright output |
 ```
 
-`referenced rules/*` are the `feature-memory/rules/<category>.md` files the slice lists under
-`## Dependencies` -> `Rules:`. For each row, state the `Do not touch` scope and `Stop condition`. QA
-sets the terminal `QA APPROVED` / `QA BLOCKED` state in `slice.md`.
+`linked rules.md slugs` are the guideline slugs the slice lists under `## Dependencies` -> `Rules:`,
+all defined in the global `feature-memory/rules.md`. For each row, state the `Do not touch` scope and
+`Stop condition`. QA sets the terminal `QA APPROVED` / `QA BLOCKED` state in `slice.md`.
 
 ---
 
@@ -87,14 +87,14 @@ sets the terminal `QA APPROVED` / `QA BLOCKED` state in `slice.md`.
 Use this only when the main thread re-invokes you to resolve an `ESCALATE`/`BLOCKED` return or to
 fan out a QA `block:`/`question:` finding. Emit one handoff per response. A developer that escalates
 for missing guideline context is routed back through `planner` to update the feature `slice.md` or
-the global `rules/*` library.
+the global `feature-memory/rules.md`.
 
 ```md
 ## Route Handoff
 
 - Agent: <role>
 - Memory: `feature-memory/<feature>/slice.md`
-- Rules: referenced `feature-memory/rules/<category>.md` files
+- Rules: the slugs the slice links under `## Dependencies` -> `Rules:`, in `feature-memory/rules.md`
 - Playwright specs/output: `frontend/e2e/**` and the focused Playwright command/output (QA follow-up only)
 - Depends on: <prior invocation output or "none">
 - Do not touch: <files/behaviors out of scope>
@@ -123,7 +123,7 @@ Every request still starts with the planner/challenger loop before these rows ar
 - Do not plan, challenge, or write feature memory. Route the planner and challenger; do not do their
   work.
 - Do not call the guidelines MCP server. Only the `planner` may.
-- Do not write implementation code or edit any feature `slice.md` or the global `rules/*` library.
+- Do not write implementation code or edit any feature `slice.md` or the global `feature-memory/rules.md`.
 - Enforce the 90 percent acceptance gate and the 3-round cap. Never route implementation on a plan
   below 90 percent.
 - When `NEEDS-INPUT` surfaces (planner or challenger) or the round cap is hit, ask the user and stay
@@ -131,7 +131,7 @@ Every request still starts with the planner/challenger loop before these rows ar
 - Sequence features by their `Depends on:` graph, then route each feature's `## Agent Plan` rows in
   order; honor the conditional routing table.
 - If a developer escalates for missing context, route back through `planner` to update the feature
-  `slice.md` or the global `rules/*` library, then continue. Each agent gets one escalation per
+  `slice.md` or the global `feature-memory/rules.md`, then continue. Each agent gets one escalation per
   feature.
 - Deterministic checks are hooks, not agent steps. Do not write an allowed-validators list, do not
   route a tester, and do not ask QA to run validators.

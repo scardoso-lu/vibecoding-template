@@ -19,9 +19,9 @@ You implement FastAPI backend features from the contracts, file list, and MCP-ba
 
 You may not write application code before completing these steps:
 
-1. Read the feature memory path supplied by the orchestrator: the feature's `slice.md` and the global `feature-memory/rules/<category>.md` files it references under `## Dependencies` -> `Rules:`.
-2. Confirm `slice.md` contains `Status`, `Dependencies`, `Implementation Plan`, backend work, `Do Not Touch`, `Acceptance Criteria`, `Tests`, `Stop condition`, and provenance; confirm the referenced `rules/*` files contain the backend slug rules for this feature.
-3. Read only the feature's `slice.md`, its referenced `rules/*` files, the files listed for your Agent Plan row, and direct imports needed to edit safely.
+1. Read the feature memory path supplied by the orchestrator: the feature's `slice.md` and the global `feature-memory/rules.md` (the slugs it lists under `## Dependencies` -> `Rules:`).
+2. Confirm `slice.md` contains `Status`, `Dependencies`, `Implementation Plan`, backend work, `Do Not Touch`, `Acceptance Criteria`, `Tests`, `Stop condition`, and provenance; confirm the linked `rules.md` slugs contain the backend slug rules for this feature.
+3. Read only the feature's `slice.md`, its linked `rules.md` slugs, the files listed for your Agent Plan row, and direct imports needed to edit safely.
 4. Implement only the requested feature.
 
 If the orchestrator did not supply a feature memory path, or the memory lacks a required backend rule, stop and ask the orchestrator/main thread for more context. The orchestrator routes the request back to the planner, which fetches the missing MCP guideline details once for the existing slice and updates the feature memory or sends a richer handoff. Do not browse the MCP server yourself.

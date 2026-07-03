@@ -16,8 +16,8 @@ only from feature memory and MCP-backed rules.
 
 1. Use feature-slice memory for guidelines.
    The `fullstack-guidelines` MCP server is the source of truth. The `planner` fetches the
-   needed slugs, writes one `feature-memory/<feature>/slice.md` per business feature plus the shared
-   `feature-memory/rules/<category>.md` library, and hands the relevant files to downstream agents.
+   needed slugs, writes one `feature-memory/<feature>/slice.md` per business feature plus the single
+   global `feature-memory/rules.md`, and hands the relevant files to downstream agents.
    Developers and QA do not refetch guideline text.
 
 2. Route work through the agent system.
@@ -70,13 +70,13 @@ The planner reads `.codex/templates/template-routing.md`, loads only the needed 
 templates, then writes:
 
 - One `feature-memory/<feature>/slice.md` per business feature.
-- The shared global rules library `feature-memory/rules/<category>.md`, one file per category
-  concern, reused across every feature. There is no per-slice `rules.md`.
+- The single global `feature-memory/rules.md`, one block per guideline slug, reused across every
+  feature and never split by category. There is no per-slice `rules.md`.
 
 Each `slice.md` links the rest of the plan through a `## Dependencies` section: `Depends on:` lists
-the sibling feature slices it needs first, and `Rules:` lists the global `feature-memory/rules/<category>.md`
-files it draws on. Every rule block in the library must cite `Source: get_guideline("<slug>")`, and
-the orchestrator sequences features by their `Depends on:` graph.
+the sibling feature slices it needs first, and `Rules:` lists the guideline slugs it draws on (each
+defined as a block in `feature-memory/rules.md`). Every block in `feature-memory/rules.md` must cite
+`Source: get_guideline("<slug>")`, and the orchestrator sequences features by their `Depends on:` graph.
 
 Full slices must include `Status`, `Request`, `Slice Boundary`, `Dependencies`, `Do Not Touch`,
 `Implementation Plan`, `Acceptance Criteria`, `QA Handoff`, and provenance. User-facing slices also
@@ -86,8 +86,8 @@ tests, and user-facing slices must include `e2e-coverage.json` mapping initial-p
 to Playwright tests.
 
 Do not create role-specific feature-memory directories such as `00-shared/`, `backend/`,
-`frontend/`, or `qa/`; `feature-memory/rules/` is the reserved global rules area. Do not put
-validator allow-lists in feature memory.
+`frontend/`, or `qa/`; rules live in the single global `feature-memory/rules.md`, never split by
+category. Do not put validator allow-lists in feature memory.
 
 ## Deterministic Enforcement
 
