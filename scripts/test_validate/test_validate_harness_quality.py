@@ -199,7 +199,7 @@ Fullstack.
         json.dumps(
             {
                 "generated_by": {
-                    "command": "python scripts\\validate\\gate.py --root . --slice feature-memory\\inventory\\slice.md",
+                    "command": "python scripts\\validate\\cli.py gate --root . --slice feature-memory\\inventory\\slice.md",
                     "cwd": ".",
                 },
                 "runs": [
@@ -223,7 +223,7 @@ Fullstack.
     assert "validate-tools project-layout ." in messages
     assert "docker compose up" in messages
     assert "runtime-smoke.json" in messages
-    assert "runtime-smoke.py" in messages
+    assert "runtime-smoke" in messages
     assert "frontend test command" in messages
     assert "unit_coverage" in messages
 
@@ -276,7 +276,7 @@ Fullstack.
         json.dumps(
             {
                 "generated_by": {
-                    "command": "python scripts\\validate\\gate.py --root . --slice feature-memory\\inventory\\slice.md",
+                    "command": "python scripts\\validate\\cli.py gate --root . --slice feature-memory\\inventory\\slice.md",
                     "cwd": ".",
                 },
                 "runs": [
@@ -305,7 +305,7 @@ Fullstack.
                         "output_path": "feature-memory/inventory/evidence/docker-compose-up.txt",
                     },
                     {
-                        "command": "python scripts\\validate\\runtime-smoke.py --config feature-memory\\inventory\\runtime-smoke.json",
+                        "command": "python scripts\\validate\\cli.py runtime-smoke --config feature-memory\\inventory\\runtime-smoke.json",
                         "cwd": ".",
                         "exit_code": 0,
                         "started_at": "2026-06-29T00:00:03Z",
