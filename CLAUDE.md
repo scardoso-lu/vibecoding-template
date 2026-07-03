@@ -105,6 +105,7 @@ Workflow scripts own mechanical review:
 | Feature memory contract | `python scripts/validate/feature-memory.py --root .` |
 | Feature memory compaction | `python scripts/validate/compaction.py --root .` |
 | Hook registration and smoke paths | `python scripts/validate/hook-registration.py --root .` |
+| Harness parity and integrity (both runtimes) | `python scripts/validate/harness.py --root .` |
 | Playwright story contracts | `python scripts/validate/playwright-stories.py --root .` |
 | Acceptance/test coverage mapping | `python scripts/validate/test-coverage.py --root .` |
 | Initial-prompt E2E coverage mapping | `python scripts/validate/e2e-coverage.py --root .` |

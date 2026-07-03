@@ -22,6 +22,7 @@ from scripts.validate.feature_memory import (
     validate_feature_memory,
     validate_test_coverage_mapping,
 )
+from scripts.validate.harness import validate_harness
 from scripts.validate.harness_quality import validate_qa_evidence, validate_tooling
 from scripts.validate.hook_registration import validate_hook_registration
 from scripts.validate.ownership import validate_ownership
@@ -39,6 +40,7 @@ VALIDATORS: dict[str, Callable[[Path], list[Finding]]] = {
     "test-coverage": validate_test_coverage_mapping,
     "e2e-coverage": validate_e2e_coverage,
     "hook-registration": validate_hook_registration,
+    "harness": validate_harness,
     "project-layout": validate_project_layout,
     "database": validate_database_policy,
     "migrations": validate_migrations,
