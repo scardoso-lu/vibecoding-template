@@ -14,7 +14,6 @@ the current slice. Do not load every template by default.
 | Next.js routes/components/actions/frontend tests | `.claude/templates/categories/frontend.md` |
 | User-facing Playwright story tests | `.claude/templates/categories/e2e.md` |
 | QA merge judgment | `.claude/templates/categories/qa.md` |
-| Historical compaction | `.claude/templates/categories/history.md` |
 | Docs/config/copy/one-file non-behavior change | `.claude/templates/template-minimal.md` |
 
 Rules:

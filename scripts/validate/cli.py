@@ -5,7 +5,6 @@
     python scripts/validate/cli.py all               # every workflow validator
     python scripts/validate/cli.py doctor            # all + hook syntax/registration
     python scripts/validate/cli.py gate --slice memory/feature/<feature>/slice.md
-    python scripts/validate/cli.py compaction [--enforce] [--json]
     python scripts/validate/cli.py ownership [--agent A] [--slice S] [--changed-file F ...]
     python scripts/validate/cli.py runtime-smoke [--config C] [--url U] [--must-contain T ...] [--forbid T ...]
     python scripts/validate/cli.py playwright-output [--file F]
@@ -28,7 +27,6 @@ from scripts.validate.controller import VALIDATORS, run_doctor, run_validators
 from scripts.validate.models import repo_root_from
 from scripts.validate.services import (
     agent_evidence,
-    feature_memory,
     gate,
     ownership,
     playwright_output,
@@ -37,7 +35,6 @@ from scripts.validate.services import (
 
 SPECIAL = {
     "gate",
-    "compaction",
     "ownership",
     "runtime-smoke",
     "playwright-output",
@@ -77,9 +74,6 @@ def build_parser() -> argparse.ArgumentParser:
     gate_p.add_argument("--slice", type=Path, required=True, dest="slice_path")
     gate_p.add_argument("--coverage-threshold", type=float, default=80.0)
 
-    comp_p = add("compaction")
-    comp_p.add_argument("--enforce", action="store_true")
-
     own_p = add("ownership")
     own_p.add_argument(
         "--agent", choices=["backend-developer", "frontend-developer", "qa"]
@@ -101,29 +95,6 @@ def build_parser() -> argparse.ArgumentParser:
     aeh_p.add_argument("--write", action="store_true")
 
     return parser
-
-
-def _compaction(root: Path, *, enforce: bool, as_json: bool) -> int:
-    approved = feature_memory.approved_active_slices(root)
-    due = feature_memory.compaction_due_slices(root)
-    payload = {
-        "approved_active_count": len(approved),
-        "compaction_due": bool(due),
-        "compact": [path.relative_to(root).as_posix() for path in due],
-        "history_target": "memory/history/",
-    }
-    if as_json:
-        print(json.dumps(payload, indent=2))
-    elif due:
-        print(
-            "compaction: due - move the three oldest QA-approved slices to "
-            "memory/history/:"
-        )
-        for rel in payload["compact"]:
-            print(f"  - {rel}")
-    else:
-        print(f"compaction: ok ({len(approved)} active QA-approved slice(s))")
-    return 1 if enforce and due else 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -158,8 +129,6 @@ def main(argv: list[str] | None = None) -> int:
             hashed = agent_evidence.apply_hashes(data)
             print(hashed["evidence_hash"])
         return 0
-    if check == "compaction":
-        return _compaction(root, enforce=args.enforce, as_json=args.json_output)
     if check == "ownership":
         findings = ownership.validate_ownership(
             root,

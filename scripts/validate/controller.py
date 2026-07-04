@@ -2,7 +2,7 @@
 
 Maps check names to service functions and runs the selected checks, returning
 Findings for the view to render. Special runners (gate, runtime-smoke,
-compaction, playwright-output) are dispatched by the CLI directly since they do
+playwright-output) are dispatched by the CLI directly since they do
 not follow the `validate_*(root) -> list[Finding]` shape.
 """
 

@@ -104,58 +104,6 @@ def parse_dependencies(
     return prd, adr, depends_on, rules
 
 
-def slice_state(slice_md: Path) -> str:
-    text = read_text(slice_md)
-    match = re.search(r"^\s*-?\s*State:\s*(.+?)\s*$", text, re.MULTILINE)
-    return match.group(1).strip() if match else ""
-
-
-def slice_qa_date(slice_md: Path) -> str:
-    text = read_text(slice_md)
-    match = re.search(r"^\s*-?\s*QA verdict date:\s*(.+?)\s*$", text, re.MULTILINE)
-    return match.group(1).strip() if match else ""
-
-
-def approved_active_slices(root: Path) -> list[Path]:
-    approved: list[Path] = []
-    for memory_root in feature_memory_roots(root):
-        for slice_md in memory_root.rglob("slice.md"):
-            relative_parts = slice_md.relative_to(memory_root).parts
-            if "history" in relative_parts:
-                continue
-            if slice_state(slice_md).upper() == "QA APPROVED":
-                approved.append(slice_md.parent)
-    return sorted(
-        approved,
-        key=lambda path: (
-            slice_qa_date(path / "slice.md") or "9999-99-99",
-            path.stat().st_mtime,
-            path.as_posix(),
-        ),
-    )
-
-
-def compaction_due_slices(root: Path) -> list[Path]:
-    approved = approved_active_slices(root)
-    if len(approved) < 4:
-        return []
-    return approved[:3]
-
-
-def validate_compaction(root: Path) -> list[Finding]:
-    findings: list[Finding] = []
-    due = compaction_due_slices(root)
-    if due:
-        names = ", ".join(path.relative_to(root).as_posix() for path in due)
-        findings.append(
-            Finding(
-                "memory/feature",
-                f"compaction due: move the three oldest QA-approved slices to memory/history/: {names}",
-            )
-        )
-    return findings
-
-
 def validate_feature_memory(root: Path) -> list[Finding]:
     findings: list[Finding] = []
     required_sections = [
@@ -177,13 +125,13 @@ def validate_feature_memory(root: Path) -> list[Finding]:
             )
         )
     if (root / MEMORY_DIR).exists():
-        allowed_memory_entries = {PRD_DIR, ADR_DIR, FEATURE_DIR, "history", GLOBAL_RULES_FILE}
+        allowed_memory_entries = {PRD_DIR, ADR_DIR, FEATURE_DIR, GLOBAL_RULES_FILE}
         for entry in (root / MEMORY_DIR).iterdir():
             if entry.name not in allowed_memory_entries:
                 findings.append(
                     Finding(
                         entry.relative_to(root).as_posix(),
-                        "memory may only contain PRD/, ADR/, feature/, history/, and rules.md",
+                        "memory may only contain PRD/, ADR/, feature/, and rules.md",
                     )
                 )
     if (root / MEMORY_DIR / PRD_DIR).exists():
@@ -207,7 +155,7 @@ def validate_feature_memory(root: Path) -> list[Finding]:
     if (root / MEMORY_DIR).exists():
         for slice_md in (root / MEMORY_DIR).rglob("slice.md"):
             rel_parts = slice_md.relative_to(root / MEMORY_DIR).parts
-            if rel_parts[:1] not in [(FEATURE_DIR,), ("history",)]:
+            if rel_parts[:1] != (FEATURE_DIR,):
                 findings.append(
                     Finding(
                         slice_md.relative_to(root).as_posix(),
@@ -244,8 +192,6 @@ def validate_feature_memory(root: Path) -> list[Finding]:
     for memory_root in feature_memory_roots(root):
         for slice_md in memory_root.rglob("slice.md"):
             relative_parts = slice_md.relative_to(memory_root).parts
-            if "history" in relative_parts:
-                continue
             if relative_parts and relative_parts[0] == "rules":
                 # Reserved global rules area, not a feature slice.
                 continue
@@ -377,8 +323,6 @@ def validate_test_coverage_mapping(root: Path) -> list[Finding]:
     findings: list[Finding] = []
     for memory_root in feature_memory_roots(root):
         for slice_md in memory_root.rglob("slice.md"):
-            if "history" in slice_md.relative_to(memory_root).parts:
-                continue
             rel = slice_md.relative_to(root).as_posix()
             text = read_text(slice_md)
             is_minimal = "template-minimal" in text or "Minimal Slice" in text

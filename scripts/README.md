@@ -45,7 +45,6 @@ There are no per-check wrapper files; every check is a subcommand of `cli.py`.
 | Validate memory contracts | `python scripts/validate/cli.py memory --root .` |
 | Validate agent prompt interpretation evidence | `python scripts/validate/cli.py agent-evidence --root .` |
 | Generate agent evidence hashes | `python scripts/validate/cli.py agent-evidence-hash --root . --file agent-evidence/prompt-N/agent-evidence.json --write` |
-| Check memory compaction threshold | `python scripts/validate/cli.py compaction --root .` |
 | Validate Playwright story-test contracts | `python scripts/validate/cli.py playwright-stories --root .` |
 | Validate hook registration and smoke paths | `python scripts/validate/cli.py hook-registration --root .` |
 | Validate stack-local project layout | `python scripts/validate/cli.py project-layout --root .` |

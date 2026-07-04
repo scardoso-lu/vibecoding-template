@@ -5,7 +5,7 @@ Memory lives under `memory/` (gitignored, runtime only). Product planning uses `
 ## Templates
 
 - **Routing table**: `.claude/templates/template-routing.md` maps slice needs to focused category templates.
-- **Category templates**: `.claude/templates/categories/` contains small section templates for base slice, rules, foundation, backend, frontend, E2E, QA, and history.
+- **Category templates**: `.claude/templates/categories/` contains small section templates for base slice, rules, foundation, backend, frontend, E2E, and QA.
 - **Full slice index**: `.claude/templates/template-full.md` is intentionally small and points to the routing table.
 - **Minimal slice**: `.claude/templates/template-minimal.md` is for docs, config-only, copy, and one-file non-behavior changes.
 
@@ -13,5 +13,5 @@ The product-owner and software-architect read `template-routing.md` first, then 
 
 ## Workflow rules
 
-See `.claude/agents/product-owner.md` and `.claude/agents/software-architect.md` for Plan Mode steps, Minimal Slice Mode eligibility, and compaction schedule; `.claude/agents/business-challenger.md` and `.claude/agents/technical-challenger.md` for the 90 percent challenge gates; and `.claude/agents/orchestrator.md` for the product/architecture/challenge loop and routing rules.
+See `.claude/agents/product-owner.md` and `.claude/agents/software-architect.md` for Plan Mode steps and Minimal Slice Mode eligibility; `.claude/agents/business-challenger.md` and `.claude/agents/technical-challenger.md` for the challenge gates; and `.claude/agents/orchestrator.md` for the product/architecture/challenge loop and routing rules.
 

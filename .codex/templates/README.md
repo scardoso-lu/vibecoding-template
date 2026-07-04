@@ -5,7 +5,7 @@ Memory lives under `memory/` (gitignored, runtime only). Product planning uses `
 ## Templates
 
 - **Routing table**: `.codex/templates/template-routing.md` maps slice needs to focused category templates.
-- **Category templates**: `.codex/templates/categories/` contains small section templates for base slice, rules, foundation, backend, frontend, E2E, QA, and history.
+- **Category templates**: `.codex/templates/categories/` contains small section templates for base slice, rules, foundation, backend, frontend, E2E, and QA.
 - **Full slice index**: `.codex/templates/template-full.md` is intentionally small and points to the routing table.
 - **Minimal slice**: `.codex/templates/template-minimal.md` is for docs, config-only, copy, and one-file non-behavior changes.
 
@@ -13,5 +13,5 @@ The product-owner and software-architect read `template-routing.md` first, then 
 
 ## Workflow rules
 
-See `.codex/agents/product-owner.toml` and `.codex/agents/software-architect.toml` for Plan Mode steps, Minimal Slice Mode eligibility, and compaction schedule; `.codex/agents/business-challenger.toml` and `.codex/agents/technical-challenger.toml` for the 90 percent challenge gates; and `.codex/agents/orchestrator.toml` for the product/architecture/challenge loop and routing rules.
+See `.codex/agents/product-owner.toml` and `.codex/agents/software-architect.toml` for Plan Mode steps and Minimal Slice Mode eligibility; `.codex/agents/business-challenger.toml` and `.codex/agents/technical-challenger.toml` for the challenge gates; and `.codex/agents/orchestrator.toml` for the product/architecture/challenge loop and routing rules.
 

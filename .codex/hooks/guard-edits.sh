@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PreToolUse guard for Edit / Write / apply_patch - protects files that must not be
+# PreToolUse guard for Edit / Write / MultiEdit - protects files that must not be
 # hand-edited, and enforces QA's write scope using the subagent
 # identity (agent_type) the hook receives. Emits the PreToolUse deny decision as
 # JSON. Fails open (exit 0) if JSON parsing is unavailable.
@@ -20,13 +20,6 @@ deny() {
   hook_json_pretool_deny "$1"
   exit 0
 }
-
-# Compacted, QA-approved historical slices are review-only - never edited as active
-# handoffs (see orchestrator compaction rules in AGENTS.md).
-case "$FP" in
-  */memory/history/*|memory/history/*)
-    deny "'memory/history/' is review-only (compacted QA-approved slices). Do not edit historical summaries." ;;
-esac
 
 # Secrets files. .env.example is the tracked template and stays editable.
 base="$(basename "$FP")"
@@ -59,10 +52,10 @@ case "$base" in
 esac
 case "$FP" in
   */memory/PRD/*|memory/PRD/*|*/memory/ADR/*|memory/ADR/*|*/memory/feature/*|memory/feature/*|\
-  */memory/history/*|memory/history/*|*/memory/rules.md|memory/rules.md)
+  */memory/rules.md|memory/rules.md)
     : ;;
   */memory/*|memory/*)
-    deny "memory/ may only contain PRD/, ADR/, feature/, history/, and rules.md. Do not create role-specific or ad-hoc memory files ('$FP')." ;;
+    deny "memory/ may only contain PRD/, ADR/, feature/, and rules.md. Do not create role-specific or ad-hoc memory files ('$FP')." ;;
 esac
 
 # Read-only challengers: their entire output is a scored critique. Any file write is out of role.
@@ -71,7 +64,7 @@ case "$AGENT" in
     deny "A '$AGENT' subagent is read-only: never edit PRDs, memory, rules, code, or configuration. Return findings in the challenge verdict instead of writing '$FP'." ;;
 esac
 
-# Role write scopes from the agent contracts (AGENTS.md + .codex/agents/*.toml). The main thread
+# Role write scopes from the agent contracts (CLAUDE.md + .claude/agents/*.md). The main thread
 # (empty agent_type) is unaffected.
 case "$AGENT" in
   product-owner)

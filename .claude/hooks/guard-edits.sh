@@ -21,13 +21,6 @@ deny() {
   exit 0
 }
 
-# Compacted, QA-approved historical slices are review-only - never edited as active
-# handoffs (see orchestrator compaction rules in CLAUDE.md).
-case "$FP" in
-  */memory/history/*|memory/history/*)
-    deny "'memory/history/' is review-only (compacted QA-approved slices). Do not edit historical summaries." ;;
-esac
-
 # Secrets files. .env.example is the tracked template and stays editable.
 base="$(basename "$FP")"
 case "$base" in
@@ -59,10 +52,10 @@ case "$base" in
 esac
 case "$FP" in
   */memory/PRD/*|memory/PRD/*|*/memory/ADR/*|memory/ADR/*|*/memory/feature/*|memory/feature/*|\
-  */memory/history/*|memory/history/*|*/memory/rules.md|memory/rules.md)
+  */memory/rules.md|memory/rules.md)
     : ;;
   */memory/*|memory/*)
-    deny "memory/ may only contain PRD/, ADR/, feature/, history/, and rules.md. Do not create role-specific or ad-hoc memory files ('$FP')." ;;
+    deny "memory/ may only contain PRD/, ADR/, feature/, and rules.md. Do not create role-specific or ad-hoc memory files ('$FP')." ;;
 esac
 
 # Read-only challengers: their entire output is a scored critique. Any file write is out of role.

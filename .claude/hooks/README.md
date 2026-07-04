@@ -8,7 +8,7 @@ every clone inherits them.
 |---|---|---|---|
 | `session-start.sh` | `SessionStart` | - | Installs backend/frontend deps (`uv sync`, `pnpm install`) when their manifests exist, so tests and linters are ready in a fresh remote container. |
 | `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, and implementer/QA shell reads of agent infrastructure. |
-| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to review-only `memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Enforces the memory placement contract (`prd.md`/`adr.md`/`slice.md` only at their contract paths; `memory/` limited to `PRD/ ADR/ feature/ history/ rules.md`) and the role write scopes: challengers are read-only, product-owner writes only `memory/PRD/**`, software-architect only `memory/ADR/**`+`memory/feature/**`+`memory/rules.md`, orchestrator never memory or app code, developers never the other stack's app root or planning memory, and **QA** only `frontend/e2e/**` specs/helpers and the slice verdict. |
+| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to secrets files (`.env`, `.env.*`; `.env.example` stays editable). Enforces the memory placement contract (`prd.md`/`adr.md`/`slice.md` only at their contract paths; `memory/` limited to `PRD/ ADR/ feature/ rules.md`) and the role write scopes: challengers are read-only, product-owner writes only `memory/PRD/**`, software-architect only `memory/ADR/**`+`memory/feature/**`+`memory/rules.md`, orchestrator never memory or app code, developers never the other stack's app root or planning memory, and **QA** only `frontend/e2e/**` specs/helpers and the slice verdict. |
 | `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks implementer/QA subagents from reading `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, `scripts/`, hooks, settings, and agent templates. Main-thread and coordination-tier reads pass through. |
 | `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the software-architect may call the guidelines server**; other roles are denied and told to request context through the orchestrator. Also enforces the tool budget: `get_all_context` is denied for every caller, and the software-architect may call only `get_metadata`/`search_guidelines`/`get_guideline`. |
 | developer handoff prompt gate | `SubagentStart` | `backend-developer\|frontend-developer` | Model-checks implementer handoffs before code starts: slice path, linked PRD/ADR/rules context, Agent Plan row, Do Not Touch, ACs, tests/evidence expectations, provenance, and narrow read scope. |
@@ -97,19 +97,15 @@ this.
 the scripts fall back to stdin. This avoids Windows shells where redirected stdin makes a
 WinGet-provided `jq.exe` fail to execute.
 
-## Closing the Bash gap, compaction, and commit secrets
+## Closing the Bash gap and commit secrets
 
-Seven hooks cover paths the per-edit hooks miss:
+Six hooks cover paths the per-edit hooks miss:
 
 - **`format-changed.sh` (`Stop`)** - `auto-format.sh` only fires on `Edit`/`Write`, so files written
   through `Bash` (Alembic `--autogenerate` migrations, codegen, scaffolding) never get formatted.
   Once per turn this scans `git status --porcelain` and routes each changed/untracked file back
   through `auto-format.sh`, so there is one source of truth for the ruff/prettier mapping. Never
   blocks; loop-safe via `stop_hook_active`; a no-op when no formatter is installed.
-
-- Feature-memory compaction is advisory, not a hook: run `scripts/validate/cli.py compaction` on
-  demand to see which QA-approved slices are oldest, then move them under `memory/history/`.
-  No Stop hook blocks on it.
 
 - **`workflow-watch.sh` (`Stop`)** - runs one aggregate workflow check for workflow-infrastructure
   changes, otherwise runs only the relevant targeted validators based on `git status`. This keeps

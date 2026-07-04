@@ -7,10 +7,8 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from scripts.validate.services.feature_memory import (
-    compaction_due_slices,
     global_rules_slugs,
     parse_dependencies,
-    validate_compaction,
     validate_feature_memory,
 )
 
@@ -291,47 +289,3 @@ def test_role_specific_memory_directory_is_reported(tmp_path: Path) -> None:
     assert any("role-specific memory directory" in f.message for f in findings)
 
 
-def write_approved_slice(root: Path, name: str, date: str) -> None:
-    slice_dir = root / "memory" / "feature" / name
-    slice_dir.mkdir(parents=True)
-    (slice_dir / "slice.md").write_text(
-        f"""# {name}
-
-## Status
-- State: QA APPROVED
-- QA verdict date: {date}
-""",
-        encoding="utf-8",
-    )
-
-
-def test_compaction_due_when_four_active_approved_slices_exist(tmp_path: Path) -> None:
-    write_approved_slice(tmp_path, "one", "2026-01-01")
-    write_approved_slice(tmp_path, "two", "2026-01-02")
-    write_approved_slice(tmp_path, "three", "2026-01-03")
-    write_approved_slice(tmp_path, "four", "2026-01-04")
-
-    due = [path.name for path in compaction_due_slices(tmp_path)]
-
-    assert due == ["one", "two", "three"]
-    assert any(
-        "compaction due" in finding.message for finding in validate_compaction(tmp_path)
-    )
-
-
-def test_compaction_ignores_history_and_non_approved_slices(tmp_path: Path) -> None:
-    write_approved_slice(tmp_path, "one", "2026-01-01")
-    write_approved_slice(tmp_path, "two", "2026-01-02")
-    write_approved_slice(tmp_path, "three", "2026-01-03")
-    history = tmp_path / "memory" / "history" / "old"
-    history.mkdir(parents=True)
-    (history / "slice.md").write_text(
-        "## Status\n- State: QA APPROVED\n", encoding="utf-8"
-    )
-    blocked = tmp_path / "memory" / "feature" / "blocked"
-    blocked.mkdir(parents=True)
-    (blocked / "slice.md").write_text(
-        "## Status\n- State: QA BLOCKED\n", encoding="utf-8"
-    )
-
-    assert compaction_due_slices(tmp_path) == []
