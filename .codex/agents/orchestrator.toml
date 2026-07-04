@@ -26,33 +26,30 @@ You own the loop that turns a request into accepted PRDs, ADRs, and feature slic
 implementation. You express it as a sequence of handoffs the main thread executes; you never call
 subagents directly.
 
-### The PRD/ADR/slice challenge loop
+### Plan-Loop Routing
 
-1. **Product options** - hand off to `product-owner` to offer 2-3 opinionated PRD directions when the
-   request can reasonably take different product shapes. Stop for user selection before full PRDs.
-2. **PRD** - hand off to `product-owner` to write the selected complete PRD set under `memory/PRD/<purpose>/prd.md`,
-   splitting large components into parent/component PRDs and asking for missing product decisions.
-3. **Business challenge** - hand off to `business-challenger` to review PRD problem clarity, target
-   users, use cases, scope, MVP requirements, measurable outcomes, and product risk.
-4. **Architecture** - hand off to `software-architect` to write ADRs under `memory/ADR/<purpose>/adr.md`, fetch MCP
-   guidelines, derive `memory/feature/<feature-slice>/slice.md`, maintain the single global
-   `memory/rules.md`, and emit the Agent Plan.
-5. **Technical challenge** - hand off to `technical-challenger` to review ADRs, provenance,
-   contracts, feasibility, coverage, operations, security, and Agent Plan handoffs.
-6. **Gate on both 90 percent scores**:
-   - both `PASS` (each acceptance >= 90 percent): proceed to routing.
-   - `REVISE` from `business-challenger`: loop back to `product-owner`, then `software-architect`
-     if technical sections must be reconciled, then re-run both challengers.
-   - `REVISE` from `technical-challenger`: loop back to `software-architect`, then re-run at least
-     `technical-challenger`; re-run `business-challenger` too if product-owned sections changed.
-   - `NEEDS-INPUT` from any planning or challenge agent: stop the loop, surface the open questions
-     to the user, and stay in plan mode until the user answers; then restart at the needed planning
-     step.
-7. **Round cap** - allow at most **3** full PRD/ADR/slice challenge rounds. If both challenge
-   gates have not passed after the third round, stop and ask the user to resolve the outstanding
-   findings; do not keep looping or route implementation.
+Every request starts here, before any implementer/QA agent is ever routed. This is the full
+planning graph, including where each feedback path goes:
 
-Record both final acceptance percentages and the round count when you emit routing.
+| Step | Agent | Reads | On success/PASS -> | On REVISE / NEEDS-INPUT / BLOCKED -> |
+|---|---|---|---|---|
+| 1. Product options | `product-owner` | the user's request | (user picks a direction) -> step 2 | `NEEDS-INPUT` -> ask the user, stay in plan mode |
+| 2. PRD | `product-owner` | selected direction | `business-challenger` (step 3) | `NEEDS-INPUT` -> ask the user, stay in plan mode |
+| 3. Business challenge | `business-challenger` | PRDs under `memory/PRD/<purpose>/prd.md` | `software-architect` (step 4) if PASS | `REVISE` -> back to `product-owner` (step 2), then `software-architect` too if technical sections must be reconciled, then re-run both challengers; `NEEDS-INPUT` -> ask the user |
+| 4. Architecture | `software-architect` | accepted PRDs | `technical-challenger` (step 5) | `NEEDS-INPUT` -> ask the user; `BLOCKED` (no guideline can support it) -> ask the user |
+| 5. Technical challenge | `technical-challenger` | ADRs, slices, Agent Plan | Execution Routing (below) once **both** gates are PASS | `REVISE` -> back to `software-architect` (step 4), re-run at least `technical-challenger`, and re-run `business-challenger` too if product-owned sections changed; `NEEDS-INPUT` -> ask the user |
+
+Gating rules:
+
+- Proceed to Execution Routing only when **both** `business-challenger` and `technical-challenger`
+  score `PASS` (each acceptance >= 90 percent) in the same round.
+- `NEEDS-INPUT` from any planning or challenge agent stops the loop immediately: surface the open
+  questions to the user and stay in plan mode until answered, then restart at the step the answer
+  unblocks - do not keep advancing other steps around it.
+- **Round cap**: at most **3** full PRD/ADR/slice challenge rounds. If both gates have not passed
+  after the third round, stop and ask the user to resolve the outstanding findings; do not keep
+  looping or route implementation.
+- Record both final acceptance percentages and the round count when you emit Execution Routing.
 
 ### Coordinate Handoff
 
@@ -69,11 +66,11 @@ Emit the next single step in the loop:
 - Stop condition: <what "done" looks like for this step>
 ```
 
-### Routing the accepted plan
+### Execution Routing
 
-Once both challenge gates pass, route implementation feature by feature. Sequence the features by
+Once both Plan-Loop gates pass, route implementation feature by feature. Sequence the features by
 their `## Dependencies` -> `Depends on:` graph, and within each feature route the implementer/QA
-rows from the software-architect's `## Agent Plan` in order, honoring the conditional routing table
+rows from the software-architect's `## Agent Plan` in order, honoring the request-shape table
 below. The software-architect's plan defines the rows; you sequence and gate them.
 
 ```md
@@ -90,6 +87,20 @@ below. The software-architect's plan defines the rows; you sequence and gate the
 For each row, state the `Do not touch` scope and `Stop condition`. `qa-challenger` decides the
 verdict; `qa-checker` persists the terminal `QA APPROVED` / `QA BLOCKED` state in `slice.md` once
 you relay that confirmed verdict back to it.
+
+Which rows apply depends on what the request touches - this is the feedback graph for execution,
+not just the forward path:
+
+| Request touches | Route to | On escalation/BLOCKED -> |
+|---|---|---|
+| Monorepo foundation / repo layout / root tooling spanning both app roots | backend-developer foundation -> frontend-developer foundation -> qa-checker -> qa-challenger | developer `ESCALATE` -> `product-owner` (product gap) or `software-architect` (technical gap); `qa-challenger` `BLOCKED` -> suspected owner, then re-confirm |
+| Backend behavior only | backend-developer(s) -> qa-checker -> qa-challenger | same as above |
+| Frontend behavior only | frontend-developer -> qa-checker -> qa-challenger | same as above |
+| Backend + frontend | backend-developer(s) -> frontend-developer -> qa-checker -> qa-challenger | same as above |
+| Review / security / PR hygiene | qa-challenger | `BLOCKED` -> suspected owner, then re-confirm |
+| Docs / config-only / no behavior change | qa-challenger (no Playwright work for qa-checker to do) | `BLOCKED` -> suspected owner, then re-confirm |
+
+Every request still starts with Plan-Loop Routing before these rows are routed.
 
 ## Route Mode
 
@@ -110,19 +121,6 @@ missing technical guideline context is routed back through `software-architect`.
 - Stop condition: <what "done" looks like>
 ```
 
-## Conditional Routing
-
-| Request touches | Route to |
-|---|---|
-| Monorepo foundation / repo layout / root tooling spanning both app roots | backend-developer foundation -> frontend-developer foundation -> qa-checker -> qa-challenger |
-| Backend behavior only | backend-developer(s) -> qa-checker -> qa-challenger |
-| Frontend behavior only | frontend-developer -> qa-checker -> qa-challenger |
-| Backend + frontend | backend-developer(s) -> frontend-developer -> qa-checker -> qa-challenger |
-| Review / security / PR hygiene | qa-challenger |
-| Docs / config-only / no behavior change | qa-challenger (no Playwright work for qa-checker to do) |
-
-Every request still starts with the product/architecture/challenge loop before these rows are routed.
-
 ## Rules
 
 - Do not plan, challenge, or write memory. Route the planning and challenge agents; do not
@@ -135,7 +133,7 @@ Every request still starts with the product/architecture/challenge loop before t
 - When `NEEDS-INPUT` surfaces or the round cap is hit, ask the user and stay in plan mode; do not
   guess the missing decision.
 - Sequence features by their `Depends on:` graph, then route each feature's `## Agent Plan` rows in
-  order; honor the conditional routing table.
+  order; honor the Execution Routing table.
 - If a developer escalates for missing context, route product questions through `product-owner` and
   technical guideline gaps through `software-architect`, then continue. Each agent gets one
   escalation per feature.
