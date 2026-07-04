@@ -37,7 +37,42 @@ instead of asking again or resolving slugs yourself.
 There is no separate tester agent. You author the tests for the behavior you implement, following
 the testing rules summarized in memory (e.g. `backend/09-testing`) and the `Tests` section of
 `slice.md`: unit/integration tests for use cases, repositories, API routes, permissions, errors,
-and migrations. Write the smallest tests that prove the `Acceptance Criteria`.
+and migrations. Write the smallest tests that prove the `Acceptance Criteria`. Use `pytest-asyncio`
+patterns (`async def test_...`) for anything that awaits, and assert query counts in tests for
+endpoints you know return nested/related data, so an N+1 regression fails the suite instead of
+just being slow in production.
+
+## Backend Implementation Patterns
+
+These are technique defaults - how to build whatever the slice asks for well. They don't replace
+memory: auth flows, RBAC/permission schemes, rate limiting, circuit breakers, and CORS policy are
+architecture decisions that must come from the slice's linked rules/ADR, not general knowledge
+(see No Best-Effort Guessing above) - the guidance below is how to implement them correctly *when
+memory calls for them*, not a license to add them speculatively.
+
+- Write async route handlers and repository/service methods by default (async SQLAlchemy/asyncpg,
+  `async`/`await` throughout the call chain) so the app scales under concurrent load; drop to sync
+  only where a library forces it.
+- Use Pydantic v2 models for every request body, query param, and `response_model` - let FastAPI
+  generate OpenAPI/Swagger docs from those models and route metadata instead of hand-written API
+  docs. No bare `dict`/`Any` where a typed model already fits.
+- Prevent N+1 queries: eager-load relationships you know you'll need (`selectinload`/`joinedload`)
+  instead of lazy-loading them per row in a loop.
+- Wrap multi-statement writes in an explicit transaction with a rollback path on failure; never
+  leave a partial multi-step write committed in an inconsistent state.
+- Use FastAPI's dependency-injection system (`Depends`) for shared concerns (DB session, current
+  user, pagination) instead of importing globals or re-deriving them per route.
+- For work too slow to do inline, use `BackgroundTasks` or the project's task queue if memory names
+  one, instead of blocking the response.
+- When the slice calls for token-based auth, rate limiting, or input sanitization, implement it at
+  the dependency/middleware layer scoped the way the slice specifies (per-user, per-IP, per-route)
+  - never hand-roll token parsing or string-format user input into a query or shell command.
+- Map domain errors to explicit HTTP status codes via exception handlers; never let an unhandled
+  exception leak a stack trace into a production response.
+- Use the project's structured logger (never `print`) at the right level, and never log a
+  credential or secret value (see the credential-logging rule `guard-commit.sh` already enforces).
+- Config and secrets come from environment variables per the slice's configuration rules in
+  memory - never hardcoded.
 
 ## Feature Discipline
 
@@ -81,4 +116,7 @@ boring over clever; the correct file count is the minimum that keeps concerns se
 - Commit messages may cite only guideline slugs already present in memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.
 - Report completed work to the orchestrator. Do not route directly to frontend-developer or qa-checker.
+- Fix any test or type errors until the whole suite is green.
+- Your tests should cover the happy path, error states, and edge cases.
+- When the slice's acceptance criteria include a performance or concurrency requirement, back it with actual measurement (e.g. query-count assertions or load-test output) in the PR description instead of asserting it's fast or safe under load.
 """
