@@ -2,12 +2,27 @@
 # Notification hook — desktop alert when Codex is waiting for input or permission, so
 # you can step away from the terminal. Cross-platform; a silent no-op where no
 # notification backend exists (remote containers, CI).
+#
+# Registered only for the attention-worthy Notification matchers (permission_prompt,
+# idle_prompt, agent_needs_input) - not every subtype (e.g. auth_success, agent_completed)
+# fires a desktop popup, since those don't need you to look.
+#
+# Belt-and-suspenders main-thread scoping: if the event ever carries an agent_type (a
+# subagent-attributed notification), skip - you only need the popup for the top-level
+# session waiting on you, not for background subagent churn. When agent_type is absent
+# (the normal case for this event), this is a no-op and the notification fires as before.
 set -uo pipefail
 
-MSG="${1:-Codex needs your attention}"
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HOOK_DIR/hook-json.sh" 2>/dev/null || true
 
-# Consume and ignore the Notification event JSON on stdin.
-cat >/dev/null 2>&1 || true
+if command -v hook_json_can_parse >/dev/null 2>&1 && hook_json_can_parse; then
+  INPUT_PEEK="$(cat)"
+  AGENT_PEEK="$(hook_json_get "$INPUT_PEEK" "agent_type")"
+  [ -z "$AGENT_PEEK" ] || exit 0
+fi
+
+MSG="${1:-Codex needs your attention}"
 
 case "$(uname -s 2>/dev/null || echo unknown)" in
   Darwin)

@@ -26,6 +26,8 @@ every clone inherits them.
 | `track-compact.sh` | `PostCompact` | - | Appends a JSON line (timestamp + event fields) to a temp-dir log every time a compaction completes. `PostCompact` stdout is never fed back into context (unlike `SessionStart`), so this hook is side-effects-only - it cannot and does not replace `reinject-context.sh`. |
 | `context-usage-watch.sh` | `PostToolUse` | - (all tools) | Watches transcript token usage; at >=90% of the context window (once per session) it injects an instruction to write the repo-root `SESSION-HANDOFF.md` (completed / missing / PRD-ADR-slice references / next steps) before auto-compaction, and to output the handoff verbatim in the chat reply (the file is gitignored, so chat is the durable copy). |
 | `resume-handoff.sh` | `SessionStart` | `startup\|resume` | If `SESSION-HANDOFF.md` exists, instructs Claude to first ask the user whether to inject it; on yes, the missing items are implemented following the handoff's PRD/ADR/feature references. |
+| `notify-attention.sh` | `Notification` | `permission_prompt\|idle_prompt\|agent_needs_input` | Desktop toast when the main thread needs you (a permission prompt, an idle prompt, or an agent waiting on input). Skips if the event carries an `agent_type` (subagent-attributed, not yours to act on). Silent no-op with no notification backend (remote containers, CI). |
+| `notify-stop.sh` | `Stop` | - | Speaks a short phrase (local TTS) when a turn ends, audible only on the machine running the session. Silent no-op with no TTS backend. |
 
 ## How blocking works
 
