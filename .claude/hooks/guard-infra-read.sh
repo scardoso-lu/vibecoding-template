@@ -27,12 +27,17 @@ deny() {
   exit 0
 }
 
-if [ "$AGENT" = "qa" ]; then
-  case "$PATH_VALUE" in
-    .claude/skills/playwright-cli/*|*/.claude/skills/playwright-cli/*)
-      exit 0 ;;
-  esac
-fi
+# Templates and skills are reference material, not agent infrastructure: they carry no hook/
+# settings/prompt logic, so every implementer/QA subagent may read them (e.g. QA's own prompt
+# points at .claude/templates/categories/e2e.md's worked example, and any subagent may need a
+# skill's docs). Everything else under .claude/.codex stays blocked below.
+case "$PATH_VALUE" in
+  .claude/templates/*|*/.claude/templates/*|\
+  .claude/skills/*|*/.claude/skills/*|\
+  .codex/templates/*|*/.codex/templates/*|\
+  .codex/skills/*|*/.codex/skills/*)
+    exit 0 ;;
+esac
 
 case "$PATH_VALUE" in
   CLAUDE.md|AGENTS.md|*/CLAUDE.md|*/AGENTS.md|\

@@ -99,8 +99,11 @@ case "$AGENT" in
   ""|orchestrator|product-owner|software-architect|business-challenger|technical-challenger)
     : ;;
   *)
+    # Same templates/skills carve-out as guard-infra-read.sh: reference material, not
+    # agent infrastructure.
     if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \
-       && printf '%s' "$CMD" | grep -Eiq '(^|[[:space:]"'"'"'./\\])(CLAUDE\.md|AGENTS\.md|\.claude|\.codex|scripts)([[:space:]"'"'"'/\\]|$)'; then
+       && printf '%s' "$CMD" | grep -Eiq '(^|[[:space:]"'"'"'./\\])(CLAUDE\.md|AGENTS\.md|\.claude|\.codex|scripts)([[:space:]"'"'"'/\\]|$)' \
+       && ! printf '%s' "$CMD" | grep -Eiq '\.(claude|codex)[/\\](templates|skills)[/\\]'; then
       deny "A '$AGENT' subagent may not inspect agent infrastructure through shell commands. Stop and return ESCALATE so the orchestrator can provide targeted context."
     fi ;;
 esac
