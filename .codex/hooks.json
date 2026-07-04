@@ -32,6 +32,17 @@
         ]
       }
     ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/track-compact.sh",
+            "statusMessage": "Recording compaction"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",

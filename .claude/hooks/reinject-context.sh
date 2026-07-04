@@ -4,6 +4,11 @@
 # Compaction summarizes the conversation and can drop the project's operating rules. Anything this
 # prints to stdout is added back into Claude's context, so we restate the essentials and the live
 # state (which memory slices are active) rather than dumping all of CLAUDE.md.
+#
+# This stays wired to SessionStart (not PostCompact) deliberately: PostCompact fires after
+# compaction too, but its stdout is never fed back into Claude's context (side-effects only), so it
+# cannot do this file's job. track-compact.sh is the PostCompact hook - it only logs that a
+# compaction happened, for out-of-band review.
 set -uo pipefail
 
 ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
