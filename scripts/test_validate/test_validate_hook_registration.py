@@ -22,7 +22,7 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
             "verify-qa.sh",
             "auto-format.sh",
             "format-changed.sh",
-            "workflow-watch.sh",
+            "guard-harness.sh",
             "notify-stop.sh",
         ]:
             (hook_dir / hook).write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -34,7 +34,7 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
         "verify-qa.sh",
         "auto-format.sh",
         "format-changed.sh",
-        "workflow-watch.sh",
+        "guard-harness.sh",
         "notify-stop.sh",
     ]
     if include_guard_mcp:
@@ -111,7 +111,7 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
                                             "verify-qa.sh",
                                             "auto-format.sh",
                                             "format-changed.sh",
-                                            "workflow-watch.sh",
+                                            "guard-harness.sh",
                                             "notify-stop.sh",
                                         ]
                                     ),

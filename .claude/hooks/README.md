@@ -21,7 +21,7 @@ every clone inherits them.
 | `verify-qa.sh` | `SubagentStop` | `qa` | Deterministic QA artifact gate: runs QA, agent evidence, Playwright story, test coverage, E2E coverage, and QA evidence validators before QA returns. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys, AWS/Stripe/GitHub/Slack/Google/OpenAI/npm keys, Azure connection strings/SAS tokens, DB connection-string passwords, JWTs, and credential-named variables being logged - blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
-| `workflow-watch.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, memory, backend, frontend, QA, and Playwright story contracts. |
+| `guard-harness.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, memory, backend, frontend, QA, and Playwright story contracts. |
 | `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 CLAUDE.md rules + the deterministic-gate model + the active PRD/ADR/feature-slice states, and points back at `SESSION-HANDOFF.md` when one exists. |
 | `track-compact.sh` | `PostCompact` | - | Appends a JSON line (timestamp + event fields) to a temp-dir log every time a compaction completes. `PostCompact` stdout is never fed back into context (unlike `SessionStart`), so this hook is side-effects-only - it cannot and does not replace `reinject-context.sh`. |
 | `context-usage-watch.sh` | `PostToolUse` | - (all tools) | Watches transcript token usage; at >=90% of the context window (once per session) it injects an instruction to write the repo-root `SESSION-HANDOFF.md` (completed / missing / PRD-ADR-slice references / next steps) before auto-compaction, and to output the handoff verbatim in the chat reply (the file is gitignored, so chat is the durable copy). |
@@ -111,7 +111,7 @@ Six hooks cover paths the per-edit hooks miss:
   through `auto-format.sh`, so there is one source of truth for the ruff/prettier mapping. Never
   blocks; loop-safe via `stop_hook_active`; a no-op when no formatter is installed.
 
-- **`workflow-watch.sh` (`Stop`)** - runs one aggregate workflow check for workflow-infrastructure
+- **`guard-harness.sh` (`Stop`)** - runs one aggregate workflow check for workflow-infrastructure
   changes, otherwise runs only the relevant targeted validators based on `git status`. This keeps
   guidance drift, hook registration, memory, Playwright story, backend, frontend, and QA
   mechanical checks out of agent prompts without repeatedly fanning out through overlapping wrappers.

@@ -202,7 +202,7 @@
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/workflow-watch.sh"
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-harness.sh"
           },
           {
             "type": "command",

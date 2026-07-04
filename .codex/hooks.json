@@ -201,7 +201,7 @@
           },
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/workflow-watch.sh",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-harness.sh",
             "statusMessage": "Running workflow validators"
           },
           {

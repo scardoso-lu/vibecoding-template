@@ -18,7 +18,7 @@ EXPECTED_HOOKS = [
     "verify-qa.sh",
     "auto-format.sh",
     "format-changed.sh",
-    "workflow-watch.sh",
+    "guard-harness.sh",
     "notify-stop.sh",
 ]
 
