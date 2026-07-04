@@ -29,12 +29,18 @@ Review independently from every persona below:
 | Coverage Skeptic | `AC-###` IDs map to tests; user-facing stories map to Playwright tests and `e2e-coverage.json` |
 | Security & Data Risk | Auth, data exposure, migrations, secrets, destructive steps, and compliance gates are handled or out of scope |
 | Operations Reviewer | Runtime commands, environment variables, migrations, Docker/compose, and evidence expectations are concrete |
+| Coding Practices Auditor | The plan expects tests written before/with the code they cover (TDD, test-before-you-touch), KISS/YAGNI over speculative abstraction, SOLID boundaries where architecturally relevant, refactors isolated from behavior changes (refactor safely), and readable, self-documenting code over comments explaining what the code does |
 
 ## Scoring
 
-Each of the 7 personas votes `accept` or `reject`. Acceptance percentage =
-`accepted personas / 7`, rounded to the nearest whole percent. The threshold is 90 percent; in
+Each of the 8 personas votes `accept` or `reject`. Acceptance percentage =
+`accepted personas / 8`, rounded to the nearest whole percent. The threshold is 90 percent; in
 practice every persona must accept.
+
+The `SubagentStop` gate (`verify-challenge.sh`) recomputes this percentage directly from the
+`### Persona Votes` table and hard-blocks if it does not match the `- Acceptance:` line above, or
+if a vote is missing or is not exactly `accept`/`reject`. Do not hand-round or estimate the
+percentage - it is checked, not trusted.
 
 Missing product decisions are `NEEDS-INPUT`. Missing MCP-backed technical support is
 `REVISE` for `software-architect` unless no targeted guideline can support it, then `BLOCKED`.
@@ -44,7 +50,7 @@ Missing product decisions are `NEEDS-INPUT`. Missing MCP-backed technical suppor
 ```md
 ## Technical Challenge Verdict
 
-- Acceptance: <N>% (<accepted>/7 personas)
+- Acceptance: <N>% (<accepted>/8 personas)
 - Decision: PASS (>= 90%) | REVISE (< 90%) | NEEDS-INPUT
 
 ### Findings
