@@ -37,6 +37,22 @@ if command -v uv >/dev/null 2>&1 && ! command -v validate-tools >/dev/null 2>&1;
   uv tool install validate-tools || log "WARN: 'uv tool install validate-tools' failed; gate will skip validators"
 fi
 
+# A missing validate-tools silently downgrades verify-subagent.sh's compliance gate to
+# ruff/mypy/pytest only (it does `have validate-tools || return 0` per check) - a WARN buried among
+# routine install logs is easy to miss. Make this unmissable: SessionStart stdout is added back
+# into context (see reinject-context.sh), so this block surfaces on every turn until resolved.
+if ! command -v validate-tools >/dev/null 2>&1; then
+  cat <<'EOF' >&2
+[session-start] WARNING: 'validate-tools' is not on PATH in this remote session.
+  verify-subagent.sh silently skips every validate-tools compliance check when the CLI is
+  missing - the developer SubagentStop gate is running degraded (ruff/mypy/pytest only, no
+  compliance scan). Install it manually with 'uv tool install validate-tools' or fix the
+  failed install above; do not treat a green developer gate as compliance-checked until this
+  is resolved.
+EOF
+  log "WARNING: validate-tools still unavailable - the SubagentStop compliance gate is running degraded (see stderr)"
+fi
+
 # Frontend: pnpm-managed Node project.
 if [ -f "package.json" ]; then
   if command -v pnpm >/dev/null 2>&1; then

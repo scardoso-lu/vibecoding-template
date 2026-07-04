@@ -88,6 +88,42 @@ print(json.dumps({
   fi
 }
 
+hook_json_is_coordination_tier() {
+  # Coordination tier: orchestrator, product-owner, software-architect, business-challenger, and
+  # technical-challenger, plus the main thread (empty agent_type - passed as ""). These may read
+  # agent infrastructure directly; every other subagent must go through the orchestrator instead.
+  # Shared by guard-infra-read.sh and guard-bash.sh so the two guards enforce the exact same set
+  # and can't independently drift (they used to each hardcode this case pattern separately).
+  case "$1" in
+    ""|orchestrator|product-owner|software-architect|business-challenger|technical-challenger)
+      return 0 ;;
+    *)
+      return 1 ;;
+  esac
+}
+
+hook_json_is_reference_material_path() {
+  # True when $1 is a normalized path under .claude/templates, .claude/skills, .codex/templates,
+  # or .codex/skills - reference material every subagent may read, not agent infrastructure.
+  # Shared by guard-infra-read.sh (exact-path case match); guard-bash.sh matches the same four
+  # directories against free command text via HOOK_JSON_REFERENCE_PATH_TEXT_REGEX below so both
+  # checks name the same paths in one place.
+  case "$1" in
+    .claude/templates/*|*/.claude/templates/*|\
+    .claude/skills/*|*/.claude/skills/*|\
+    .codex/templates/*|*/.codex/templates/*|\
+    .codex/skills/*|*/.codex/skills/*)
+      return 0 ;;
+    *)
+      return 1 ;;
+  esac
+}
+
+# Same four reference-material directories as hook_json_is_reference_material_path, as a regex
+# fragment for guard-bash.sh's free-text command matching (it can't use the case-glob above since
+# it isn't checking a single extracted path).
+HOOK_JSON_REFERENCE_PATH_TEXT_REGEX='\.(claude|codex)[/\\](templates|skills)[/\\]'
+
 hook_json_stop_block() {
   local reason="$1"
   local py

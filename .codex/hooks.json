@@ -131,6 +131,11 @@
             "type": "prompt",
             "prompt": "Coordination gate for vibecoding-template. Review the just-finished orchestrator output against AGENTS.md. Block if it mixed Coordinate and Route modes in one response, wrote or revised PRDs/ADRs/slices/rules/code itself instead of emitting a handoff, routed implementation before both challenge gates reached at least 90 percent, kept looping past the 3-round cap instead of asking the user, omitted the round count or both acceptance percentages when emitting routing, emitted implementer/QA handoffs without Do Not Touch scope and a Stop condition, ignored the conditional routing table (e.g. routed frontend work for a backend-only change), or sequenced features against their Depends on graph. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific coordination problem and required orchestrator fix>\"}.",
             "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-round-cap.sh",
+            "statusMessage": "Checking round-cap state"
           }
         ]
       },

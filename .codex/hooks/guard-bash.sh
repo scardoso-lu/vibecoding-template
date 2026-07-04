@@ -3,12 +3,18 @@
 # plainly destructive. Emits the documented PreToolUse deny decision as JSON.
 # Fails open (exit 0, no decision) if JSON parsing is unavailable so it never bricks a session.
 #
-# microsoft/agent-governance-toolkit was evaluated as a replacement for this guard: it is a
-# real, maintained policy-enforcement layer (YAML/OPA Rego/Cedar rules, sub-ms interception),
-# but it targets framework callback hooks (LangChain, CrewAI, Google ADK, etc.) and has no
-# documented Codex/Claude Code PreToolUse integration. Adopting it would mean replacing this
-# hook-script model with an external policy engine - a much larger architecture change than
-# this task, so it was not adopted here. Revisit if a native integration ships.
+# microsoft/agent-governance-toolkit was evaluated as a replacement for this guard: it is a real,
+# maintained policy-enforcement layer (YAML rules, OPA/Cedar adapters, sub-ms interception) and it
+# does now ship a first-party Claude Code plugin (agent-governance-claude-code, SessionStart /
+# UserPromptSubmit / PreToolUse hooks + a bundled MCP server) - an earlier version of this comment
+# claimed no such integration existed; that claim was stale and has been corrected. It was still not
+# adopted wholesale: it is a Node.js runtime dependency with a fail-closed default
+# (denyOnPolicyError), where this hook-script model is deliberately pure bash/python and fails open,
+# and its PreToolUse policy overlaps almost entirely with what guard-bash.sh/guard-edits.sh already
+# enforce for this repo - it wouldn't replace the role-scoped guards below, only sit alongside them.
+# What was borrowed instead: the SSRF/cloud-metadata-endpoint block, the curl|bash / wget|bash
+# pipe-to-shell block, and the broader credential-file path list below are adapted from its
+# config/default-policy.json, ported here as plain regex so no new dependency is added.
 set -uo pipefail
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -95,17 +101,37 @@ fi
 
 # Implementer/QA subagents may not read agent infrastructure through shell commands
 # either. Main thread has no agent_type; the coordination tier is allowed.
-case "$AGENT" in
-  ""|orchestrator|product-owner|software-architect|business-challenger|technical-challenger)
-    : ;;
-  *)
-    # Same templates/skills carve-out as guard-infra-read.sh: reference material, not
-    # agent infrastructure.
-    if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \
-       && printf '%s' "$CMD" | grep -Eiq '(^|[[:space:]"'"'"'./\\])(CLAUDE\.md|AGENTS\.md|\.claude|\.codex|scripts)([[:space:]"'"'"'/\\]|$)' \
-       && ! printf '%s' "$CMD" | grep -Eiq '\.(claude|codex)[/\\](templates|skills)[/\\]'; then
-      deny "A '$AGENT' subagent may not inspect agent infrastructure through shell commands. Stop and return ESCALATE so the orchestrator can provide targeted context."
-    fi ;;
-esac
+if ! hook_json_is_coordination_tier "$AGENT"; then
+  # Same templates/skills carve-out as guard-infra-read.sh: reference material, not
+  # agent infrastructure (HOOK_JSON_REFERENCE_PATH_TEXT_REGEX names the same four directories).
+  if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \
+     && printf '%s' "$CMD" | grep -Eiq '(^|[[:space:]"'"'"'./\\])(CLAUDE\.md|AGENTS\.md|\.claude|\.codex|scripts)([[:space:]"'"'"'/\\]|$)' \
+     && ! printf '%s' "$CMD" | grep -Eiq "$HOOK_JSON_REFERENCE_PATH_TEXT_REGEX"; then
+    deny "A '$AGENT' subagent may not inspect agent infrastructure through shell commands. Stop and return ESCALATE so the orchestrator can provide targeted context."
+  fi
+fi
+
+# Cloud instance metadata endpoints (AWS/Alibaba/GCP) hand out live, short-lived credentials to
+# anything that can reach them; a request from inside an agent's shell has no legitimate use in
+# normal development and is a classic SSRF-to-credential-theft path.
+if printf '%s' "$CMD" | grep -Eiq '169\.254\.169\.254|100\.100\.100\.200|metadata\.google\.internal'; then
+  deny "requests to a cloud instance metadata endpoint (169.254.169.254 / 100.100.100.200 / metadata.google.internal) are blocked - these hand out live cloud credentials and have no legitimate use in normal development."
+fi
+
+# Piping a downloaded script straight into a shell interpreter skips any chance to review it first -
+# a classic supply-chain/remote-code-execution pattern regardless of how trustworthy the source
+# looks in the moment.
+if printf '%s' "$CMD" | grep -Eiq '\b(curl|wget)\b[^|;&]*\|[^|;&]*\b(sh|bash|zsh|powershell(\.exe)?|pwsh)\b' \
+   || printf '%s' "$CMD" | grep -Eiq '\bbash\b[[:space:]]*<\([^)]*\b(curl|wget)\b'; then
+  deny "piping a downloaded script directly into a shell (curl|bash, wget|bash, bash <(curl ...)) is blocked - download it, review the contents, then run it explicitly."
+fi
+
+# Broader credential-file reads beyond .env: SSH keys, cloud CLI credential stores, and other
+# dotfiles that hold long-lived secrets. Same read-command shape as the .env check above, matched
+# on the path fragment so it works whether the path is absolute, ~-relative, or bare.
+CRED_FILE_RE='(id_rsa|id_ed25519|id_ecdsa|id_dsa|\.ssh[/\\]|\.aws[/\\]|\.azure[/\\]|\.kube[/\\]config|\.netrc|\.git-credentials|\.npmrc|\.pypirc|\.docker[/\\]config\.json|\.config[/\\]gcloud|\.config[/\\]gh[/\\]hosts\.yml)'
+if printf '%s' "$CMD_NOQUOTE" | grep -Eiq "(^|[[:space:];|&])(cat|type|more|less|head|tail|sed|awk|Get-Content|gc)([[:space:]][^|;&]*)?[[:space:]][^|;&]*${CRED_FILE_RE}"; then
+  deny "reading a credential file (SSH key, cloud CLI credential store, or similar dotfile) via shell is blocked - never dump these into the transcript. Ask the user for the exact value you need instead."
+fi
 
 exit 0

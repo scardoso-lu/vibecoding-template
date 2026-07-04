@@ -7,12 +7,12 @@ every clone inherits them.
 | Hook | Event | Matcher | What it does |
 |---|---|---|---|
 | `session-start.sh` | `SessionStart` | - | Installs backend/frontend deps (`uv sync`, `pnpm install`) when their manifests exist, so tests and linters are ready in a fresh remote container. |
-| `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, implementer/QA shell reads of agent infrastructure, echoing/dumping env vars or secrets files (`.env`, `env`/`printenv`/`set`, secret-shaped `$VAR`/`%VAR%`/`$env:VAR`, `os.environ`/`process.env` one-liners), and broad filesystem scans hunting for installed tools (ask the user for the exact path instead). |
+| `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, implementer/QA shell reads of agent infrastructure, echoing/dumping env vars or secrets files (`.env`, `env`/`printenv`/`set`, secret-shaped `$VAR`/`%VAR%`/`$env:VAR`, `os.environ`/`process.env` one-liners), broader credential-file reads (SSH keys, `~/.aws`, `~/.azure`, `~/.kube/config`, `~/.netrc`, `~/.git-credentials`, `~/.npmrc`, `~/.pypirc`, etc.), cloud instance metadata requests (`169.254.169.254` / `100.100.100.200` / `metadata.google.internal`), piping a downloaded script into a shell (`curl\|bash`, `wget\|bash`, `bash <(curl ...)`), and broad filesystem scans hunting for installed tools (ask the user for the exact path instead). |
 | `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|apply_patch` | Blocks edits to secrets files (`.env`, `.env.*`; `.env.example` stays editable). Enforces the memory placement contract (`prd.md`/`adr.md`/`slice.md` only at their contract paths; `memory/` limited to `PRD/ ADR/ feature/ rules.md`) and the role write scopes: challengers are read-only, product-owner writes only `memory/PRD/**`, software-architect only `memory/ADR/**`+`memory/feature/**`+`memory/rules.md`, orchestrator never memory or app code, developers never the other stack's app root or planning memory, and **QA** only `frontend/e2e/**` specs/helpers, `qa-evidence.json`/`e2e-coverage.json`, and the slice verdict. |
 | `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks implementer/QA subagents from reading `AGENTS.md`, `CLAUDE.md`, agent prompts/hooks/settings, and `scripts/`. Both `.codex/templates/**` and `.codex/skills/**` (and their `.claude/` mirrors) are whitelisted for every subagent - reference material, not agent infrastructure. Main-thread and coordination-tier reads pass through. |
 | `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack_guidelines__.*` | Enforces the core MCP budget rule: **only the software-architect may call the guidelines server**; other roles are denied and told to request context through the orchestrator. Also enforces the tool budget: `get_all_context` is denied for every caller, and the software-architect may call only `get_metadata`/`search_guidelines`/`get_guideline`. |
 | developer handoff prompt gate | `SubagentStart` | `backend-developer\|frontend-developer` | Model-checks implementer handoffs before code starts: slice path, linked PRD/ADR/rules context, Agent Plan row, Do Not Touch, ACs, tests/evidence expectations, provenance, and narrow read scope. |
-| coordination prompt gate | `SubagentStop` | `orchestrator` | Model-checks the orchestrator's return: one mode per response, no plan/memory/code writing, both 90% challenge gates and the 3-round cap enforced, round count + acceptance percentages recorded, and handoffs carry Do Not Touch + Stop condition. |
+| coordination prompt gate | `SubagentStop` | `orchestrator` | Model-checks the orchestrator's return: one mode per response, no plan/memory/code writing, both 90% challenge gates and the 3-round cap enforced, round count + acceptance percentages recorded, and handoffs carry Do Not Touch + Stop condition. Paired with `verify-round-cap.sh` below, which checks the round count deterministically instead of trusting this model judgment alone. |
 | business planning prompt gate | `SubagentStop` | `product-owner\|business-challenger` | Model-checks the PRD phase: selectable options for broad work, complete PRDs under `memory/PRD/<purpose>/prd.md`, P0/P1/P2 MVP requirements by journey/use case, and parent/component PRD links for large components. |
 | architecture planning prompt gate | `SubagentStop` | `software-architect\|technical-challenger` | Model-checks the architecture phase: accepted PRDs become ADRs under `memory/ADR/<purpose>/adr.md`, slices link `PRD:`/`ADR:`/`Rules:`, rules stay in global `memory/rules.md`, and Agent Plan handoffs include larger component context. |
 | QA judgment prompt gate | `SubagentStop` | `qa-challenger` | Model-checks qa-challenger's final judgment: clear slice verdict, required Playwright story coverage/output, deterministic gate evidence, linked PRD/ADR/rules context, and routable `BLOCKED` findings instead of app fixes. |
@@ -20,6 +20,7 @@ every clone inherits them.
 | `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs stack-local validators, static checks, and available tests/coverage before a developer returns. |
 | `verify-qa.sh` | `SubagentStop` | `qa-checker` | Deterministic QA artifact gate: runs QA, agent evidence, Playwright story, test coverage, E2E coverage, and QA evidence validators before qa-checker returns. |
 | `verify-challenge.sh` | `SubagentStop` | `business-challenger\|technical-challenger` | Deterministic scoring gate: reads the challenger's own transcript, recomputes accepted/total from its `### Persona Votes` table, and hard-blocks if that doesn't match the stated `- Acceptance: N%` line or a vote is missing/malformed. An LLM's self-reported percentage is a claim, not evidence. |
+| `verify-round-cap.sh` | `SubagentStop` | `orchestrator` | Deterministic round-cap gate: reads the orchestrator's own transcript for its `## Coordinate Handoff` block, and for every `business-challenge`/`technical-challenge` step, checks the declared `Round: N of 3` against a small hook-owned counter file (not memory, not writable by the orchestrator) keyed by the PRD purpose. Hard-blocks if the round exceeds the cap or regresses/is miscounted relative to what the hook itself has tracked. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys, AWS/Stripe/GitHub/Slack/Google/OpenAI/npm keys, Azure connection strings/SAS tokens, DB connection-string passwords, JWTs, and credential-named variables being logged - blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
 | `guard-harness.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, memory, backend, frontend, QA, and Playwright story contracts. |
@@ -70,6 +71,11 @@ the agent prompts:
   Whitelist: every subagent may read `.codex/templates/**` and `.codex/skills/**` (and the
   `.claude/` mirrors) - they are reference material (e.g. qa-checker's own prompt points at
   `.codex/templates/categories/e2e.md`), not agent infrastructure.
+  The coordination-tier agent list and the templates/skills whitelist each live in exactly one
+  place - `hook_json_is_coordination_tier()` and `hook_json_is_reference_material_path()` /
+  `HOOK_JSON_REFERENCE_PATH_TEXT_REGEX` in `hook-json.sh` - and both `guard-infra-read.sh` and
+  `guard-bash.sh` call the shared helpers instead of each hardcoding their own copy of the same
+  rule (they used to, and could silently drift apart).
 - **Role write scopes** (`guard-edits.sh`): challengers (`business-challenger`,
   `technical-challenger`, `qa-challenger`) are fully read-only; `product-owner` writes only
   `memory/PRD/**` and `agent-evidence/**`; `software-architect` writes only `memory/ADR/**`,
@@ -153,7 +159,7 @@ Six hooks cover paths the per-edit hooks miss:
 
 ## Deterministic verification (PostToolUse + SubagentStop)
 
-Seven hooks move work out of "the agent should remember to do this" and into "this always
+Eight hooks move work out of "the agent should remember to do this" and into "this always
 happens":
 
 - **Developer handoff prompt gate (`SubagentStart`, matcher
@@ -198,6 +204,15 @@ happens":
   before qa-checker can return: QA contract, agent prompt interpretation evidence, Playwright
   story shape, acceptance/test coverage, initial-prompt E2E coverage, and machine-readable QA
   evidence. qa-challenger keeps judgment; this hook owns artifact mechanics.
+
+- **`verify-round-cap.sh` (`SubagentStop`, matcher `orchestrator`)** gives the Plan-Loop round
+  count and 3-round cap a real, hook-owned source of truth. Unlike the persona-vote tally
+  (`verify-challenge.sh`), a round count is a cross-message historical fact, so no single message
+  can self-verify it - this hook maintains its own per-PRD-purpose counter (a temp-dir state file
+  the orchestrator never sees or writes) and hard-blocks if the orchestrator's declared
+  `Round: N of 3` exceeds the cap or regresses relative to what the hook has already tracked for
+  that purpose. The coordination prompt gate still reviews everything else about the loop; this
+  hook only owns the one invariant that can be computed deterministically.
 
 ## Hooks vs subagents - the division of labor
 
@@ -248,6 +263,13 @@ the remote environment (`CODEX_REMOTE=true`). It is idempotent and fail-tolerant
 failed install logs a warning and continues. Until the template has real backend/frontend
 code it is a no-op that just reports "scaffold only". To trade the guarantee for faster
 startup, switch it to async per the SessionStart hook docs.
+
+If `validate-tools` is still missing after the install attempt (or `uv` itself isn't present),
+this hook prints an explicit, multi-line `WARNING` block instead of a single log line - a missing
+`validate-tools` silently downgrades `verify-subagent.sh`'s compliance gate to ruff/mypy/pytest
+only (`have validate-tools || return 0` per check), and a one-line `WARN:` buried among routine
+install logs was too easy to miss. `SessionStart` stdout is added back into context (see
+`reinject-context.sh`), so this warning stays visible until `validate-tools` is actually installed.
 
 ## Testing a hook locally
 

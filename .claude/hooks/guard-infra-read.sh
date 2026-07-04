@@ -12,10 +12,7 @@ INPUT="${HOOK_INPUT_JSON:-}"
 [ -n "$INPUT" ] || INPUT="$(cat)"
 AGENT="$(hook_json_get "$INPUT" "agent_type")"
 
-case "$AGENT" in
-  ""|orchestrator|product-owner|software-architect|business-challenger|technical-challenger)
-    exit 0 ;;
-esac
+hook_json_is_coordination_tier "$AGENT" && exit 0
 
 PATH_VALUE="$(hook_json_get "$INPUT" "tool_input.file_path")"
 [ -n "$PATH_VALUE" ] || PATH_VALUE="$(hook_json_get "$INPUT" "tool_input.path")"
@@ -31,13 +28,7 @@ deny() {
 # settings/prompt logic, so every implementer/QA subagent may read them (e.g. QA's own prompt
 # points at .claude/templates/categories/e2e.md's worked example, and any subagent may need a
 # skill's docs). Everything else under .claude/.codex stays blocked below.
-case "$PATH_VALUE" in
-  .claude/templates/*|*/.claude/templates/*|\
-  .claude/skills/*|*/.claude/skills/*|\
-  .codex/templates/*|*/.codex/templates/*|\
-  .codex/skills/*|*/.codex/skills/*)
-    exit 0 ;;
-esac
+hook_json_is_reference_material_path "$PATH_VALUE" && exit 0
 
 case "$PATH_VALUE" in
   CLAUDE.md|AGENTS.md|*/CLAUDE.md|*/AGENTS.md|\
