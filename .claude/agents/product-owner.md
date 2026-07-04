@@ -63,7 +63,7 @@ Leave ADRs, guideline slugs, feature slices, API/data/frontend contracts, implem
 test coverage mapping, and the final `Agent Plan` for `software-architect`.
 
 Do not write to `memory/feature/`. Do not create role-specific memory directories such as
-`00-shared/`, `backend/`, `frontend/`, or `qa/`.
+`00-shared/`, `backend/`, `frontend/`, `qa-checker/`, or `qa-challenger/`.
 
 ## Handoff to Software Architect
 

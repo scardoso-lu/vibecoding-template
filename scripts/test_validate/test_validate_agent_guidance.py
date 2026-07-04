@@ -18,7 +18,7 @@ def test_detects_stale_agent_guidance_terms(tmp_path: Path) -> None:
     )
     agent_dir = tmp_path / ".claude" / "agents"
     agent_dir.mkdir(parents=True)
-    (agent_dir / "qa.md").write_text(
+    (agent_dir / "qa-checker.md").write_text(
         "Use Spec File and story specs\n", encoding="utf-8"
     )
 
@@ -45,8 +45,10 @@ def test_clean_guidance_has_no_stale_term_findings(tmp_path: Path) -> None:
         ".codex/agents/business-challenger.toml",
         ".claude/agents/technical-challenger.md",
         ".codex/agents/technical-challenger.toml",
-        ".claude/agents/qa.md",
-        ".codex/agents/qa.toml",
+        ".claude/agents/qa-checker.md",
+        ".codex/agents/qa-checker.toml",
+        ".claude/agents/qa-challenger.md",
+        ".codex/agents/qa-challenger.toml",
         ".claude/templates/categories/e2e.md",
         ".codex/templates/categories/e2e.md",
         ".claude/templates/categories/qa.md",

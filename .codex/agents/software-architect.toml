@@ -90,7 +90,8 @@ links under `PRD:`, `ADR:`, or `Rules:`.
 |---|---|---|
 | 1 | backend-developer | `slice.md` + linked PRDs/ADRs + linked `rules.md` slugs |
 | 2 | frontend-developer | `slice.md` + linked PRDs/ADRs + linked `rules.md` slugs |
-| N | qa | `slice.md` + linked PRDs/ADRs + linked `rules.md` slugs + `frontend/e2e/**` + Playwright output |
+| 3 | qa-checker | `slice.md` + linked PRDs/ADRs + linked `rules.md` slugs + `frontend/e2e/**` |
+| 4 | qa-challenger | `slice.md` + linked PRDs/ADRs + linked `rules.md` slugs + `frontend/e2e/**` + Playwright output + qa-checker evidence |
 ```
 
 For each row, state `Do not touch` scope and `Stop condition`. Include the parent PRD/ADR paths that
@@ -98,7 +99,7 @@ the agent may read or grep when component context is needed. This plan lists imp
 only; the `orchestrator` sequences features by `Depends on:` and routes rows once both challengers
 accept.
 
-QA stop condition for user-facing slices: every `E2E Test Stories` row has one Playwright
+qa-checker stop condition for user-facing slices: every `E2E Test Stories` row has one Playwright
 `test(...)` with nearby `// Story: ...` and `// Covers: US-###, AC-###` comments, the deterministic
 gate has generated `qa-evidence.json`, unit coverage is at least 80 percent, and
 `e2e-coverage.json` maps every initial-prompt user story.

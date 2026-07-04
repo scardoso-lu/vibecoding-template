@@ -41,9 +41,10 @@ only from memory and MCP-backed rules.
 4. Block subagent reads of agent infrastructure.
    Only the main thread and the coordination tier (`orchestrator`, `product-owner`,
    `software-architect`, `business-challenger`, `technical-challenger`) may read root guidance,
-   agent config, hooks, workflow scripts, settings, templates, or cross-runtime support files.
+   agent config, hooks, workflow scripts, settings, or cross-runtime support files.
    Implementer/QA subagents may read those files only when the orchestrator handoff names the exact
-   path. QA may read `.claude/skills/playwright-cli/**` for Playwright spec work.
+   path. Any subagent may read `.claude/templates/**` and `.claude/skills/**` - reference material,
+   not agent infrastructure.
 
 ## Agent Roles
 
@@ -56,7 +57,8 @@ only from memory and MCP-backed rules.
 | `technical-challenger` | Challenges ADRs, provenance, architecture, contracts, feasibility, coverage, operations, and security; read-only |
 | `backend-developer` | Implements backend code and tests from memory; no MCP access |
 | `frontend-developer` | Implements frontend code and tests from memory; no MCP access |
-| `qa` | Reviews the slice, writes/heals Playwright story tests when needed, and returns `APPROVED` or `BLOCKED` |
+| `qa-checker` | Writes/heals Playwright story tests when needed, runs them, and produces qa-evidence.json/e2e-coverage.json; no MCP access |
+| `qa-challenger` | Reviews qa-checker's evidence and the slice, and returns the final `APPROVED` or `BLOCKED` merge verdict; read-only |
 
 The orchestrator runs product or feature work through
 `product-owner` -> `business-challenger` -> `software-architect` -> `technical-challenger` before
@@ -67,7 +69,8 @@ at least 90 percent. If the loop hits its round cap or any coordination agent fl
 information, the orchestrator asks the user and holds planning in plan mode.
 
 Routing is conditional. Backend-only work skips frontend. Frontend-only work skips backend.
-Docs/config/copy/minimal changes can route straight to QA review. Foundation work is one
+Docs/config/copy/minimal changes can route straight to `qa-challenger` review (no Playwright work
+for `qa-checker` to do). Foundation work is one
 cross-cutting monorepo slice when it touches repo layout, root manifests, bootstrap scripts,
 workspace config, or both app roots.
 
@@ -123,8 +126,9 @@ tests, and user-facing slices must include `e2e-coverage.json` mapping initial-p
 to Playwright tests.
 
 Do not create role-specific memory directories such as `00-shared/`, `backend/`,
-`frontend/`, or `qa/`; rules live in the single global `memory/rules.md`, never split by
-category. Do not put prompt interpretation evidence or validator allow-lists in memory.
+`frontend/`, `qa-checker/`, or `qa-challenger/`; rules live in the single global
+`memory/rules.md`, never split by category. Do not put prompt interpretation evidence or
+validator allow-lists in memory.
 
 ## Deterministic Enforcement
 

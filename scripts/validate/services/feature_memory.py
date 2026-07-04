@@ -231,7 +231,14 @@ def validate_feature_memory(root: Path) -> list[Finding]:
                 findings.append(
                     Finding(rel, "user-facing slice missing ## E2E Test Stories")
                 )
-            for forbidden in ["00-shared", "backend", "frontend", "qa"]:
+            for forbidden in [
+                "00-shared",
+                "backend",
+                "frontend",
+                "qa",
+                "qa-checker",
+                "qa-challenger",
+            ]:
                 if (slice_md.parent / forbidden).exists():
                     findings.append(
                         Finding(

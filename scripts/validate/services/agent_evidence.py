@@ -15,7 +15,10 @@ BASELINE_AGENTS = {
     "business-challenger",
     "software-architect",
     "technical-challenger",
-    "qa",
+    # qa-challenger always makes the final merge call, like the old combined "qa" role;
+    # qa-checker is conditional (only when Playwright work is needed), like the developers,
+    # so it is not baseline - it is added via the slice's Implementation Plan table instead.
+    "qa-challenger",
 }
 
 AGENT_EVIDENCE_ROOT = "agent-evidence"

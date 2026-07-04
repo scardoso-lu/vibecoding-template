@@ -49,7 +49,7 @@ def test_qa_may_write_slice_verdict_regardless_of_separator(runtime_dir: str, sl
     result = run_hook(
         runtime_dir,
         "guard-edits.sh",
-        {"tool_input": {"file_path": slice_path}, "agent_type": "qa"},
+        {"tool_input": {"file_path": slice_path}, "agent_type": "qa-checker"},
     )
     assert not is_denied(result), f"[{runtime_dir}] QA writing slice.md was denied for {slice_path!r}: {result}"
 
@@ -60,7 +60,7 @@ def test_qa_is_still_denied_outside_its_write_scope(runtime_dir: str, backend_pa
     result = run_hook(
         runtime_dir,
         "guard-edits.sh",
-        {"tool_input": {"file_path": backend_path}, "agent_type": "qa"},
+        {"tool_input": {"file_path": backend_path}, "agent_type": "qa-checker"},
     )
     assert is_denied(result), f"[{runtime_dir}] QA writing {backend_path!r} should have been denied: {result}"
 

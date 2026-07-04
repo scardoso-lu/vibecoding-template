@@ -9,7 +9,7 @@ Use for every non-minimal feature. Write one `slice.md` per business feature und
 
 ## Status
 - State: active | NEEDS-INPUT | BLOCKED | E2E CLEAN | E2E BUGS FOUND | QA APPROVED | QA BLOCKED
-- Current owner: product-owner | software-architect | business-challenger | technical-challenger | backend-developer | frontend-developer | qa
+- Current owner: product-owner | software-architect | business-challenger | technical-challenger | backend-developer | frontend-developer | qa-checker | qa-challenger
 - Last updated:
 
 ## Request

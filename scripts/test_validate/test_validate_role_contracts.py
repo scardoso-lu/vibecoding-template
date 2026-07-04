@@ -118,13 +118,13 @@ def test_ownership_checks_agent_scope_pycache_and_do_not_touch(tmp_path: Path) -
 
     findings = validate_ownership(
         tmp_path,
-        agent="qa",
+        agent="qa-checker",
         changed_files=["frontend/src/locked/page.tsx", "scripts/lib/__pycache__/x.pyc"],
         slice_path=slice_md,
     )
     messages = "\n".join(finding.format() for finding in findings)
 
-    assert "QA may only change" in messages
+    assert "qa-checker may only change" in messages
     assert "generated Python cache file" in messages
     assert "changed file is listed in Do Not Touch" in messages
 

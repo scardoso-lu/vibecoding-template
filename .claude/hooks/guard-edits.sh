@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse guard for Edit / Write / MultiEdit - protects files that must not be
-# hand-edited, and enforces QA's write scope using the subagent
+# hand-edited, and enforces qa-checker's write scope using the subagent
 # identity (agent_type) the hook receives. Emits the PreToolUse deny decision as
 # JSON. Fails open (exit 0) if JSON parsing is unavailable.
 set -uo pipefail
@@ -60,7 +60,7 @@ esac
 
 # Read-only challengers: their entire output is a scored critique. Any file write is out of role.
 case "$AGENT" in
-  business-challenger|technical-challenger)
+  business-challenger|technical-challenger|qa-challenger)
     deny "A '$AGENT' subagent is read-only: never edit PRDs, memory, rules, code, or configuration. Return findings in the challenge verdict instead of writing '$FP'." ;;
 esac
 
@@ -102,15 +102,16 @@ case "$AGENT" in
     esac ;;
 esac
 
-# Role scope: QA may write only deterministic Playwright E2E specs/helpers and the terminal
-# slice verdict. Application code, unit tests, config, and non-E2E fixes route through the
-# orchestrator.
-if [ "$AGENT" = "qa" ]; then
+# Role scope: qa-checker may write only deterministic Playwright E2E specs/helpers and the
+# terminal slice verdict. Application code, unit tests, config, and non-E2E fixes route through
+# the orchestrator. qa-challenger is read-only (covered by the challenger case above) - it never
+# writes slice.md itself; the orchestrator relays its confirmed verdict to qa-checker to persist.
+if [ "$AGENT" = "qa-checker" ]; then
   case "$FP" in
     */frontend/e2e/*|frontend/e2e/*|*/memory/feature/*/slice.md|memory/feature/*/slice.md|*/memory/feature/*/qa-evidence.json|memory/feature/*/qa-evidence.json|*/agent-evidence/*/agent-evidence.json|agent-evidence/*/agent-evidence.json)
       : ;;  # allowed
     *)
-      deny "QA may write only frontend/e2e/** Playwright specs/helpers, agent-evidence/prompt-N/agent-evidence.json, memory feature QA evidence, or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the orchestrator instead of editing '$FP'." ;;
+      deny "qa-checker may write only frontend/e2e/** Playwright specs/helpers, agent-evidence/prompt-N/agent-evidence.json, memory feature QA evidence, or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the orchestrator instead of editing '$FP'." ;;
   esac
 fi
 

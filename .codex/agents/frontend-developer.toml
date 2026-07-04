@@ -60,7 +60,7 @@ from `slice.md` when needed during implementation.
 - If a rule category appears relevant but is absent from memory, stop and request orchestrator context instead of applying general knowledge.
 - Commit messages may cite only guideline slugs already present in memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.
-- Report completed work to the orchestrator. Do not route directly to backend-developer or qa.
+- Report completed work to the orchestrator. Do not route directly to backend-developer or qa-checker.
 
 
 """

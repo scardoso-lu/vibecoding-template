@@ -27,7 +27,7 @@ SLICE = """# Slice
 | Step | Agent | Work |
 |---|---|---|
 | 1 | product-owner | PRD |
-| 2 | qa | Review |
+| 2 | qa-challenger | Review |
 """
 
 
@@ -55,7 +55,7 @@ def evidence() -> dict:
                 "business-challenger",
                 "software-architect",
                 "technical-challenger",
-                "qa",
+                "qa-challenger",
             ]
         ],
     }

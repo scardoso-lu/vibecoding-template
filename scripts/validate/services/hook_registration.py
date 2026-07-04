@@ -25,7 +25,7 @@ EXPECTED_HOOKS = [
 EXPECTED_PROMPT_MATCHERS = [
     "product-owner|business-challenger",
     "software-architect|technical-challenger",
-    "qa",
+    "qa-challenger",
 ]
 
 EXPECTED_START_PROMPT_MATCHERS = [
@@ -119,21 +119,27 @@ def validate_hook_registration(root: Path, *, smoke: bool = True, runner: Runner
         smoke_cases = [
             (
                 ["python", ".claude/hooks/run-hook.py", ".claude/hooks/guard-edits.sh"],
-                '{"agent_type":"qa","tool_input":{"file_path":"frontend/e2e/new-story.spec.ts"}}',
+                '{"agent_type":"qa-checker","tool_input":{"file_path":"frontend/e2e/new-story.spec.ts"}}',
                 False,
-                "QA frontend/e2e write should be allowed",
+                "qa-checker frontend/e2e write should be allowed",
             ),
             (
                 ["python", ".claude/hooks/run-hook.py", ".claude/hooks/guard-edits.sh"],
-                '{"agent_type":"qa","tool_input":{"file_path":"frontend/src/x.ts"}}',
+                '{"agent_type":"qa-checker","tool_input":{"file_path":"frontend/src/x.ts"}}',
                 True,
-                "QA app-code write should be denied",
+                "qa-checker app-code write should be denied",
             ),
             (
                 ["python", ".claude/hooks/run-hook.py", ".claude/hooks/guard-mcp.sh"],
-                '{"agent_type":"qa"}',
+                '{"agent_type":"qa-checker"}',
                 True,
-                "QA MCP call should be denied",
+                "qa-checker MCP call should be denied",
+            ),
+            (
+                ["python", ".claude/hooks/run-hook.py", ".claude/hooks/guard-edits.sh"],
+                '{"agent_type":"qa-challenger","tool_input":{"file_path":"memory/feature/example/slice.md"}}',
+                True,
+                "qa-challenger slice.md write should be denied (read-only)",
             ),
         ]
         old_cwd = Path.cwd()

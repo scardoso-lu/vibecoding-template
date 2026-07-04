@@ -62,7 +62,7 @@ Emit the next single step in the loop:
 ## Coordinate Handoff
 
 - Step: product-options | prd | business-challenge | architecture | technical-challenge | needs-input | route
-- Agent: product-owner | software-architect | business-challenger | technical-challenger | (user) | <implementer/qa>
+- Agent: product-owner | software-architect | business-challenger | technical-challenger | (user) | <implementer/qa-checker/qa-challenger>
 - Artifacts: `memory/PRD/<purpose>/prd.md`, `memory/ADR/<purpose>/adr.md`, `memory/feature/<feature-slice>/slice.md`
 - Round: <n> of 3
 - Reads: linked PRDs/ADRs/slices/rules where available (+ challenge findings when revising)
@@ -83,16 +83,18 @@ below. The software-architect's plan defines the rows; you sequence and gate the
 |---|---|---|
 | 1 | backend-developer | `slice.md` + linked `rules.md` slugs |
 | 2 | frontend-developer | `slice.md` + linked `rules.md` slugs |
-| N | qa | `slice.md` + linked `rules.md` slugs + `frontend/e2e/**` + Playwright output |
+| 3 | qa-checker | `slice.md` + linked `rules.md` slugs + `frontend/e2e/**` |
+| 4 | qa-challenger | `slice.md` + linked `rules.md` slugs + `frontend/e2e/**` + Playwright output |
 ```
 
-For each row, state the `Do not touch` scope and `Stop condition`. QA sets the terminal
-`QA APPROVED` / `QA BLOCKED` state in `slice.md`.
+For each row, state the `Do not touch` scope and `Stop condition`. `qa-challenger` decides the
+verdict; `qa-checker` persists the terminal `QA APPROVED` / `QA BLOCKED` state in `slice.md` once
+you relay that confirmed verdict back to it.
 
 ## Route Mode
 
 Use this only when the main thread re-invokes you to resolve an `ESCALATE`/`BLOCKED` return or to
-fan out a QA `block:`/`question:` finding. Emit one handoff per response. A developer that escalates
+fan out a `qa-challenger` `block:`/`question:` finding. Emit one handoff per response. A developer that escalates
 for missing product context is routed back through `product-owner`; a developer that escalates for
 missing technical guideline context is routed back through `software-architect`.
 
@@ -102,7 +104,7 @@ missing technical guideline context is routed back through `software-architect`.
 - Agent: <role>
 - Memory: `memory/feature/<feature-slice>/slice.md`
 - Rules: the slugs the slice links under `## Dependencies` -> `Rules:`, in `memory/rules.md`
-- Playwright specs/output: `frontend/e2e/**` and the focused Playwright command/output (QA follow-up only)
+- Playwright specs/output: `frontend/e2e/**` and the focused Playwright command/output (qa-checker/qa-challenger follow-up only)
 - Depends on: <prior invocation output or "none">
 - Do not touch: <files/behaviors out of scope>
 - Stop condition: <what "done" looks like>
@@ -112,12 +114,12 @@ missing technical guideline context is routed back through `software-architect`.
 
 | Request touches | Route to |
 |---|---|
-| Monorepo foundation / repo layout / root tooling spanning both app roots | backend-developer foundation -> frontend-developer foundation -> qa |
-| Backend behavior only | backend-developer(s) -> qa |
-| Frontend behavior only | frontend-developer -> qa |
-| Backend + frontend | backend-developer(s) -> frontend-developer -> qa |
-| Review / security / PR hygiene | qa |
-| Docs / config-only / no behavior change | qa |
+| Monorepo foundation / repo layout / root tooling spanning both app roots | backend-developer foundation -> frontend-developer foundation -> qa-checker -> qa-challenger |
+| Backend behavior only | backend-developer(s) -> qa-checker -> qa-challenger |
+| Frontend behavior only | frontend-developer -> qa-checker -> qa-challenger |
+| Backend + frontend | backend-developer(s) -> frontend-developer -> qa-checker -> qa-challenger |
+| Review / security / PR hygiene | qa-challenger |
+| Docs / config-only / no behavior change | qa-challenger (no Playwright work for qa-checker to do) |
 
 Every request still starts with the product/architecture/challenge loop before these rows are routed.
 
@@ -138,9 +140,11 @@ Every request still starts with the product/architecture/challenge loop before t
   technical guideline gaps through `software-architect`, then continue. Each agent gets one
   escalation per feature.
 - Deterministic checks are hooks, not agent steps. Do not write an allowed-validators list, do not
-  route a tester, and do not ask QA to run validators.
-- When QA returns `BLOCKED`, route each `block:`/`question:` finding to the suspected owner, then
-  re-invoke QA to confirm the fix and make the final merge decision.
+  route a tester, and do not ask qa-checker/qa-challenger to run validators.
+- When `qa-challenger` returns `BLOCKED`, route each `block:`/`question:` finding to the suspected
+  owner (`backend-developer`/`frontend-developer` for app bugs, `qa-checker` for stale/weak test
+  code), then re-invoke `qa-checker` to update evidence and `qa-challenger` to confirm the fix and
+  make the final merge decision.
 - Nothing merges without a green deterministic gate and `State: QA APPROVED` in `slice.md`.
 - Never communicate directly with the product-owner, software-architect, challengers, developers,
   or QA agents; all routing goes through the main thread.

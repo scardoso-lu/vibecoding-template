@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SubagentStop gate (matcher: qa) - deterministic QA artifact checks.
+# SubagentStop gate (matcher: qa-checker) - deterministic QA artifact checks.
 set -uo pipefail
 
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,7 +14,7 @@ if [ "$(hook_json_get "$INPUT" "stop_hook_active" "false")" = "true" ]; then
 fi
 
 AGENT="$(hook_json_get "$INPUT" "agent_type")"
-[ "$AGENT" = "qa" ] || exit 0
+[ "$AGENT" = "qa-checker" ] || exit 0
 
 ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "$ROOT" 2>/dev/null || exit 0
@@ -41,7 +41,7 @@ run_validator "e2e-coverage" python scripts/validate/cli.py e2e-coverage --root 
 run_validator "qa-evidence" python scripts/validate/cli.py qa-evidence --root .
 
 if [ -n "$fails" ]; then
-  hook_json_stop_block "QA deterministic gate failed before returning. Only fix findings inside QA's write scope (frontend/e2e/** specs/helpers, e2e-coverage.json, qa-evidence.json via the real gate command, or the slice.md verdict). A finding about a missing backend/frontend implementation file, unit test, or agent-evidence.json is not yours to fix: return BLOCKED naming it and route it through the orchestrator to the responsible agent instead. Never hand-author qa-evidence.json or a spec that can't actually run just to silence this gate. Findings:"$'\n'"${fails}"
+  hook_json_stop_block "QA deterministic gate failed before returning. Only fix findings inside qa-checker's write scope (frontend/e2e/** specs/helpers, e2e-coverage.json, qa-evidence.json via the real gate command, or the slice.md verdict). A finding about a missing backend/frontend implementation file, unit test, or agent-evidence.json is not yours to fix: return BLOCKED naming it and route it through the orchestrator to the responsible agent instead. Never hand-author qa-evidence.json or a spec that can't actually run just to silence this gate. Findings:"$'\n'"${fails}"
 fi
 
 exit 0

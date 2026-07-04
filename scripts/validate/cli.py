@@ -79,7 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     own_p = add("ownership")
     own_p.add_argument(
-        "--agent", choices=["backend-developer", "frontend-developer", "qa"]
+        "--agent", choices=["backend-developer", "frontend-developer", "qa-checker"]
     )
     own_p.add_argument("--slice", type=Path, dest="slice_path")
     own_p.add_argument("--changed-file", action="append", dest="changed_files")

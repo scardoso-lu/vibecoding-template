@@ -165,16 +165,21 @@
         ]
       },
       {
-        "matcher": "qa",
+        "matcher": "qa-checker",
         "hooks": [
           {
             "type": "command",
             "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-qa.sh",
             "statusMessage": "Running QA gate"
-          },
+          }
+        ]
+      },
+      {
+        "matcher": "qa-challenger",
+        "hooks": [
           {
             "type": "prompt",
-            "prompt": "QA judgment gate for vibecoding-template. Review the just-finished QA output against AGENTS.md. Block if QA approved without a clear slice verdict, omitted user-facing Playwright story coverage when required, failed to reference focused Playwright output for changed user behavior, ignored qa-evidence.json, agent-evidence/prompt-N evidence, or deterministic gate evidence, approved despite missing linked PRD/ADR/rules context, wrote app fixes instead of returning BLOCKED for implementers, or returned vague findings that cannot be routed by the orchestrator. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific QA judgment problem and required QA fix or routed owner question>\"}.",
+            "prompt": "QA judgment gate for vibecoding-template. Review the just-finished qa-challenger output against AGENTS.md. Block if it approved without a clear slice verdict, omitted user-facing Playwright story coverage when required, failed to reference focused Playwright output for changed user behavior, ignored qa-evidence.json, agent-evidence/prompt-N evidence, or deterministic gate evidence, approved despite missing linked PRD/ADR/rules context, wrote app fixes instead of returning BLOCKED for implementers, or returned vague findings that cannot be routed by the orchestrator. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific QA judgment problem and required qa-challenger fix or routed owner question>\"}.",
             "timeout": 120
           }
         ]

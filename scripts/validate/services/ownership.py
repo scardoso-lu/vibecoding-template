@@ -91,14 +91,14 @@ def validate_ownership(
                         "frontend-developer must not change backend implementation files",
                     )
                 )
-    elif agent == "qa":
+    elif agent == "qa-checker":
         allowed_prefixes = ("frontend/e2e/", "memory/feature/")
         for changed in files:
             if changed and not changed.startswith(allowed_prefixes):
                 findings.append(
                     Finding(
                         changed,
-                        "QA may only change Playwright E2E files and terminal slice state",
+                        "qa-checker may only change Playwright E2E files and terminal slice state",
                     )
                 )
 

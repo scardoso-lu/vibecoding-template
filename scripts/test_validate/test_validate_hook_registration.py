@@ -73,7 +73,7 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
                             "hooks": [{"type": "prompt", "prompt": "architecture planning gate"}],
                         },
                         {
-                            "matcher": "qa",
+                            "matcher": "qa-challenger",
                             "hooks": [{"type": "prompt", "prompt": "qa judgment gate"}],
                         },
                         {
@@ -135,7 +135,7 @@ def write_hook_fixture(tmp_path: Path, *, include_guard_mcp: bool = True) -> Non
                             "hooks": [{"type": "prompt", "prompt": "architecture planning gate"}],
                         },
                         {
-                            "matcher": "qa",
+                            "matcher": "qa-challenger",
                             "hooks": [{"type": "prompt", "prompt": "qa judgment gate"}],
                         },
                         {"matcher": "backend-developer|frontend-developer", "hooks": []},
