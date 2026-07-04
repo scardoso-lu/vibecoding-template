@@ -25,7 +25,7 @@ If the supplied context is still insufficient, stop and ask the orchestrator/mai
 context. The orchestrator routes product gaps back to `product-owner` and MCP-backed technical gaps
 back to `software-architect`. Do not browse the MCP server yourself.
 
-Do not read historical summaries. Do not scan broad directories unless the handoff lists them. If the listed files are insufficient, ask for more context instead of exploring broadly.
+Do not read completed ADR, PRDs or slice.md unless the handoff lists them. Do not scan broad directories unless the handoff lists them. If the listed files are insufficient, ask for more context instead of exploring broadly.
 
 Respect `Do Not Touch`. If the requested implementation appears to require touching protected files, behaviors, or contracts, stop and ask the orchestrator/main thread for updated slice boundaries.
 
