@@ -58,6 +58,8 @@ for line in reversed(lines):
         record = json.loads(line)
     except Exception:
         continue
+    if not isinstance(record, dict):
+        continue
     message = record.get("message")
     if not isinstance(message, dict) or message.get("role") != "assistant":
         continue
