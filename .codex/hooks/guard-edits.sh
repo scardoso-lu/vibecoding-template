@@ -108,10 +108,10 @@ esac
 # writes slice.md itself; the orchestrator relays its confirmed verdict to qa-checker to persist.
 if [ "$AGENT" = "qa-checker" ]; then
   case "$FP" in
-    */frontend/e2e/*|frontend/e2e/*|*/memory/feature/*/slice.md|memory/feature/*/slice.md|*/memory/feature/*/qa-evidence.json|memory/feature/*/qa-evidence.json|*/agent-evidence/*/agent-evidence.json|agent-evidence/*/agent-evidence.json)
+    */frontend/e2e/*|frontend/e2e/*|*/memory/feature/*/slice.md|memory/feature/*/slice.md|*/memory/feature/*/qa-evidence.json|memory/feature/*/qa-evidence.json|*/memory/feature/*/e2e-coverage.json|memory/feature/*/e2e-coverage.json|*/agent-evidence/*/agent-evidence.json|agent-evidence/*/agent-evidence.json)
       : ;;  # allowed
     *)
-      deny "qa-checker may write only frontend/e2e/** Playwright specs/helpers, agent-evidence/prompt-N/agent-evidence.json, memory feature QA evidence, or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the orchestrator instead of editing '$FP'." ;;
+      deny "qa-checker may write only frontend/e2e/** Playwright specs/helpers, agent-evidence/prompt-N/agent-evidence.json, memory feature QA evidence (qa-evidence.json, e2e-coverage.json), or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the orchestrator instead of editing '$FP'." ;;
   esac
 fi
 

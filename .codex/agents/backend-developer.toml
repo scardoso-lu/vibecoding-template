@@ -76,11 +76,6 @@ memory calls for them*, not a license to add them speculatively.
 
 ## Feature Discipline
 
-> "The best code is the code you never wrote." An agent given a narrow task tends to install
-> dependencies, wrap classes, and generalize "for future use," producing far more code than the
-> task needs and a codebase the user can no longer navigate. Source:
-> [`backend/27-feature-discipline`](https://github.com/scardoso-lu/fullstack-agent-guidelines/blob/main/guidelines/backend/27-feature-discipline.md).
-
 Before writing any code, stop at the first rung that holds:
 
 1. Does this need to exist at all? -> skip it (YAGNI).

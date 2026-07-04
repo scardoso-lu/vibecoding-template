@@ -71,11 +71,6 @@ to implement them correctly *when memory calls for them*, not a license to add t
 
 ## Feature Discipline
 
-> "The best code is the code you never wrote." An agent given a narrow task tends to install
-> packages, wrap components, and add compatibility layers "for safety," producing far more code
-> than the task needs and a component tree the user can no longer navigate. Source:
-> [`frontend/20-feature-discipline`](https://github.com/scardoso-lu/fullstack-agent-guidelines/blob/main/guidelines/frontend/20-feature-discipline.md).
-
 Before writing any code, stop at the first rung that holds:
 
 1. Does this need to exist at all? -> skip it (YAGNI).

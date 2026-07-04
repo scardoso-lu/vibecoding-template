@@ -63,10 +63,11 @@ only from memory and MCP-backed rules.
 The orchestrator runs product or feature work through
 `product-owner` -> `business-challenger` -> `software-architect` -> `technical-challenger` before
 routing implementation. The product-owner starts with 2-3 concrete PRD direction options when the
-request allows different product shapes; the user picks before full PRDs are written. Each challenger
-scores its domain against a 7-persona panel; all challenges stop only when both acceptance scores are
-at least 90 percent. If the loop hits its round cap or any coordination agent flags missing
-information, the orchestrator asks the user and holds planning in plan mode.
+request allows different product shapes; the user picks before full PRDs are written.
+`business-challenger` scores its 6-persona panel and `technical-challenger` scores its 8-persona
+panel; all challenges stop only when both acceptance scores are at least 90 percent. If the loop
+hits its round cap or any coordination agent flags missing information, the orchestrator asks the
+user and holds planning in plan mode.
 
 Routing is conditional. Backend-only work skips frontend. Frontend-only work skips backend.
 Docs/config/copy/minimal changes can route straight to `qa-challenger` review (no Playwright work
