@@ -20,6 +20,15 @@
         ]
       },
       {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/resume-handoff.sh"
+          }
+        ]
+      },
+      {
         "matcher": "compact",
         "hooks": [
           {
@@ -84,6 +93,14 @@
           {
             "type": "command",
             "command": "python .claude/hooks/run-hook.py .claude/hooks/auto-format.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/context-usage-watch.sh"
           }
         ]
       }

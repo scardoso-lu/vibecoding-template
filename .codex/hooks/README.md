@@ -21,7 +21,9 @@ every clone inherits them.
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys / AWS keys and blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
 | `workflow-watch.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, memory, backend, frontend, QA, and Playwright story contracts. |
-| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 AGENTS.md rules + the deterministic-gate model + the active memory slice states. |
+| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 AGENTS.md rules + the deterministic-gate model + the active PRD/ADR/feature-slice states, and points back at `SESSION-HANDOFF.md` when one exists. |
+| `context-usage-watch.sh` | `PostToolUse` | - (all tools) | Watches transcript token usage; at >=90% of the context window (once per session) it injects an instruction to write the repo-root `SESSION-HANDOFF.md` (completed / missing / PRD-ADR-slice references / next steps) before auto-compaction. |
+| `resume-handoff.sh` | `SessionStart` | `startup\|resume` | If `SESSION-HANDOFF.md` exists, instructs Codex to first ask the user whether to inject it; on yes, the missing items are implemented following the handoff's PRD/ADR/feature references. |
 
 ## How blocking works
 
@@ -87,7 +89,7 @@ WinGet-provided `jq.exe` fail to execute.
 
 ## Closing the Bash gap, compaction, and commit secrets
 
-Five hooks cover paths the per-edit hooks miss:
+Seven hooks cover paths the per-edit hooks miss:
 
 - **`format-changed.sh` (`Stop`)** - `auto-format.sh` only fires on `Edit`/`Write`, so files written
   through `Bash` (Alembic `--autogenerate` migrations, codegen, scaffolding) never get formatted.
@@ -108,6 +110,23 @@ Five hooks cover paths the per-edit hooks miss:
   rules. Anything it prints to stdout is added back to context, so it restates the four AGENTS.md
   rules, the "deterministic work is a hook" model, and lists the active memory slices with
   their QA `State`. It summarizes; it does not dump AGENTS.md.
+
+- **`context-usage-watch.sh` (`PostToolUse`, all tools)** - auto-compaction can hit before anyone
+  saves the working state. This hook tail-reads the session transcript after each tool call, sums
+  the newest assistant `usage` record (`input` + `cache_read` + `cache_creation` + `output`
+  tokens), and once usage crosses `CONTEXT_HANDOFF_THRESHOLD_PCT` (default `90`) of
+  `CONTEXT_WINDOW_TOKENS` (default `200000`) it returns `additionalContext` telling Codex to
+  write `SESSION-HANDOFF.md` at the repo root: `## Completed`, `## Missing / Not Completed`
+  (checklist), `## References` (parent `memory/PRD/**/prd.md`, `memory/ADR/**/adr.md`,
+  `memory/feature/**/slice.md`, `memory/rules.md` slugs), and `## Next steps`. It fires once per
+  session (temp-dir sentinel keyed by `session_id`) and fails open on any parse/IO problem.
+
+- **`resume-handoff.sh` (`SessionStart`, matcher `startup|resume`)** - the pickup half of the
+  handoff loop. When `SESSION-HANDOFF.md` exists it injects an instruction to **ask the user
+  first** whether to inject the handoff; on yes, Codex reads the file, follows its References to
+  the linked PRDs/ADRs/feature slices, and continues implementing the missing items, updating or
+  deleting the handoff when done. On no, the file is left untouched. The file content itself is
+  not dumped into context until the user opts in.
 
 - **`guard-commit.sh` (`PreToolUse` Bash, `if: Bash(git commit *)`)** - the `SubagentStop` gate only
   covers developer subagents, so a main-thread `git commit` is otherwise unchecked. This scans the

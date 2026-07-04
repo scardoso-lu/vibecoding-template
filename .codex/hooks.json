@@ -12,6 +12,16 @@
         ]
       },
       {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/resume-handoff.sh",
+            "statusMessage": "Checking for a session handoff"
+          }
+        ]
+      },
+      {
         "matcher": "compact",
         "hooks": [
           {
@@ -77,6 +87,15 @@
             "type": "command",
             "command": "python .codex/hooks/run-hook.py .codex/hooks/auto-format.sh",
             "statusMessage": "Formatting changed files"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/context-usage-watch.sh",
+            "statusMessage": "Checking context usage"
           }
         ]
       }
