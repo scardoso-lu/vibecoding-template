@@ -16,6 +16,7 @@ hook_json_can_parse || exit 0
 INPUT="${HOOK_INPUT_JSON:-}"
 [ -n "$INPUT" ] || INPUT="$(cat)"
 AGENT="$(hook_json_get "$INPUT" "agent_type")"
+TOOL="$(hook_json_get "$INPUT" "tool_name")"
 
 deny() {
   hook_json_pretool_deny "$1"
@@ -28,5 +29,23 @@ case "$AGENT" in
   backend-developer|frontend-developer|qa|product-owner|business-challenger|technical-challenger|orchestrator)
     deny "Only the software-architect may call the guidelines MCP server. Stop and request targeted context through the orchestrator (see the MCP budget rules in AGENTS.md) - do not resolve slugs or browse MCP from a '$AGENT' subagent." ;;
 esac
+
+# MCP budget: broad context dumps are banned for normal feature work regardless of caller.
+case "$TOOL" in
+  *get_all_context*)
+    deny "Never call broad context tools such as get_all_context for normal feature work (MCP budget, AGENTS.md). Fetch only the specific guideline slugs the slice needs via get_metadata/search_guidelines/get_guideline." ;;
+esac
+
+# The software-architect's budget is targeted discovery + fetch only: get_metadata (at most once
+# per slice), search_guidelines, and get_guideline. Compliance/example/browse tools are out of
+# budget for feature work.
+if [ "$AGENT" = "software-architect" ]; then
+  case "$TOOL" in
+    *get_metadata|*search_guidelines|*get_guideline)
+      : ;;
+    *)
+      deny "software-architect may call only get_metadata (once per slice when routing does not identify slugs), search_guidelines, and get_guideline. '$TOOL' is outside the MCP budget; derive slice rules from fetched guidelines instead." ;;
+  esac
+fi
 
 exit 0

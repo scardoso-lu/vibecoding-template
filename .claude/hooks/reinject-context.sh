@@ -30,18 +30,36 @@ cat <<'EOF'
    business-challenger, and technical-challenger may; others request context through the orchestrator.
 EOF
 
-# Live state: active memory slices and their QA state, when the runtime dir exists.
-if compgen -G "memory/feature/*/" >/dev/null 2>&1; then
-  echo "Active memory slices:"
-  for d in memory/feature/*/; do
+# Live state: active PRDs, ADRs, and feature slices with their State lines, so the
+# refreshed context keeps the references implementers/QA need after compaction.
+list_states() {
+  # $1 label, $2 dir glob, $3 artifact file name inside each dir
+  local label="$1" glob="$2" file="$3" d state found=0
+  compgen -G "$glob" >/dev/null 2>&1 || return 0
+  for d in $glob; do
     [ -d "$d" ] || continue
-    slice="$(basename "$d")"
-    state="$(grep -h -m1 'State:' "$d/slice.md" 2>/dev/null | sed 's/^[[:space:]-]*//')"
-    printf '  - %s - %s
-' "$slice" "${state:-no slice.md yet}"
+    if [ "$found" -eq 0 ]; then
+      echo "$label"
+      found=1
+    fi
+    state="$(grep -h -m1 'State:' "$d$file" 2>/dev/null | sed 's/^[[:space:]-]*//')"
+    printf '  - %s - %s\n' "$(basename "$d")" "${state:-no $file yet}"
   done
+}
+
+if compgen -G "memory/PRD/*/" >/dev/null 2>&1 \
+  || compgen -G "memory/ADR/*/" >/dev/null 2>&1 \
+  || compgen -G "memory/feature/*/" >/dev/null 2>&1; then
+  list_states "Active PRDs (memory/PRD/<purpose>/prd.md):" "memory/PRD/*/" "prd.md"
+  list_states "Active ADRs (memory/ADR/<purpose>/adr.md):" "memory/ADR/*/" "adr.md"
+  list_states "Active feature slices (memory/feature/<feature>/slice.md):" "memory/feature/*/" "slice.md"
 else
-  echo "No active memory slices (scaffold / none in progress)."
+  echo "No active memory PRDs/ADRs/slices (scaffold / none in progress)."
+fi
+
+# A session handoff written before compaction outlives the summarized conversation.
+if [ -f "SESSION-HANDOFF.md" ]; then
+  echo "A session handoff exists at SESSION-HANDOFF.md - re-read it now if the compacted summary lost the completed / missing work state; it links the parent PRDs, ADRs, and feature slices."
 fi
 
 exit 0

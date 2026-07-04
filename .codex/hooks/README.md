@@ -8,10 +8,11 @@ every clone inherits them.
 |---|---|---|---|
 | `session-start.sh` | `SessionStart` | - | Installs backend/frontend deps (`uv sync`, `pnpm install`) when their manifests exist, so tests and linters are ready in a fresh remote container. |
 | `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, and implementer/QA shell reads of agent infrastructure. |
-| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|apply_patch` | Blocks edits to review-only `memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Also confines **QA** to writing `frontend/e2e/**` Playwright specs/helpers and the slice verdict. |
+| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|apply_patch` | Blocks edits to review-only `memory/history/**` and secrets files (`.env`, `.env.*`; `.env.example` stays editable). Enforces the memory placement contract (`prd.md`/`adr.md`/`slice.md` only at their contract paths; `memory/` limited to `PRD/ ADR/ feature/ history/ rules.md`) and the role write scopes: challengers are read-only, product-owner writes only `memory/PRD/**`, software-architect only `memory/ADR/**`+`memory/feature/**`+`memory/rules.md`, orchestrator never memory or app code, developers never the other stack's app root or planning memory, and **QA** only `frontend/e2e/**` specs/helpers and the slice verdict. |
 | `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks implementer/QA subagents from reading `AGENTS.md`, `CLAUDE.md`, `.codex/`, `.claude/`, `scripts/`, hooks, settings, and agent templates. Main-thread and coordination-tier reads pass through. |
-| `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack_guidelines__.*` | Enforces the core MCP budget rule: **only the software-architect may call the guidelines server**; other roles are denied and told to request context through the orchestrator. |
+| `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack_guidelines__.*` | Enforces the core MCP budget rule: **only the software-architect may call the guidelines server**; other roles are denied and told to request context through the orchestrator. Also enforces the tool budget: `get_all_context` is denied for every caller, and the software-architect may call only `get_metadata`/`search_guidelines`/`get_guideline`. |
 | developer handoff prompt gate | `SubagentStart` | `backend-developer\|frontend-developer` | Model-checks implementer handoffs before code starts: slice path, linked PRD/ADR/rules context, Agent Plan row, Do Not Touch, ACs, tests/evidence expectations, provenance, and narrow read scope. |
+| coordination prompt gate | `SubagentStop` | `orchestrator` | Model-checks the orchestrator's return: one mode per response, no plan/memory/code writing, both 90% challenge gates and the 3-round cap enforced, round count + acceptance percentages recorded, and handoffs carry Do Not Touch + Stop condition. |
 | business planning prompt gate | `SubagentStop` | `product-owner\|business-challenger` | Model-checks the PRD phase: selectable options for broad work, complete PRDs under `memory/PRD/<purpose>/prd.md`, P0/P1/P2 MVP requirements by journey/use case, and parent/component PRD links for large components. |
 | architecture planning prompt gate | `SubagentStop` | `software-architect\|technical-challenger` | Model-checks the architecture phase: accepted PRDs become ADRs under `memory/ADR/<purpose>/adr.md`, slices link `PRD:`/`ADR:`/`Rules:`, rules stay in global `memory/rules.md`, and Agent Plan handoffs include larger component context. |
 | QA judgment prompt gate | `SubagentStop` | `qa` | Model-checks QA's final judgment: clear slice verdict, required Playwright story coverage/output, deterministic gate evidence, linked PRD/ADR/rules context, and routable `BLOCKED` findings instead of app fixes. |
@@ -21,7 +22,9 @@ every clone inherits them.
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys / AWS keys and blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
 | `workflow-watch.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, memory, backend, frontend, QA, and Playwright story contracts. |
-| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 AGENTS.md rules + the deterministic-gate model + the active memory slice states. |
+| `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 AGENTS.md rules + the deterministic-gate model + the active PRD/ADR/feature-slice states, and points back at `SESSION-HANDOFF.md` when one exists. |
+| `context-usage-watch.sh` | `PostToolUse` | - (all tools) | Watches transcript token usage; at >=90% of the context window (once per session) it injects an instruction to write the repo-root `SESSION-HANDOFF.md` (completed / missing / PRD-ADR-slice references / next steps) before auto-compaction, and to output the handoff verbatim in the chat reply (the file is gitignored, so chat is the durable copy). |
+| `resume-handoff.sh` | `SessionStart` | `startup\|resume` | If `SESSION-HANDOFF.md` exists, instructs Codex to first ask the user whether to inject it; on yes, the missing items are implemented following the handoff's PRD/ADR/feature references. |
 
 ## How blocking works
 
@@ -62,6 +65,15 @@ the agent prompts:
   Bash guard also blocks obvious shell reads/searches of those paths.
   Narrow exception: QA may read `.codex/skills/playwright-cli/**` for Playwright spec
   generation/healing.
+- **Role write scopes** (`guard-edits.sh`): challengers (`business-challenger`,
+  `technical-challenger`) are fully read-only; `product-owner` writes only `memory/PRD/**` and
+  `agent-evidence/**`; `software-architect` writes only `memory/ADR/**`, `memory/feature/**`,
+  `memory/rules.md`, and `agent-evidence/**`; `orchestrator` never writes memory or `backend/`/
+  `frontend/` code; `backend-developer`/`frontend-developer` never write the other stack's app
+  root or planning memory (PRDs, ADRs, `memory/rules.md`). The same hook enforces the memory
+  placement contract for every caller, main thread included.
+- **MCP tool budget** (`guard-mcp.sh`): `get_all_context` is denied for all callers, and the
+  software-architect is limited to `get_metadata` / `search_guidelines` / `get_guideline`.
 - **QA write scope** (`guard-edits.sh`): when `agent_type` is `qa`, writes are allowed only under
   `frontend/e2e/**` or to the terminal `slice.md` verdict; anything else is denied so app fixes
   route back through the orchestrator.
@@ -87,7 +99,7 @@ WinGet-provided `jq.exe` fail to execute.
 
 ## Closing the Bash gap, compaction, and commit secrets
 
-Five hooks cover paths the per-edit hooks miss:
+Seven hooks cover paths the per-edit hooks miss:
 
 - **`format-changed.sh` (`Stop`)** - `auto-format.sh` only fires on `Edit`/`Write`, so files written
   through `Bash` (Alembic `--autogenerate` migrations, codegen, scaffolding) never get formatted.
@@ -108,6 +120,23 @@ Five hooks cover paths the per-edit hooks miss:
   rules. Anything it prints to stdout is added back to context, so it restates the four AGENTS.md
   rules, the "deterministic work is a hook" model, and lists the active memory slices with
   their QA `State`. It summarizes; it does not dump AGENTS.md.
+
+- **`context-usage-watch.sh` (`PostToolUse`, all tools)** - auto-compaction can hit before anyone
+  saves the working state. This hook tail-reads the session transcript after each tool call, sums
+  the newest assistant `usage` record (`input` + `cache_read` + `cache_creation` + `output`
+  tokens), and once usage crosses `CONTEXT_HANDOFF_THRESHOLD_PCT` (default `90`) of
+  `CONTEXT_WINDOW_TOKENS` (default `200000`) it returns `additionalContext` telling Codex to
+  write `SESSION-HANDOFF.md` at the repo root: `## Completed`, `## Missing / Not Completed`
+  (checklist), `## References` (parent `memory/PRD/**/prd.md`, `memory/ADR/**/adr.md`,
+  `memory/feature/**/slice.md`, `memory/rules.md` slugs), and `## Next steps`. It fires once per
+  session (temp-dir sentinel keyed by `session_id`) and fails open on any parse/IO problem.
+
+- **`resume-handoff.sh` (`SessionStart`, matcher `startup|resume`)** - the pickup half of the
+  handoff loop. When `SESSION-HANDOFF.md` exists it injects an instruction to **ask the user
+  first** whether to inject the handoff; on yes, Codex reads the file, follows its References to
+  the linked PRDs/ADRs/feature slices, and continues implementing the missing items, updating or
+  deleting the handoff when done. On no, the file is left untouched. The file content itself is
+  not dumped into context until the user opts in.
 
 - **`guard-commit.sh` (`PreToolUse` Bash, `if: Bash(git commit *)`)** - the `SubagentStop` gate only
   covers developer subagents, so a main-thread `git commit` is otherwise unchecked. This scans the
