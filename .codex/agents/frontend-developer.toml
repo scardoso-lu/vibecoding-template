@@ -43,6 +43,12 @@ assertions for anything that resolves later - not manual `done()` callbacks or a
 
 ## Modern JavaScript Practices
 
+These are technique defaults - how to build whatever the slice asks for well. They don't replace
+memory: auth guards on protected routes, permission-based UI (RBAC), and state-management/
+data-fetching library choices are architecture decisions that must come from the slice's linked
+rules/ADR, not general knowledge (see No Best-Effort Guessing above) - the guidance below is how
+to implement them correctly *when memory calls for them*, not a license to add them speculatively.
+
 - Prefer `async`/`await` over chained `.then()`/`.catch()` - flatten control flow instead of
   nesting or chaining callbacks.
 - Use functional patterns (`map`/`filter`/`reduce`, pure functions, immutable updates) where they
