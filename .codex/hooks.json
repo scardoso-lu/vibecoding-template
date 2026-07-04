@@ -155,6 +155,16 @@
         ]
       },
       {
+        "matcher": "business-challenger|technical-challenger",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-challenge.sh",
+            "statusMessage": "Checking challenge scoring"
+          }
+        ]
+      },
+      {
         "matcher": "qa",
         "hooks": [
           {

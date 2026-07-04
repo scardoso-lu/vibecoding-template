@@ -16,7 +16,6 @@ Review independently from every persona below:
 | Persona | Challenges the plan on |
 |---|---|
 | Problem Skeptic | The PRD names a real user or business problem; it is not just "user cannot use our proposed feature" |
-| User Advocate | Target users and use cases are specific enough to guide prioritization and go-to-market alignment |
 | Journey Mapper | Current journey, proposed journey, and critical lifecycle flows are coherent end to end |
 | MVP Minimalist | P0/P1/P2 requirements are bucketed by journey or use case, with P0 limited to adoption-critical behavior |
 | Outcome Auditor | Goals are 2-3 measurable outcomes or non-failure signals tied to user value |
@@ -25,9 +24,14 @@ Review independently from every persona below:
 
 ## Scoring
 
-Each of the 7 personas votes `accept` or `reject`. Acceptance percentage =
-`accepted personas / 7`, rounded to the nearest whole percent. The threshold is 90 percent; in
+Each of the 6 personas votes `accept` or `reject`. Acceptance percentage =
+`accepted personas / 6`, rounded to the nearest whole percent. The threshold is 90 percent; in
 practice every persona must accept.
+
+The `SubagentStop` gate (`verify-challenge.sh`) recomputes this percentage directly from the
+`### Persona Votes` table and hard-blocks if it does not match the `- Acceptance:` line above, or
+if a vote is missing or is not exactly `accept`/`reject`. Do not hand-round or estimate the
+percentage - it is checked, not trusted.
 
 Missing product decisions or missing user option selection are `NEEDS-INPUT`, not architect-fixable
 defects.
@@ -37,7 +41,7 @@ defects.
 ```md
 ## Business Challenge Verdict
 
-- Acceptance: <N>% (<accepted>/7 personas)
+- Acceptance: <N>% (<accepted>/6 personas)
 - Decision: PASS (>= 90%) | REVISE (< 90%) | NEEDS-INPUT
 
 ### Findings

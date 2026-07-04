@@ -159,6 +159,15 @@
         ]
       },
       {
+        "matcher": "business-challenger|technical-challenger",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-challenge.sh"
+          }
+        ]
+      },
+      {
         "matcher": "qa",
         "hooks": [
           {

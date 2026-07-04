@@ -8,6 +8,7 @@
     python scripts/validate/cli.py ownership [--agent A] [--slice S] [--changed-file F ...]
     python scripts/validate/cli.py runtime-smoke [--config C] [--url U] [--must-contain T ...] [--forbid T ...]
     python scripts/validate/cli.py playwright-output [--file F]
+    python scripts/validate/cli.py challenge-scoring [--file F]
 
 `cli.py <check>` is the only interface; hooks, templates, and docs call it.
 """
@@ -27,6 +28,7 @@ from scripts.validate.controller import VALIDATORS, run_doctor, run_validators
 from scripts.validate.models import repo_root_from
 from scripts.validate.services import (
     agent_evidence,
+    challenge_scoring,
     gate,
     ownership,
     playwright_output,
@@ -38,6 +40,7 @@ SPECIAL = {
     "ownership",
     "runtime-smoke",
     "playwright-output",
+    "challenge-scoring",
     "agent-evidence-hash",
 }
 
@@ -90,6 +93,9 @@ def build_parser() -> argparse.ArgumentParser:
     po_p = add("playwright-output")
     po_p.add_argument("--file", type=Path)
 
+    csc_p = add("challenge-scoring")
+    csc_p.add_argument("--file", type=Path)
+
     aeh_p = add("agent-evidence-hash")
     aeh_p.add_argument("--file", type=Path, required=True)
     aeh_p.add_argument("--write", action="store_true")
@@ -117,6 +123,16 @@ def main(argv: list[str] | None = None) -> int:
         for line in playwright_output.summarize_playwright_output(text):
             print(line)
         return 0
+    if check == "challenge-scoring":
+        text = (
+            _resolve(root, args.file).read_text(encoding="utf-8")
+            if args.file
+            else sys.stdin.read()
+        )
+        findings = challenge_scoring.validate_challenge_verdict(text)
+        for finding in findings:
+            print(finding.format())
+        return 1 if findings else 0
     if check == "agent-evidence-hash":
         path = _resolve(root, args.file)
         if path is None:
