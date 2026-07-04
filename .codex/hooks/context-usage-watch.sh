@@ -107,7 +107,10 @@ def main() -> int:
         "(memory/ADR/<purpose>/adr.md), feature slices (memory/feature/<feature>/slice.md), and "
         "memory/rules.md slugs this work belongs to, or 'none yet' when memory is empty; "
         "(4) '## Next steps' - the exact resume order for the missing items. "
-        "Keep it factual - only work that verifiably happened. Then continue the task."
+        "Keep it factual - only work that verifiably happened. "
+        "After writing the file, output its FULL contents verbatim in your chat reply so the "
+        "user keeps a durable copy (SESSION-HANDOFF.md is gitignored and does not survive a "
+        "fresh clone). Then continue the task."
     )
     print(
         json.dumps(

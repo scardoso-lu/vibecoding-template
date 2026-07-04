@@ -227,6 +227,10 @@ __marimo__/
 memory/
 agent-evidence/
 
+# Per-session working state written by the context-usage-watch hook; the durable copy is the
+# chat output at ~90% usage, not git.
+SESSION-HANDOFF.md
+
 # Per-stack environment files (use .env.example in each service dir as the template)
 backend/.env
 frontend/.env

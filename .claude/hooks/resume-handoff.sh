@@ -5,6 +5,9 @@
 # fired at ~90% usage), this announces it and instructs Claude to ask the user whether to
 # inject it before any other work. Stdout is added to Claude's context. The file's content
 # is deliberately NOT dumped here - it is only read after the user says yes.
+#
+# SESSION-HANDOFF.md is gitignored: it only exists when the same workspace persists across
+# sessions. In a fresh clone the durable copy is the chat output the 90% watch requested.
 set -uo pipefail
 
 ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
