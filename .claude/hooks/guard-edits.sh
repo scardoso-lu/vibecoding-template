@@ -58,6 +58,18 @@ case "$FP" in
     deny "memory/ may only contain PRD/, ADR/, feature/, and rules.md. Do not create role-specific or ad-hoc memory files ('$FP')." ;;
 esac
 
+# Repo-hygiene checks (no secrets committed, migrations apply cleanly) are owned deterministically
+# by scripts/validate/** plus guard-commit.sh - never by a slice's own test suite, even one filed
+# under a "harness" directory. Matched by filename, not directory: "harness" is also this repo's
+# legitimate Test Coverage category for real, AC-mapped feature tests (e.g. a slice's own
+# no-raw-value-in-logs or no-retention check) that must stay writable. Only the specific
+# repo-hygiene concerns already covered elsewhere are blocked.
+base_lower="$(printf '%s' "$base" | tr '[:upper:]' '[:lower:]')"
+case "$base_lower" in
+  *secrets_committed*|*secret_committed*|*migrations_apply*)
+    deny "'$base' duplicates a repo-hygiene check scripts/validate/** and guard-commit.sh already run deterministically (secrets committed / migrations apply cleanly). Cite that existing check in the slice instead of writing a new test for it at '$FP'." ;;
+esac
+
 # Read-only challengers: their entire output is a scored critique. Any file write is out of role.
 case "$AGENT" in
   business-challenger|technical-challenger|qa-challenger)

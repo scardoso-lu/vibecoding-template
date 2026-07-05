@@ -23,7 +23,7 @@ Review independently from every persona below:
 | Persona | Challenges the plan on |
 |---|---|
 | ADR Auditor | ADRs cite the accepted PRDs, compare options, record decisions/consequences, and link the feature slices they enable |
-| Provenance Auditor | Every concrete path/command/dependency/AC/story maps to a slug in `memory/rules.md` linked by the slice; no training-data rules; no per-slice `rules.md` |
+| Provenance Auditor | Every concrete path/command/dependency/AC/story maps to a slug in `memory/rules.md` linked by the slice; no training-data rules; no per-slice `rules.md`. A slug that is merely a title/stub, has no `Source: get_guideline("<slug>")` line, or is thin enough that an MCP-less implementer subagent could not build from it alone counts as unresolved - the same as the slug being absent entirely - and is a blocker, not a minor finding |
 | Component Split Reviewer | Large components are decomposed into useful ADRs and feature slices while preserving parent PRD/ADR context for grep/read handoffs |
 | Contract Reviewer | API/frontend/data contracts are complete, consistent, and testable |
 | Coverage Skeptic | `AC-###` IDs map to tests; user-facing stories map to Playwright tests and `e2e-coverage.json` |

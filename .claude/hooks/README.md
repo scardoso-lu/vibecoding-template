@@ -6,9 +6,10 @@ every clone inherits them.
 
 | Hook | Event | Matcher | What it does |
 |---|---|---|---|
+| `log-prompt.sh` | `UserPromptSubmit` | - | Appends every raw user prompt, with an ISO-8601 timestamp and session id, to the repo-root `PROMPT-LOG.md` - so the original ask survives session end/compaction even when nothing else does. Side-effect only: never blocks, never injects context. |
 | `session-start.sh` | `SessionStart` | - | Installs backend/frontend deps (`uv sync`, `pnpm install`) when their manifests exist, so tests and linters are ready in a fresh remote container. |
 | `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, implementer/QA shell reads of agent infrastructure, echoing/dumping env vars or secrets files (`.env`, `env`/`printenv`/`set`, secret-shaped `$VAR`/`%VAR%`/`$env:VAR`, `os.environ`/`process.env` one-liners), broader credential-file reads (SSH keys, `~/.aws`, `~/.azure`, `~/.kube/config`, `~/.netrc`, `~/.git-credentials`, `~/.npmrc`, `~/.pypirc`, etc.), cloud instance metadata requests (`169.254.169.254` / `100.100.100.200` / `metadata.google.internal`), piping a downloaded script into a shell (`curl\|bash`, `wget\|bash`, `bash <(curl ...)`), and broad filesystem scans hunting for installed tools (ask the user for the exact path instead). |
-| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to secrets files (`.env`, `.env.*`; `.env.example` stays editable). Enforces the memory placement contract (`prd.md`/`adr.md`/`slice.md` only at their contract paths; `memory/` limited to `PRD/ ADR/ feature/ rules.md`) and the role write scopes: challengers are read-only, product-owner writes only `memory/PRD/**`, software-architect only `memory/ADR/**`+`memory/feature/**`+`memory/rules.md`, orchestrator never memory or app code, developers never the other stack's app root or planning memory, and **QA** only `frontend/e2e/**` specs/helpers, `qa-evidence.json`/`e2e-coverage.json`, and the slice verdict. |
+| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|MultiEdit` | Blocks edits to secrets files (`.env`, `.env.*`; `.env.example` stays editable). Enforces the memory placement contract (`prd.md`/`adr.md`/`slice.md` only at their contract paths; `memory/` limited to `PRD/ ADR/ feature/ rules.md`), blocks any filename matching a secrets-committed/migrations-apply-cleanly check regardless of location (those are owned by `scripts/validate/**` + `guard-commit.sh`, never by app-level tests - genuine feature tests under `test/harness/` stay writable), and the role write scopes: challengers are read-only, product-owner writes only `memory/PRD/**`, software-architect only `memory/ADR/**`+`memory/feature/**`+`memory/rules.md`, orchestrator never memory or app code, developers never the other stack's app root or planning memory, and **QA** only `frontend/e2e/**` specs/helpers, `qa-evidence.json`/`e2e-coverage.json`, and the slice verdict. |
 | `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks implementer/QA subagents from reading `CLAUDE.md`, `AGENTS.md`, agent prompts/hooks/settings, and `scripts/`. Both `.claude/templates/**` and `.claude/skills/**` (and their `.codex/` mirrors) are whitelisted for every subagent - reference material, not agent infrastructure. Main-thread and coordination-tier reads pass through. |
 | `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack-guidelines__.*` | Enforces the core MCP budget rule: **only the software-architect may call the guidelines server**; other roles are denied and told to request context through the orchestrator. Also enforces the tool budget: `get_all_context` is denied for every caller, and the software-architect may call only `get_metadata`/`search_guidelines`/`get_guideline`. |
 | developer handoff prompt gate | `SubagentStart` | `backend-developer\|frontend-developer` | Model-checks implementer handoffs before code starts: slice path, linked PRD/ADR/rules context, Agent Plan row, Do Not Touch, ACs, tests/evidence expectations, provenance, and narrow read scope. |
@@ -20,6 +21,7 @@ every clone inherits them.
 | `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs stack-local validators, static checks, and available tests/coverage before a developer returns. |
 | `verify-qa.sh` | `SubagentStop` | `qa-checker` | Deterministic QA artifact gate: runs QA, agent evidence, Playwright story, test coverage, E2E coverage, and QA evidence validators before qa-checker returns. |
 | `verify-challenge.sh` | `SubagentStop` | `business-challenger\|technical-challenger` | Deterministic scoring gate: reads the challenger's own transcript, recomputes accepted/total from its `### Persona Votes` table, and hard-blocks if that doesn't match the stated `- Acceptance: N%` line or a vote is missing/malformed. An LLM's self-reported percentage is a claim, not evidence. |
+| `verify-architecture.sh` | `SubagentStop` | `software-architect` | Deterministic gate: runs `scripts/validate/cli.py memory` right after the architect returns, so a slice.md `Rules:` slug with no matching, fully-authored block in `memory/rules.md` is caught immediately - before technical-challenger or an MCP-less implementer subagent ever sees it - instead of only at the top-level `Stop` hook, which can fire too late in the same turn. |
 | `verify-round-cap.sh` | `SubagentStop` | `orchestrator` | Deterministic round-cap gate: reads the orchestrator's own transcript for its `## Coordinate Handoff` block, and for every `business-challenge`/`technical-challenge` step, checks the declared `Round: N of 3` against a small hook-owned counter file (not memory, not writable by the orchestrator) keyed by the PRD purpose. Hard-blocks if the round exceeds the cap or regresses/is miscounted relative to what the hook itself has tracked. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys, AWS/Stripe/GitHub/Slack/Google/OpenAI/npm keys, Azure connection strings/SAS tokens, DB connection-string passwords, JWTs, and credential-named variables being logged - blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
@@ -27,7 +29,7 @@ every clone inherits them.
 | `reinject-context.sh` | `SessionStart` | `compact` | After compaction, re-injects the 4 CLAUDE.md rules + the deterministic-gate model + the active PRD/ADR/feature-slice states, and points back at `SESSION-HANDOFF.md` when one exists. |
 | `track-compact.sh` | `PostCompact` | - | Appends a JSON line (timestamp + event fields) to a temp-dir log every time a compaction completes. `PostCompact` stdout is never fed back into context (unlike `SessionStart`), so this hook is side-effects-only - it cannot and does not replace `reinject-context.sh`. |
 | `context-usage-watch.sh` | `PostToolUse` | - (all tools) | Watches transcript token usage; at >=90% of the context window (once per session) it injects an instruction to write the repo-root `SESSION-HANDOFF.md` (completed / missing / PRD-ADR-slice references / next steps) before auto-compaction, and to output the handoff verbatim in the chat reply (the file is gitignored, so chat is the durable copy). |
-| `resume-handoff.sh` | `SessionStart` | `startup\|resume` | If `SESSION-HANDOFF.md` exists, instructs Claude to first ask the user whether to inject it; on yes, the missing items are implemented following the handoff's PRD/ADR/feature references. |
+| `resume-handoff.sh` | `SessionStart` | `startup\|resume` | If `SESSION-HANDOFF.md` exists, instructs Claude to use `AskUserQuestion` with exactly Yes/No/Something else before doing anything else; on yes, the missing items are implemented following the handoff's PRD/ADR/feature references. |
 | `notify-attention.sh` | `Notification` | `permission_prompt\|idle_prompt\|agent_needs_input` | Desktop toast when the main thread needs you (a permission prompt, an idle prompt, or an agent waiting on input). Skips if the event carries an `agent_type` (subagent-attributed, not yours to act on). Silent no-op with no notification backend (remote containers, CI). |
 | `notify-stop.sh` | `Stop` | - | Speaks a short phrase (local TTS) when a turn ends, audible only on the machine running the session. Silent no-op with no TTS backend. |
 
@@ -159,7 +161,7 @@ Six hooks cover paths the per-edit hooks miss:
 
 ## Deterministic verification (PostToolUse + SubagentStop)
 
-Eight hooks move work out of "the agent should remember to do this" and into "this always
+Nine hooks move work out of "the agent should remember to do this" and into "this always
 happens":
 
 - **Developer handoff prompt gate (`SubagentStart`, matcher
@@ -204,6 +206,13 @@ happens":
   before qa-checker can return: QA contract, agent prompt interpretation evidence, Playwright
   story shape, acceptance/test coverage, initial-prompt E2E coverage, and machine-readable QA
   evidence. qa-challenger keeps judgment; this hook owns artifact mechanics.
+
+- **`verify-architecture.sh` (`SubagentStop`, matcher `software-architect`)** runs
+  `scripts/validate/cli.py memory` right after the architect returns: every slug a slice's
+  `Dependencies -> Rules:` line cites must already have a matching, fetched block in
+  `memory/rules.md`. This used to only be caught by `guard-harness.sh`'s top-level `Stop` hook,
+  which can fire after the orchestrator has already routed an implementer subagent in the same
+  turn - and implementers cannot call MCP themselves to resolve a dangling slug.
 
 - **`verify-round-cap.sh` (`SubagentStop`, matcher `orchestrator`)** gives the Plan-Loop round
   count and 3-round cap a real, hook-owned source of truth. Unlike the persona-vote tally

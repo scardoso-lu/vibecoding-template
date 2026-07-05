@@ -9,6 +9,7 @@ from scripts.validate.models import (
     has_heading,
     parse_md_table,
     read_text,
+    row_is_started,
     section_text,
     split_ids,
 )
@@ -395,7 +396,11 @@ def validate_test_coverage_mapping(root: Path) -> list[Finding]:
                 location = row.get("Test Location", "") or row.get("Location", "")
                 if location:
                     path_part = location.strip("`").partition("::")[0]
-                    if path_part and not (root / path_part).exists():
+                    if (
+                        path_part
+                        and row_is_started(row)
+                        and not (root / path_part).exists()
+                    ):
                         findings.append(
                             Finding(
                                 path_part,

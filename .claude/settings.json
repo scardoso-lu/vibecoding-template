@@ -10,6 +10,16 @@
     ]
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/log-prompt.sh"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "hooks": [
@@ -159,6 +169,10 @@
             "type": "prompt",
             "prompt": "Architecture planning gate for vibecoding-template. Review the just-finished software-architect/technical-challenger output against CLAUDE.md. Block if accepted PRDs were not converted into separate memory/ADR/<purpose>/adr.md ADRs before feature slices, ADRs lack context/options/decision/consequences/components/enabled slices, memory slices lack PRD/ADR/Rules links, guideline rules are not in the single global memory/rules.md with Source: get_guideline(\"<slug>\"), large components are not split into useful component ADRs/slices, Agent Plan rows omit linked PRD/ADR context for downstream grep/read handoffs, or agent-evidence/prompt-N records do not explain how the prompt was interpreted with the prompt hash and propagated x_request_id. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific ADR/slice provenance problem and required software-architect fix or user question>\"}.",
             "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-architecture.sh"
           }
         ]
       },

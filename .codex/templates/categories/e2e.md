@@ -9,11 +9,15 @@ header comment, and number every action as a sequential `// N)` step comment sta
 `validate_playwright_stories` enforces the `// Story:` comment and rejects a referenced spec
 file that is missing numbered step comments or has non-sequential step numbers.
 
+Status legend: `done` (file exists and passes) | `in-progress` (being built) | `not-started`
+(deliberately postponed - see `## Staging` in the base slice). Missing Status = treated as
+started/enforced.
+
 ```md
 ## E2E Test Stories
-| Story ID | User Story | Criteria | Test Location | Seed/Setup | Assertions | Slugs |
-|---|---|---|---|---|---|---|
-| e2e-001 | As a client, I want to buy informatics products, so that I can find and purchase the item I need. | AC-001 | `frontend/e2e/product-search.spec.ts::filters informatics products and shows priced grid` | seed catalog with an "Informatics" category and priced products | product grid renders filtered results with visible pricing | `<slug>` |
+| Story ID | User Story | Criteria | Test Location | Seed/Setup | Assertions | Slugs | Status |
+|---|---|---|---|---|---|---|---|
+| e2e-001 | As a client, I want to buy informatics products, so that I can find and purchase the item I need. | AC-001 | `frontend/e2e/product-search.spec.ts::filters informatics products and shows priced grid` | seed catalog with an "Informatics" category and priced products | product grid renders filtered results with visible pricing | `<slug>` | done |
 
 ## Playwright Setup
 - Launch backend:
@@ -53,7 +57,11 @@ Also write `memory/feature/<slice>/e2e-coverage.json`:
     {"id": "US-001", "prompt_text": "As a client, I want to buy informatics products.", "covered_by": ["e2e-001"]}
   ],
   "tests": [
-    {"id": "e2e-001", "location": "frontend/e2e/product-search.spec.ts::filters informatics products and shows priced grid", "covers": ["US-001"]}
+    {"id": "e2e-001", "location": "frontend/e2e/product-search.spec.ts::filters informatics products and shows priced grid", "covers": ["US-001"], "status": "done"}
   ]
 }
 ```
+
+Each test entry's `status` is `done` | `in-progress` | `not-started`, matching its `## E2E Test
+Stories` row - a `not-started` entry's `location` is a planned future path and is not checked
+against the filesystem until its status changes.

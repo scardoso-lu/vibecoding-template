@@ -21,14 +21,17 @@ updated="$(date -r "$HANDOFF" '+%Y-%m-%d %H:%M' 2>/dev/null || stat -f '%Sm' "$H
 
 cat <<EOF
 [session-handoff] A previous session left a handoff file: $HANDOFF (last updated: $updated).
-Before starting any other work, ask the user: "A session handoff exists in $HANDOFF.
-Do you want me to inject it and continue the unfinished work?"
-- If YES: read $HANDOFF, follow its '## References' section (linked memory/PRD/**/prd.md,
+Before starting any other work, use the AskUserQuestion tool to ask: "A session handoff exists
+in $HANDOFF. Do you want me to inject it and continue the unfinished work?" with exactly these
+three options (do not just type the question as plain text - render it as a real multi-choice
+prompt so the user can pick without typing):
+- "Yes" - read $HANDOFF, follow its '## References' section (linked memory/PRD/**/prd.md,
   memory/ADR/**/adr.md, memory/feature/**/slice.md, and memory/rules.md slugs), and implement
   the '## Missing / Not Completed' items in the '## Next steps' order. Route product/feature
   work through the orchestrator per the operating rules. When everything is done, update
   $HANDOFF (or delete it if nothing remains).
-- If NO: leave $HANDOFF untouched and proceed with the user's new request.
+- "No" - leave $HANDOFF untouched and proceed with the user's new request.
+- "Something else" - ask the user what they want instead of guessing between the two paths above.
 EOF
 
 exit 0

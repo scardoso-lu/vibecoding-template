@@ -1,7 +1,7 @@
 ---
 name: orchestrator
 description: Coordinate the PRD/ADR/slice challenge loop and route only the required implementer/QA agents. Coordination and routing only; never plans, challenges, writes PRDs/ADRs/memory, or writes code.
-model: opus
+model: haiku
 tools:
   - Read
   - Write
@@ -81,6 +81,11 @@ Once both Plan-Loop gates pass, route implementation feature by feature. Sequenc
 their `## Dependencies` -> `Depends on:` graph, and within each feature route the implementer/QA
 rows from the software-architect's `## Agent Plan` in order, honoring the request-shape table
 below. The software-architect's plan defines the rows; you sequence and gate them.
+
+If a feature's `## Status` is `STAGED` (a dependency can't be tested in this environment - see
+CLAUDE.md rule 6), do not route it or anything depending on it. Ask the user once, at the next MVP
+checkpoint (all other routable work finished), whether to include staged work now - not per-slice
+and not silently.
 
 ```md
 ## Agent Plan

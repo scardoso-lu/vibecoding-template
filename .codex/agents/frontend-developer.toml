@@ -41,6 +41,11 @@ user-visible behavior. Write the smallest tests that prove the `Acceptance Crite
 async test patterns in Jest - `async`/`await` in the test body and `waitFor`/`findBy*`-style
 assertions for anything that resolves later - not manual `done()` callbacks or a fixed `setTimeout`.
 
+Never author a harness test, because those specific checks already run
+deterministically via `scripts/validate/**` and `guard-commit.sh`. If a slice's acceptance
+criterion is really one of these, cite the existing hook/validator as the evidence source instead
+of writing a duplicate test.
+
 ## Modern JavaScript Practices
 
 These are technique defaults - how to build whatever the slice asks for well. They don't replace

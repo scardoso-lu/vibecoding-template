@@ -42,6 +42,11 @@ patterns (`async def test_...`) for anything that awaits, and assert query count
 endpoints you know return nested/related data, so an N+1 regression fails the suite instead of
 just being slow in production.
 
+Never author a harness test, because those specific checks already run
+deterministically via `scripts/validate/**` and `guard-commit.sh`. If a slice's acceptance
+criterion is really one of these, cite the existing hook/validator as the evidence source instead
+of writing a duplicate test.
+
 ## Backend Implementation Patterns
 
 These are technique defaults - how to build whatever the slice asks for well. They don't replace
@@ -70,7 +75,7 @@ memory calls for them*, not a license to add them speculatively.
 - Map domain errors to explicit HTTP status codes via exception handlers; never let an unhandled
   exception leak a stack trace into a production response.
 - Use the project's structured logger (never `print`) at the right level, and never log a
-  credential or secret value (see the credential-logging rule `guard-commit.sh` already enforces).
+  credential or secret value.
 - Config and secrets come from environment variables per the slice's configuration rules in
   memory - never hardcoded.
 
@@ -107,6 +112,7 @@ boring over clever; the correct file count is the minimum that keeps concerns se
 ## Rules
 
 - Follow only the architecture, security, migration, logging, configuration, and testing rules summarized in memory for this slice.
+- Any access-control or trigger validation the slice names gets a real implementation, even a minimal one - never a stub, hardcoded allow-all, or `TODO` deferred to "improve later." If the permission model itself is undecided, that is a missing orchestrator/product decision, not something to guess or fake.
 - If a rule category appears relevant but is absent from memory, stop and request orchestrator context instead of applying general knowledge.
 - Commit messages may cite only guideline slugs already present in memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.

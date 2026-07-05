@@ -3,7 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts.validate.models import Finding, read_text
+from scripts.validate.models import (
+    Finding,
+    read_text,
+    slice_e2e_pending,
+    slice_has_started_work,
+)
 from scripts.validate.services.feature_memory import feature_memory_roots
 
 
@@ -23,6 +28,12 @@ def validate_qa_evidence(root: Path) -> list[Finding]:
             text = read_text(slice_md)
             is_minimal = "template-minimal" in text or "Minimal Slice" in text
             if is_minimal:
+                continue
+            # Nothing in this slice has started, or (for a user-facing slice) its entire E2E/QA
+            # surface is explicitly not-started/staged -> there is nothing for qa-checker to have
+            # evidenced yet, regardless of backend progress. Requiring qa-evidence.json here would
+            # just be noise on work that genuinely cannot be QA'd yet.
+            if not slice_has_started_work(text) or slice_e2e_pending(text):
                 continue
             slice_dir = slice_md.parent
             evidence_json = slice_dir / "qa-evidence.json"

@@ -8,9 +8,12 @@ Use for every non-minimal feature. Write one `slice.md` per business feature und
 # <feature>
 
 ## Status
-- State: active | NEEDS-INPUT | BLOCKED | E2E CLEAN | E2E BUGS FOUND | QA APPROVED | QA BLOCKED
+- State: active | NEEDS-INPUT | BLOCKED | STAGED | E2E CLEAN | E2E BUGS FOUND | QA APPROVED | QA BLOCKED
 - Current owner: product-owner | software-architect | business-challenger | technical-challenger | backend-developer | frontend-developer | qa-checker | qa-challenger
 - Last updated:
+
+`STAGED` = deliberately postponed because a dependency can't be tested in the current environment
+(e.g. needs a live external system unavailable here). See `## Staging` below.
 
 ## Request
 <Original user request or precise summary of this business feature.>
@@ -46,10 +49,19 @@ the deterministic memory validator.
 - [ ] AC-002: <observable behavior>
 
 ## Test Coverage
-| Criteria | Test Type | Test Location |
-|---|---|---|
-| AC-001 | backend | `backend/test/<test_file>.py` |
-| AC-002 | frontend-unit | `frontend/src/<feature>/<test_file>.test.tsx` |
+Status legend: `done` (file exists and passes) | `in-progress` (being built) | `not-started`
+(deliberately postponed - see `## Staging`). Missing Status = treated as started/enforced, so
+never omit it for real gaps - only use `not-started` for genuinely deferred work.
+
+| Criteria | Test Type | Test Location | Status |
+|---|---|---|---|
+| AC-001 | backend | `backend/test/<test_file>.py` | done |
+| AC-002 | frontend-unit | `frontend/src/<feature>/<test_file>.test.tsx` | not-started |
+
+## Staging
+Only when any row above is `not-started`/`deferred`: name what's blocking it (usually an untestable
+dependency - see CLAUDE.md rule 6) and when to revisit (a named prerequisite reaching QA, or the
+next MVP checkpoint). Omit this section entirely when nothing is staged.
 
 ## Tests
 - Backend:

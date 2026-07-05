@@ -73,6 +73,11 @@ their `## Dependencies` -> `Depends on:` graph, and within each feature route th
 rows from the software-architect's `## Agent Plan` in order, honoring the request-shape table
 below. The software-architect's plan defines the rows; you sequence and gate them.
 
+If a feature's `## Status` is `STAGED` (a dependency can't be tested in this environment - see
+AGENTS.md rule 6), do not route it or anything depending on it. Ask the user once, at the next MVP
+checkpoint (all other routable work finished), whether to include staged work now - not per-slice
+and not silently.
+
 ```md
 ## Agent Plan
 

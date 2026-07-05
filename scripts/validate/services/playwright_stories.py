@@ -11,6 +11,7 @@ from scripts.validate.models import (
     line_number,
     parse_md_table,
     read_text,
+    row_is_started,
     split_ids,
 )
 from scripts.validate.services.feature_memory import feature_memory_roots
@@ -111,7 +112,7 @@ def validate_playwright_stories(root: Path) -> list[Finding]:
                             f"E2E Test Stories row {index} test location must be under frontend/e2e/**",
                         )
                     )
-                if location.startswith("frontend/e2e/"):
+                if location.startswith("frontend/e2e/") and row_is_started(row):
                     path_part, _, test_name = location.partition("::")
                     test_file = root / path_part
                     if not test_file.exists():
@@ -305,6 +306,11 @@ def validate_e2e_coverage(root: Path) -> list[Finding]:
                             f"E2E test {test_id or index} missing location",
                         )
                     )
+                    continue
+                # A test explicitly marked not-started/planned/deferred has a planned
+                # future location that legitimately doesn't exist yet - not a failure.
+                test_status = str(test.get("status", "")).strip().lower()
+                if test_status in {"not-started", "not started", "deferred", "planned"}:
                     continue
                 test_file = root / path_part
                 if not test_file.exists():

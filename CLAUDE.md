@@ -46,6 +46,24 @@ only from memory and MCP-backed rules.
    path. Any subagent may read `.claude/templates/**` and `.claude/skills/**` - reference material,
    not agent infrastructure.
 
+5. Every access-control or trigger validation gets a real backend implementation, never a stub.
+   Any authentication, authorization/RBAC, or trigger-condition check named in a PRD, ADR, or slice
+   must ship working backend enforcement code - even a deliberately simple first version - before
+   the slice is done. "The user will improve this later" is a reason to keep the check minimal, not
+   a reason to fake it, `TODO` it, hardcode `True`/allow-all, or defer it to a later slice while the
+   feature ships. If the slice's real permission model is not yet decided, that is a product gap:
+   `software-architect` returns `NEEDS-INPUT` rather than let a developer ship an unenforced check.
+
+6. Testability gates sequencing; validation gates only cover started work.
+   `software-architect` does not sequence a dependent slice's implementation on top of a
+   prerequisite that cannot be tested in the current environment (e.g. needs a live external
+   system unavailable here). Mark the dependent chain `State: STAGED` in `slice.md`'s `## Staging`
+   section instead of building forward on an unverified foundation; the `orchestrator` asks the
+   user once, at the next MVP checkpoint (not per-slice), whether it is time to include staged work
+   - it does not ask silently or repeatedly. Deterministic validators and QA evidence requirements
+   apply only to `Test Coverage`/`E2E Test Stories` rows marked `in-progress` or `done`; a row
+   explicitly marked `not-started` is not a failure and must not be reported as one.
+
 ## Agent Roles
 
 | Agent | Responsibility |

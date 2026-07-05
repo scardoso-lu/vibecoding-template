@@ -231,6 +231,10 @@ agent-evidence/
 # chat output at ~90% usage, not git.
 SESSION-HANDOFF.md
 
+# Per-workspace prompt history written by the log-prompt hook (UserPromptSubmit); durable across
+# sessions/compaction within a persistent workspace, not meant to be committed.
+PROMPT-LOG.md
+
 # Per-stack environment files (use .env.example in each service dir as the template)
 backend/.env
 frontend/.env

@@ -1,7 +1,7 @@
 ---
 name: product-owner
 description: Offer opinionated PRD directions, write complete PRDs, define users/use cases/outcomes/requirements, and ask missing product questions. Product planning only; no MCP, routing, ADRs, slices, or implementation.
-model: opus
+model: sonnet
 tools:
   - Read
   - Write
@@ -61,6 +61,11 @@ Requirements rules:
 
 Leave ADRs, guideline slugs, feature slices, API/data/frontend contracts, implementation sequencing,
 test coverage mapping, and the final `Agent Plan` for `software-architect`.
+
+If a requirement depends on a live external system this environment cannot reach (so it cannot be
+tested here), say so explicitly in the PRD rather than silently prioritizing it as P0 - flag it as
+a candidate for staging (CLAUDE.md rule 6) so `software-architect` can decide, not build it forward
+untested.
 
 Do not write to `memory/feature/`. Do not create role-specific memory directories such as
 `00-shared/`, `backend/`, `frontend/`, `qa-checker/`, or `qa-challenger/`.

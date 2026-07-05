@@ -76,6 +76,51 @@ def section_text(text: str, heading: str) -> str:
     return block[: next_heading.start()] if next_heading else block
 
 
+NOT_STARTED_STATUSES = {"not-started", "not started", "deferred", "staged", "planned"}
+
+
+def row_is_started(row: dict[str, str]) -> bool:
+    """True unless a Test Coverage/E2E Test Stories row is explicitly marked not-started.
+
+    Missing Status column -> treated as started (fail toward validating, not toward
+    silently skipping) so older slices written before this column existed keep their
+    existing enforcement.
+    """
+    return (row.get("Status") or "").strip().lower() not in NOT_STARTED_STATUSES
+
+
+def slice_has_started_work(text: str) -> bool:
+    """True if any Test Coverage/E2E Test Stories row is in-progress or done.
+
+    Used to gate slice-level QA/agent-evidence artifact requirements: a slice with
+    nothing started yet has nothing for qa-checker/qa-challenger to have evidenced.
+    """
+    for row in parse_md_table(text, "Test Coverage"):
+        if row_is_started(row):
+            return True
+    for row in parse_md_table(text, "E2E Test Stories"):
+        if row_is_started(row):
+            return True
+    return False
+
+
+def slice_e2e_pending(text: str) -> bool:
+    """True when the slice is user-facing (has E2E Test Stories) and every row in that
+    table is explicitly not-started/deferred.
+
+    A slice can have real, done backend work while its whole E2E/QA surface is still
+    staged (e.g. behind an untestable dependency) - qa-evidence.json/runtime-smoke.json
+    genuinely cannot exist yet in that case, regardless of backend progress. A slice with
+    no E2E Test Stories table at all (not user-facing) is not affected by this check.
+    """
+    if not has_heading(text, "E2E Test Stories"):
+        return False
+    rows = parse_md_table(text, "E2E Test Stories")
+    if not rows:
+        return False
+    return not any(row_is_started(row) for row in rows)
+
+
 def split_ids(value: str) -> set[str]:
     return set(re.findall(r"\bAC-\d{3}\b", value))
 

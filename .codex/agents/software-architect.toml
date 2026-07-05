@@ -50,6 +50,10 @@ under `memory/ADR/<purpose>/adr.md` using `.codex/templates/adr.md`.
 Large components should split into smaller component ADRs when one ADR would mix unrelated
 decisions. Keep parent/component links so downstream agents can read or grep the broader context.
 
+If a requirement depends on a live external system this environment cannot reach (so it cannot be
+tested here), flag it as staging (CLAUDE.md rule 6) ask help for the user after initial work was completed.
+
+
 ### Step 2 - Resolve Slugs
 
 Read `.codex/guideline-routing.md` as a starting hint, not an authority. Map every technical concern
@@ -75,6 +79,14 @@ For user-facing slices, verify `E2E Test Stories` and `e2e-coverage.json` map in
 Rules live in one shared file: `memory/rules.md`, one block per guideline slug. Every block
 must include `Source: get_guideline("<slug>")`. Reuse and extend existing blocks across features
 instead of duplicating rules.
+
+Every slug any slice's `Dependencies -> Rules:` line cites must have its block written into
+`memory/rules.md` *before* the slice is considered complete - never leave a slug referenced but
+unresolved. Implementer subagents cannot call `get_guideline()` themselves (MCP is
+software-architect-only, enforced by `guard-mcp.sh`), so a missing or stub block strands them with
+no way to recover the content. `verify-architecture.sh` (`SubagentStop`) checks this
+deterministically the moment you return; a slug the validator can't find in `memory/rules.md`
+blocks you before technical-challenger even runs.
 
 Before emitting the Agent Plan, run a provenance audit on every concrete file path, directory-tree
 choice, dependency, command, architecture decision, acceptance criterion, Playwright story, and test
@@ -110,6 +122,24 @@ When re-invoked with `technical-challenger` findings, revise the technical plan 
 `NEEDS-INPUT`. When re-invoked with `business-challenger` findings, update only technical details
 needed to support the product revision and route unresolved product questions back through the
 `orchestrator`.
+
+## Test Coverage Vs. Deterministic Enforcement
+
+Before mapping an `AC-###` to a `harness` test, e.g. do not commit secrets on git, check CLAUDE.md's
+Deterministic Enforcement section. 
+These enforcements are already implemented in this proejct. Only focus on legitimate `Test Coverage`
+category for genuine feature-behavior checks that need a new deterministic script 
+(e.g. "no raw cell value ever appears in logs")
+
+## Testability Gates Sequencing
+
+Before writing a slice that `Depends on:` a prerequisite, check whether the prerequisite can
+actually be tested in this environment (e.g. it needs a live external system with no access here).
+If not, set `## Status` `State: STAGED` on the dependent slice, add a `## Staging` section naming
+the blocker and when to revisit (the prerequisite reaching QA, or the next MVP checkpoint), and
+mark its `Test Coverage`/`E2E Test Stories` rows `not-started` rather than writing a full
+Implementation Plan for work that can't be verified yet. Do not silently build forward on an
+unverified foundation.
 
 ## Rules
 
