@@ -6,13 +6,14 @@ A starter template for building fullstack web apps with AI - fast, consistent, a
 
 Turns feature requests written in plain English into working, reviewed, mergeable code - following the same architecture and quality standards every time.
 
-You describe what you want. A product owner writes PRDs in `memory/PRD/`, a software architect writes ADRs in `memory/ADR/`, fetches the relevant MCP guideline rules once, and derives feature slices in `memory/feature/`. Business and technical challengers stress-test the plan until both clear a 90 percent acceptance bar, and the orchestrator routes only the agents needed to implement, test, and review the change.
+You describe what you want. A product owner writes PRDs in `memory/PRD/`, a software architect writes ADRs in `memory/ADR/`, fetches the relevant MCP guideline rules once, and derives feature slices in `memory/feature/`. Business and technical challengers stress-test the plan until both clear a 90 percent acceptance bar, and the main thread routes only the agents needed to implement, test, and review the change.
 
 ## How it works
 
-Each feature request is routed to the smallest useful set of specialized agents:
+**Orchestration happens on the main thread - there is no separate orchestrator agent.** The main
+thread itself sequences the plan/challenge loop and routes each feature request to the smallest
+useful set of specialized agents:
 
-- **Orchestrator** - coordinates the plan/challenge loop and routes the work
 - **Product owner** - understands what you're asking for, defines business slices, user stories, acceptance behavior, and product questions
 - **Software architect** - fetches guideline rules, writes ADRs, completes technical contracts and feature slices, and emits the implementation plan
 - **Business challenger** - challenges product fit, scope, user outcomes, acceptance behavior, and business risk

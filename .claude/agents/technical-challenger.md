@@ -1,7 +1,7 @@
 ---
 name: technical-challenger
 description: Read-only technical challenge for ADRs and MCP-backed feature slices: provenance, architecture, contracts, feasibility, test coverage, and security. Scores a technical acceptance gate.
-model: opus
+model: sonnet
 tools:
   - Read
   - Glob

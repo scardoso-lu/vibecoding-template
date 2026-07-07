@@ -21,18 +21,20 @@ cat <<'EOF'
    software-architect writes ADRs under memory/ADR/<purpose>/adr.md, then
    memory/feature/<feature>/slice.md plus the single global memory/rules.md. Only the
    software-architect calls fullstack-guidelines MCP.
-2. Route every request through the agent system (start with the orchestrator). It sequences the
+2. Route every request through the agent system directly from the main thread. It sequences the
    product-owner -> business-challenger -> software-architect -> technical-challenger loop (both
    challengers must accept at >=90% or the user is asked), then routes developers/QA. Do not
    implement features directly on the main thread.
 3. Deterministic work is a hook, not an agent step: formatting, lint, type-checks, validate-tools,
-   and the test suite run automatically via .codex/hooks/ (PostToolUse, SubagentStart, and
-   SubagentStop gates). Prompt hooks review developer handoffs, business PRDs, architect ADR/slices,
-   and QA judgment; command hooks own developer and QA mechanical validators.
+   and the test suite run automatically via .codex/hooks/ (PostToolUse, SubagentStart,
+   SubagentStop, and Stop gates). Prompt hooks review developer handoffs, business PRDs, architect
+   ADR/slices, main-thread coordination, and QA judgment; command hooks own developer and QA
+   mechanical validators.
    QA owns code-first Playwright specs/output and final judgment; there is no tester or separate E2E agent.
 4. Implementer/QA subagents may not read AGENTS.md, CLAUDE.md, .codex/, .claude/, scripts/, hooks,
-   settings, or agent templates directly. Only orchestrator, product-owner, software-architect,
-   business-challenger, and technical-challenger may; others request context through the orchestrator.
+   settings, or agent templates directly. Only product-owner, software-architect,
+   business-challenger, and technical-challenger may (plus the main thread); others request context
+   through the main thread.
 EOF
 
 # Live state: active PRDs, ADRs, and feature slices with their State lines, so the

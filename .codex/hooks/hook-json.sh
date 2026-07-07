@@ -89,13 +89,13 @@ print(json.dumps({
 }
 
 hook_json_is_coordination_tier() {
-  # Coordination tier: orchestrator, product-owner, software-architect, business-challenger, and
+  # Coordination tier: product-owner, software-architect, business-challenger, and
   # technical-challenger, plus the main thread (empty agent_type - passed as ""). These may read
-  # agent infrastructure directly; every other subagent must go through the orchestrator instead.
+  # agent infrastructure directly; every other subagent must go through the main thread instead.
   # Shared by guard-infra-read.sh and guard-bash.sh so the two guards enforce the exact same set
   # and can't independently drift (they used to each hardcode this case pattern separately).
   case "$1" in
-    ""|orchestrator|product-owner|software-architect|business-challenger|technical-challenger)
+    ""|product-owner|software-architect|business-challenger|technical-challenger)
       return 0 ;;
     *)
       return 1 ;;

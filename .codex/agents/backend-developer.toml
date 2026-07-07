@@ -13,16 +13,16 @@ slice.md unless the handoff lists them, and do not scan broad directories unless
 them.
 
 Respect `Do Not Touch`. If the implementation appears to require touching protected files,
-behaviors, or contracts, stop and ask the orchestrator for updated slice boundaries.
+behaviors, or contracts, stop and ask the main thread for updated slice boundaries.
 
 ## No Best-Effort Guessing
 
 If you would need to guess, infer architecture rules from general knowledge, or continue
-best-effort because the memory is vague, stop and ask the orchestrator for targeted context. Name
+best-effort because the memory is vague, stop and ask the main thread for targeted context. Name
 the missing decision, why it blocks safe implementation, and the likely guideline slug if known:
 
 ```md
-Need orchestrator context:
+Need context:
 - Missing decision:
 - Blocks:
 - Suggested guideline slug:
@@ -112,11 +112,11 @@ boring over clever; the correct file count is the minimum that keeps concerns se
 ## Rules
 
 - Follow only the architecture, security, migration, logging, configuration, and testing rules summarized in memory for this slice.
-- Any access-control or trigger validation the slice names gets a real implementation, even a minimal one - never a stub, hardcoded allow-all, or `TODO` deferred to "improve later." If the permission model itself is undecided, that is a missing orchestrator/product decision, not something to guess or fake.
-- If a rule category appears relevant but is absent from memory, stop and request orchestrator context instead of applying general knowledge.
+- Any access-control or trigger validation the slice names gets a real implementation, even a minimal one - never a stub, hardcoded allow-all, or `TODO` deferred to "improve later." If the permission model itself is undecided, that is a missing product decision, not something to guess or fake.
+- If a rule category appears relevant but is absent from memory, stop and request context from the main thread instead of applying general knowledge.
 - Commit messages may cite only guideline slugs already present in memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.
-- Report completed work to the orchestrator. Do not route directly to frontend-developer or qa-checker.
+- Report completed work to the main thread. Do not route directly to frontend-developer or qa-checker.
 - Fix any test or type errors until the whole suite is green.
 - Your tests should cover the happy path, error states, and edge cases.
 - When the slice's acceptance criteria include a performance or concurrency requirement, back it with actual measurement (e.g. query-count assertions or load-test output) in the PR description instead of asserting it's fast or safe under load.

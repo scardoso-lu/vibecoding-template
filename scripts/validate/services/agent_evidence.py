@@ -10,7 +10,6 @@ from scripts.validate.models import Finding, parse_md_table, read_text
 from scripts.validate.services.feature_memory import feature_memory_roots
 
 BASELINE_AGENTS = {
-    "orchestrator",
     "product-owner",
     "business-challenger",
     "software-architect",

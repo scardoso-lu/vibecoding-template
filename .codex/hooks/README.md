@@ -9,11 +9,11 @@ every clone inherits them.
 | `log-prompt.sh` | `UserPromptSubmit` | - | Appends every raw user prompt, with an ISO-8601 timestamp and session id, to the repo-root `PROMPT-LOG.md` - so the original ask survives session end/compaction even when nothing else does. Side-effect only: never blocks, never injects context. |
 | `session-start.sh` | `SessionStart` | - | Installs backend/frontend deps (`uv sync`, `pnpm install`) when their manifests exist, so tests and linters are ready in a fresh remote container. |
 | `guard-bash.sh` | `PreToolUse` | `Bash` | Blocks `playwright install`, catastrophic `rm -rf` of root/home/cwd, `git push --force`, implementer/QA shell reads of agent infrastructure, echoing/dumping env vars or secrets files (`.env`, `env`/`printenv`/`set`, secret-shaped `$VAR`/`%VAR%`/`$env:VAR`, `os.environ`/`process.env` one-liners), broader credential-file reads (SSH keys, `~/.aws`, `~/.azure`, `~/.kube/config`, `~/.netrc`, `~/.git-credentials`, `~/.npmrc`, `~/.pypirc`, etc.), cloud instance metadata requests (`169.254.169.254` / `100.100.100.200` / `metadata.google.internal`), piping a downloaded script into a shell (`curl\|bash`, `wget\|bash`, `bash <(curl ...)`), and broad filesystem scans hunting for installed tools (ask the user for the exact path instead). |
-| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|apply_patch` | Blocks edits to secrets files (`.env`, `.env.*`; `.env.example` stays editable). Enforces the memory placement contract (`prd.md`/`adr.md`/`slice.md` only at their contract paths; `memory/` limited to `PRD/ ADR/ feature/ rules.md`), blocks any filename matching a secrets-committed/migrations-apply-cleanly check regardless of location (those are owned by `scripts/validate/**` + `guard-commit.sh`, never by app-level tests - genuine feature tests under `test/harness/` stay writable), and the role write scopes: challengers are read-only, product-owner writes only `memory/PRD/**`, software-architect only `memory/ADR/**`+`memory/feature/**`+`memory/rules.md`, orchestrator never memory or app code, developers never the other stack's app root or planning memory, and **QA** only `frontend/e2e/**` specs/helpers, `qa-evidence.json`/`e2e-coverage.json`, and the slice verdict. |
+| `guard-edits.sh` | `PreToolUse` | `Edit\|Write\|apply_patch` | Blocks edits to secrets files (`.env`, `.env.*`; `.env.example` stays editable). Enforces the memory placement contract (`prd.md`/`adr.md`/`slice.md` only at their contract paths; `memory/` limited to `PRD/ ADR/ feature/ rules.md`), blocks any filename matching a secrets-committed/migrations-apply-cleanly check regardless of location (those are owned by `scripts/validate/**` + `guard-commit.sh`, never by app-level tests - genuine feature tests under `test/harness/` stay writable), and the role write scopes: challengers are read-only, product-owner writes only `memory/PRD/**`, software-architect only `memory/ADR/**`+`memory/feature/**`+`memory/rules.md`, developers never the other stack's app root or planning memory, and **QA** only `frontend/e2e/**` specs/helpers, `qa-evidence.json`/`e2e-coverage.json`, and the slice verdict. |
 | `guard-infra-read.sh` | `PreToolUse` | `Read\|Grep\|Glob\|LS` | Blocks implementer/QA subagents from reading `AGENTS.md`, `CLAUDE.md`, agent prompts/hooks/settings, and `scripts/`. Both `.codex/templates/**` and `.codex/skills/**` (and their `.claude/` mirrors) are whitelisted for every subagent - reference material, not agent infrastructure. Main-thread and coordination-tier reads pass through. |
-| `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack_guidelines__.*` | Enforces the core MCP budget rule: **only the software-architect may call the guidelines server**; other roles are denied and told to request context through the orchestrator. Also enforces the tool budget: `get_all_context` is denied for every caller, and the software-architect may call only `get_metadata`/`search_guidelines`/`get_guideline`. |
+| `guard-mcp.sh` | `PreToolUse` | `mcp__fullstack_guidelines__.*` | Enforces the core MCP budget rule: **only the software-architect may call the guidelines server**; other roles are denied and told to request context through the main thread. Also enforces the tool budget: `get_all_context` is denied for every caller, and the software-architect may call only `get_metadata`/`search_guidelines`/`get_guideline`. |
 | developer handoff prompt gate | `SubagentStart` | `backend-developer\|frontend-developer` | Model-checks implementer handoffs before code starts: slice path, linked PRD/ADR/rules context, Agent Plan row, Do Not Touch, ACs, tests/evidence expectations, provenance, and narrow read scope. |
-| coordination prompt gate | `SubagentStop` | `orchestrator` | Model-checks the orchestrator's return: one mode per response, no plan/memory/code writing, both 90% challenge gates and the 3-round cap enforced, round count + acceptance percentages recorded, and handoffs carry Do Not Touch + Stop condition. Paired with `verify-round-cap.sh` below, which checks the round count deterministically instead of trusting this model judgment alone. |
+| coordination prompt gate | `Stop` | - | Model-checks the main thread's own coordination/routing decisions when a turn involved them: one mode per step, no plan/memory/code writing in place of the owning agent, both 90% challenge gates and the 3-round cap enforced, round count + acceptance percentages recorded, and handoffs carry Do Not Touch + Stop condition. Returns no output on turns that didn't involve coordination. Paired with `verify-round-cap.sh` below, which checks the round count deterministically instead of trusting this model judgment alone. |
 | business planning prompt gate | `SubagentStop` | `product-owner\|business-challenger` | Model-checks the PRD phase: selectable options for broad work, complete PRDs under `memory/PRD/<purpose>/prd.md`, P0/P1/P2 MVP requirements by journey/use case, and parent/component PRD links for large components. |
 | architecture planning prompt gate | `SubagentStop` | `software-architect\|technical-challenger` | Model-checks the architecture phase: accepted PRDs become ADRs under `memory/ADR/<purpose>/adr.md`, slices link `PRD:`/`ADR:`/`Rules:`, rules stay in global `memory/rules.md`, and Agent Plan handoffs include larger component context. |
 | QA judgment prompt gate | `SubagentStop` | `qa-challenger` | Model-checks qa-challenger's final judgment: clear slice verdict, required Playwright story coverage/output, deterministic gate evidence, linked PRD/ADR/rules context, and routable `BLOCKED` findings instead of app fixes. |
@@ -22,7 +22,7 @@ every clone inherits them.
 | `verify-qa.sh` | `SubagentStop` | `qa-checker` | Deterministic QA artifact gate: runs QA, agent evidence, Playwright story, test coverage, E2E coverage, and QA evidence validators before qa-checker returns. |
 | `verify-challenge.sh` | `SubagentStop` | `business-challenger\|technical-challenger` | Deterministic scoring gate: reads the challenger's own transcript, recomputes accepted/total from its `### Persona Votes` table, and hard-blocks if that doesn't match the stated `- Acceptance: N%` line or a vote is missing/malformed. An LLM's self-reported percentage is a claim, not evidence. |
 | `verify-architecture.sh` | `SubagentStop` | `software-architect` | Deterministic gate: runs `scripts/validate/cli.py memory` right after the architect returns, so a slice.md `Rules:` slug with no matching, fully-authored block in `memory/rules.md` is caught immediately - before technical-challenger or an MCP-less implementer subagent ever sees it - instead of only at the top-level `Stop` hook, which can fire too late in the same turn. |
-| `verify-round-cap.sh` | `SubagentStop` | `orchestrator` | Deterministic round-cap gate: reads the orchestrator's own transcript for its `## Coordinate Handoff` block, and for every `business-challenge`/`technical-challenge` step, checks the declared `Round: N of 3` against a small hook-owned counter file (not memory, not writable by the orchestrator) keyed by the PRD purpose. Hard-blocks if the round exceeds the cap or regresses/is miscounted relative to what the hook itself has tracked. |
+| `verify-round-cap.sh` | `Stop` | - | Deterministic round-cap gate: reads the main session transcript for the main thread's own `## Coordinate Handoff` block, and for every `business-challenge`/`technical-challenge` step, checks the declared `Round: N of 3` against a small hook-owned counter file (not memory, not writable by the main thread) keyed by the PRD purpose. Hard-blocks if the round exceeds the cap or regresses/is miscounted relative to what the hook itself has tracked. |
 | `guard-commit.sh` | `PreToolUse` | `Bash` (`if: Bash(git commit *)`) | Scans the staged diff before a commit for private keys, AWS/Stripe/GitHub/Slack/Google/OpenAI/npm keys, Azure connection strings/SAS tokens, DB connection-string passwords, JWTs, and credential-named variables being logged - blocks the commit on a finding. Defense-in-depth for main-thread commits the developer gate never sees. |
 | `format-changed.sh` | `Stop` | - | Formats files created via `Bash` (Alembic migrations, codegen) that `auto-format.sh` never saw, by routing each `git status` change back through `auto-format.sh`. |
 | `guard-harness.sh` | `Stop` | - | Runs targeted `scripts/validate/*` checks for changed guidance, hooks, memory, backend, frontend, QA, and Playwright story contracts. |
@@ -56,7 +56,7 @@ they enforce, they never trap.
 `PreToolUse` events carry the calling subagent's identity when the call fires inside a
 subagent:
 
-- `agent_type` - the agent name (e.g. `orchestrator`, `backend-developer`, `qa-checker`).
+- `agent_type` - the agent name (e.g. `backend-developer`, `qa-checker`, `software-architect`).
 - `agent_id` - a unique id for that subagent invocation.
 
 The guards read `agent_type` to enforce role-scoped contracts that used to live only in
@@ -64,7 +64,7 @@ the agent prompts:
 
 - **MCP is software-architect-only** (`guard-mcp.sh`): calls to `mcp__fullstack_guidelines__*`
   from `backend-developer` / `frontend-developer` / `qa-checker` / `qa-challenger` /
-  `product-owner` / `business-challenger` / `technical-challenger` / `orchestrator` are denied.
+  `product-owner` / `business-challenger` / `technical-challenger` are denied.
   The software-architect (and the main thread, which has no `agent_type`) pass through.
 - **Agent infrastructure reads are coordination-tier-only** (`guard-infra-read.sh`): direct
   `Read`/`Grep`/`Glob`/`LS` calls against root guidance, `.codex/`, `.claude/`, or
@@ -81,18 +81,18 @@ the agent prompts:
 - **Role write scopes** (`guard-edits.sh`): challengers (`business-challenger`,
   `technical-challenger`, `qa-challenger`) are fully read-only; `product-owner` writes only
   `memory/PRD/**` and `agent-evidence/**`; `software-architect` writes only `memory/ADR/**`,
-  `memory/feature/**`, `memory/rules.md`, and `agent-evidence/**`; `orchestrator` never writes
-  memory or `backend/`/`frontend/` code; `backend-developer`/`frontend-developer` never write the
-  other stack's app root or planning memory (PRDs, ADRs, `memory/rules.md`). The same hook
-  enforces the memory placement contract for every caller, main thread included.
+  `memory/feature/**`, `memory/rules.md`, and `agent-evidence/**`;
+  `backend-developer`/`frontend-developer` never write the other stack's app root or planning
+  memory (PRDs, ADRs, `memory/rules.md`). The same hook enforces the memory placement contract for
+  every caller, main thread included (the main thread itself is unrestricted).
 - **MCP tool budget** (`guard-mcp.sh`): `get_all_context` is denied for all callers, and the
   software-architect is limited to `get_metadata` / `search_guidelines` / `get_guideline`.
 - **qa-checker write scope** (`guard-edits.sh`): when `agent_type` is `qa-checker`, writes are
   allowed only under `frontend/e2e/**`, to `memory/feature/*/qa-evidence.json` and
   `memory/feature/*/e2e-coverage.json`, to `agent-evidence/*/agent-evidence.json`, or to the
   terminal `slice.md` verdict; anything else is
-  denied so app fixes route back through the orchestrator. `qa-challenger` never writes at all -
-  it is read-only, covered by the challenger rule above; the orchestrator relays its confirmed
+  denied so app fixes route back through the main thread. `qa-challenger` never writes at all -
+  it is read-only, covered by the challenger rule above; the main thread relays its confirmed
   verdict to `qa-checker` to persist.
 
 Downstream agents already omit MCP tools from their frontmatter, so `guard-mcp.sh` is
@@ -165,7 +165,7 @@ Nine hooks move work out of "the agent should remember to do this" and into "thi
 happens":
 
 - **Developer handoff prompt gate (`SubagentStart`, matcher
-  `backend-developer|frontend-developer`)** reviews the orchestrator handoff before code starts. It
+  `backend-developer|frontend-developer`)** reviews the main thread's handoff before code starts. It
   blocks when the implementer lacks a concrete slice, linked PRD/ADR/rules context, Do Not Touch,
   ACs, tests/evidence expectations, provenance, or narrow read scope.
 
@@ -184,7 +184,7 @@ happens":
   return before the main thread accepts it. It blocks approvals without a clear slice verdict,
   missing Playwright story coverage/output for user-facing changes, missing deterministic gate
   evidence or agent evidence, missing linked PRD/ADR/rules context, app-code fixes made by
-  qa-challenger, or vague findings the orchestrator cannot route.
+  qa-challenger, or vague findings the main thread cannot route.
 
 - **`auto-format.sh` (`PostToolUse`)** runs after every `Edit`/`Write`. It formats the exact
   file Codex wrote using whatever formatter is installed locally - `ruff format` + `ruff check
@@ -211,17 +211,17 @@ happens":
   `scripts/validate/cli.py memory` right after the architect returns: every slug a slice's
   `Dependencies -> Rules:` line cites must already have a matching, fetched block in
   `memory/rules.md`. This used to only be caught by `guard-harness.sh`'s top-level `Stop` hook,
-  which can fire after the orchestrator has already routed an implementer subagent in the same
+  which can fire after the main thread has already routed an implementer subagent in the same
   turn - and implementers cannot call MCP themselves to resolve a dangling slug.
 
-- **`verify-round-cap.sh` (`SubagentStop`, matcher `orchestrator`)** gives the Plan-Loop round
-  count and 3-round cap a real, hook-owned source of truth. Unlike the persona-vote tally
-  (`verify-challenge.sh`), a round count is a cross-message historical fact, so no single message
-  can self-verify it - this hook maintains its own per-PRD-purpose counter (a temp-dir state file
-  the orchestrator never sees or writes) and hard-blocks if the orchestrator's declared
-  `Round: N of 3` exceeds the cap or regresses relative to what the hook has already tracked for
-  that purpose. The coordination prompt gate still reviews everything else about the loop; this
-  hook only owns the one invariant that can be computed deterministically.
+- **`verify-round-cap.sh` (`Stop`)** gives the Plan-Loop round count and 3-round cap a real,
+  hook-owned source of truth. Unlike the persona-vote tally (`verify-challenge.sh`), a round count
+  is a cross-message historical fact, so no single message can self-verify it - this hook
+  maintains its own per-PRD-purpose counter (a temp-dir state file the main thread never sees or
+  writes) and hard-blocks if the main thread's declared `Round: N of 3` exceeds the cap or
+  regresses relative to what the hook has already tracked for that purpose. The coordination
+  prompt gate still reviews everything else about the loop; this hook only owns the one invariant
+  that can be computed deterministically.
 
 ## Hooks vs subagents - the division of labor
 
@@ -238,11 +238,15 @@ deleted from the agents.** Applied here:
 This split is why the **`tester` agent was removed** (developers author tests; the SubagentStop
 gate runs them) and the original **`qa` agent was split into `qa-checker` and `qa-challenger`**
 (the code-first Playwright work and the final merge judgment are different kinds of work, so they
-are different agents - neither runs `validate-tools` itself, the gate does). The agents that
-remain - orchestrator, product-owner, software-architect, business-challenger,
-technical-challenger, the two developers, qa-checker, qa-challenger - each do something a script
-cannot. The planning prompt gates are intentionally model-backed because PRD and
-ADR quality is judgment work; deterministic validators only check registration and artifact shape.
+are different agents - neither runs `validate-tools` itself, the gate does). The same principle is
+why there is no **`orchestrator`** agent either: coordination and routing are deterministic-enough
+graph traversal (Plan-Loop gates, round caps, request-shape routing) that the main thread performs
+directly, reviewed by the `Stop`-hook coordination gate and `verify-round-cap.sh` instead of a
+dedicated subagent. The agents that remain - product-owner, software-architect,
+business-challenger, technical-challenger, the two developers, qa-checker, qa-challenger - each do
+something a script cannot. The planning prompt gates are intentionally model-backed because PRD
+and ADR quality is judgment work; deterministic validators only check registration and artifact
+shape.
 
 **Opt-in: an LLM-backed Stop gate.** For an even stronger finish condition, Codex supports
 `type: "prompt"` and `type: "agent"` hooks that call a model. For example, an agent-based `Stop`

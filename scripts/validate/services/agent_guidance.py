@@ -105,7 +105,6 @@ def validate_agent_guidance(root: Path) -> list[Finding]:
             ".claude/agents/frontend-developer.md",
             ".codex/agents/frontend-developer.toml",
         ),
-        (".claude/agents/orchestrator.md", ".codex/agents/orchestrator.toml"),
         (".claude/agents/product-owner.md", ".codex/agents/product-owner.toml"),
         (
             ".claude/agents/software-architect.md",
@@ -155,8 +154,6 @@ def validate_agent_guidance(root: Path) -> list[Finding]:
             )
 
     for rel in [
-        ".claude/agents/orchestrator.md",
-        ".codex/agents/orchestrator.toml",
         ".claude/agents/product-owner.md",
         ".codex/agents/product-owner.toml",
         ".claude/agents/software-architect.md",

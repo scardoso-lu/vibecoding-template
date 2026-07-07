@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse guard for Read / Grep / Glob / LS. Implementer/QA subagents may not
-# inspect agent infrastructure directly; they must work from orchestrator handoffs
+# inspect agent infrastructure directly; they must work from main-thread handoffs
 # and memory. The coordination tier is allowed, as is the main thread (no agent_type).
 set -uo pipefail
 
@@ -35,7 +35,7 @@ case "$PATH_VALUE" in
   .claude|.claude/*|*/.claude|*/.claude/*|\
   .codex|.codex/*|*/.codex|*/.codex/*|\
   scripts|scripts/*|*/scripts|*/scripts/*)
-    deny "A '$AGENT' subagent may not read agent infrastructure ('$PATH_VALUE'). Stop and return ESCALATE so the orchestrator can provide targeted context." ;;
+    deny "A '$AGENT' subagent may not read agent infrastructure ('$PATH_VALUE'). Stop and return ESCALATE so the main thread can provide targeted context." ;;
 esac
 
 exit 0

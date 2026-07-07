@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# SubagentStop gate (matcher: orchestrator) - deterministic round-cap check.
+# Stop gate (main thread) - deterministic round-cap check.
 #
 # The 90%-threshold persona-vote math is deterministically re-derived and hard-blocked on by
 # verify-challenge.sh; the round count and the 3-round cap were the one Plan-Loop invariant left to
-# an LLM-judged prompt gate (the coordination gate) checking the orchestrator's own self-reported
+# an LLM-judged prompt gate (the coordination gate) checking the main thread's own self-reported
 # "Round: N of 3" line. A model can miscount rounds and that gate has no ground truth to compare
 # against - unlike the vote tally, a round count is a cross-message historical fact, so no single
 # message can self-verify it.
 #
 # This hook gives the round count a real, hook-owned source of truth: a small per-PRD-purpose
-# counter file (not memory, not something the orchestrator writes or can see) that this script
-# alone increments, each time the orchestrator's own "## Coordinate Handoff" declares a
-# business-challenge or technical-challenge step. It hard-blocks if the orchestrator's declared
+# counter file (not memory, not something the main thread writes or can see) that this script
+# alone increments, each time the main thread's own "## Coordinate Handoff" declares a
+# business-challenge or technical-challenge step. It hard-blocks if the main thread's declared
 # "Round: N of 3" doesn't match what the hook itself has tracked, or exceeds the cap.
 #
-# Assumes transcript_path in the SubagentStop event points at this subagent's own transcript (same
-# assumption verify-challenge.sh and context-usage-watch.sh already make). Fails open (exit 0) if
-# the transcript can't be read, no Coordinate Handoff is found, or anything unexpected happens - it
-# only ever hard-blocks on a round mismatch it could actually compute.
+# Assumes transcript_path in the Stop event points at the main session transcript (same assumption
+# verify-challenge.sh and context-usage-watch.sh make for their own subagent transcripts). Fails
+# open (exit 0) if the transcript can't be read, no Coordinate Handoff is found, or anything
+# unexpected happens - it only ever hard-blocks on a round mismatch it could actually compute.
 #
 # Known limitation: the counter is keyed by the PRD purpose slug and has no expiry, so if a
 # purpose slug is ever reused for unrelated future work after the original loop finished, a false
@@ -35,9 +35,6 @@ INPUT="${HOOK_INPUT_JSON:-}"
 if [ "$(hook_json_get "$INPUT" "stop_hook_active" "false")" = "true" ]; then
   exit 0
 fi
-
-AGENT="$(hook_json_get "$INPUT" "agent_type")"
-[ "$AGENT" = "orchestrator" ] || exit 0
 
 TRANSCRIPT="$(hook_json_get "$INPUT" "transcript_path")"
 [ -n "$TRANSCRIPT" ] && [ -f "$TRANSCRIPT" ] || exit 0
@@ -156,7 +153,7 @@ except Exception:
 CODE=$?
 
 if [ "$CODE" != "0" ]; then
-  hook_json_stop_block "Round-cap gate failed - the Plan-Loop round count does not match what this hook has independently tracked for this PRD, or exceeds the 3-round cap:"$'\n'"${RESULT}"
+  hook_json_stop_block "Round-cap gate failed - the Plan-Loop round count does not match what this hook has independently tracked for this PRD, or exceeds the 3-round cap. The main thread must ask the user rather than continue the loop:"$'\n'"${RESULT}"
 fi
 
 exit 0

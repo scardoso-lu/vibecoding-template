@@ -50,7 +50,6 @@ def evidence() -> dict:
                 "decisions": ["planning only"],
             }
             for agent in [
-                "orchestrator",
                 "product-owner",
                 "business-challenger",
                 "software-architect",

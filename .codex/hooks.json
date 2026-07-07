@@ -128,28 +128,13 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Developer handoff gate for vibecoding-template. Before backend-developer or frontend-developer starts, review the orchestrator handoff against AGENTS.md. Block if it lacks a concrete memory slice path, linked PRD and ADR context, linked memory/rules.md slugs, an Agent Plan row for this agent, Do Not Touch scope, acceptance criteria, tests/evidence expectations, provenance, or explicit files/areas to read. Block if the agent would need to browse MCP, infer architecture rules, scan broad repo directories, or guess missing product/technical decisions. Return no output when the handoff is usable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific missing handoff context and whether product-owner or software-architect must fix it>\"}.",
+            "prompt": "Developer handoff gate for vibecoding-template. Before backend-developer or frontend-developer starts, review the main thread's handoff against AGENTS.md. Block if it lacks a concrete memory slice path, linked PRD and ADR context, linked memory/rules.md slugs, an Agent Plan row for this agent, Do Not Touch scope, acceptance criteria, tests/evidence expectations, provenance, or explicit files/areas to read. Block if the agent would need to browse MCP, infer architecture rules, scan broad repo directories, or guess missing product/technical decisions. Return no output when the handoff is usable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific missing handoff context and whether product-owner or software-architect must fix it>\"}.",
             "timeout": 120
           }
         ]
       }
     ],
     "SubagentStop": [
-      {
-        "matcher": "orchestrator",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Coordination gate for vibecoding-template. Review the just-finished orchestrator output against AGENTS.md. Block if it mixed Coordinate and Route modes in one response, wrote or revised PRDs/ADRs/slices/rules/code itself instead of emitting a handoff, routed implementation before both challenge gates reached at least 90 percent, kept looping past the 3-round cap instead of asking the user, omitted the round count or both acceptance percentages when emitting routing, emitted implementer/QA handoffs without Do Not Touch scope and a Stop condition, ignored the conditional routing table (e.g. routed frontend work for a backend-only change), or sequenced features against their Depends on graph. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific coordination problem and required orchestrator fix>\"}.",
-            "timeout": 120
-          },
-          {
-            "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-round-cap.sh",
-            "statusMessage": "Checking round-cap state"
-          }
-        ]
-      },
       {
         "matcher": "product-owner|business-challenger",
         "hooks": [
@@ -200,7 +185,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "QA judgment gate for vibecoding-template. Review the just-finished qa-challenger output against AGENTS.md. Block if it approved without a clear slice verdict, omitted user-facing Playwright story coverage when required, failed to reference focused Playwright output for changed user behavior, ignored qa-evidence.json, agent-evidence/prompt-N evidence, or deterministic gate evidence, approved despite missing linked PRD/ADR/rules context, wrote app fixes instead of returning BLOCKED for implementers, or returned vague findings that cannot be routed by the orchestrator. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific QA judgment problem and required qa-challenger fix or routed owner question>\"}.",
+            "prompt": "QA judgment gate for vibecoding-template. Review the just-finished qa-challenger output against AGENTS.md. Block if it approved without a clear slice verdict, omitted user-facing Playwright story coverage when required, failed to reference focused Playwright output for changed user behavior, ignored qa-evidence.json, agent-evidence/prompt-N evidence, or deterministic gate evidence, approved despite missing linked PRD/ADR/rules context, wrote app fixes instead of returning BLOCKED for implementers, or returned vague findings that cannot be routed by the main thread. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific QA judgment problem and required qa-challenger fix or routed owner question>\"}.",
             "timeout": 120
           }
         ]
@@ -234,6 +219,16 @@
             "type": "command",
             "command": "python .codex/hooks/run-hook.py .codex/hooks/format-changed.sh",
             "statusMessage": "Formatting changed files"
+          },
+          {
+            "type": "prompt",
+            "prompt": "Coordination gate for vibecoding-template. If this turn involved Plan-Loop or Execution routing decisions (invoking product-owner/business-challenger/software-architect/technical-challenger, or invoking implementer/QA agents), review them against AGENTS.md's Orchestration section. Block if the main thread mixed Coordinate and Route steps incoherently, wrote or revised PRDs/ADRs/slices/rules/code itself instead of delegating to the owning agent, routed implementation before both challenge gates reached at least 90 percent in the same round, kept looping past the 3-round cap instead of asking the user, omitted the round count or both acceptance percentages when routing, invoked implementer/QA agents without Do Not Touch scope and a Stop condition, ignored the conditional routing table (e.g. routed frontend work for a backend-only change), or sequenced features against their Depends on graph. If this turn did not involve coordination/routing work, return no output immediately. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific coordination problem and required fix>\"}.",
+            "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-round-cap.sh",
+            "statusMessage": "Checking round-cap state"
           },
           {
             "type": "command",

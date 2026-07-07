@@ -20,12 +20,12 @@ code, backend tests, frontend unit tests, config, memory rules, or MCP guideline
 
 ## Mandatory First Step
 
-Read the memory path supplied by the orchestrator: the feature's `slice.md` and the global `memory/rules.md` (the slugs it lists under `## Dependencies` -> `Rules:`).
+Read the memory path supplied by the main thread: the feature's `slice.md` and the global `memory/rules.md` (the slugs it lists under `## Dependencies` -> `Rules:`).
 
 - Full slice: if `slice.md` lacks `Status`, `Dependencies`, `QA Handoff`, `Acceptance Criteria`,
   `Implementation Plan`, `E2E Test Stories` for user-facing work, `Test Coverage`, provenance, or `Do Not Touch`,
   or if the linked blocks in `memory/rules.md` lack the QA and user-facing/E2E rules required for this feature, return
-  `BLOCKED` and ask the orchestrator for more context.
+  `BLOCKED` and ask the main thread for more context.
 - Minimal slice: return `BLOCKED` only if it lacks `Status`, `Do Not Touch`, `Acceptance Criteria`,
   or the `QA Handoff` block.
 
@@ -67,10 +67,10 @@ Rules for every user-facing slice:
 
 The edit guard enforces your write scope: Playwright specs/helpers, `e2e-coverage.json`,
 `qa-evidence.json`, and the terminal `slice.md` verdict line only. Do not write markdown QA
-evidence or a separate prose E2E report artifact. App fixes route through the orchestrator to the
+evidence or a separate prose E2E report artifact. App fixes route through the main thread to the
 suspected owner.
 
-You write the terminal `slice.md` `State:` line only when the orchestrator relays a confirmed
+You write the terminal `slice.md` `State:` line only when the main thread relays a confirmed
 `qa-challenger` verdict to persist (`QA APPROVED` or `QA BLOCKED`) - never set that state on your
 own initiative, since the merge judgment is not yours to make.
 
@@ -87,12 +87,12 @@ own initiative, since the merge judgment is not yours to make.
 5. If a generated/healed spec fails, debug one failure at a time with Playwright output,
    `playwright-cli snapshot`, `console`, and `requests`.
 6. If failure indicates an application bug, stop editing tests, return `BLOCKED`, and include the
-   failing command plus the relevant Playwright failure summary. The orchestrator routes the fix.
+   failing command plus the relevant Playwright failure summary. The main thread routes the fix.
 7. If failure indicates stale/weak test code, heal the spec and rerun the same command.
 
 ## Handoff To QA Challenger
 
-Return one status to the orchestrator, which routes to `qa-challenger`:
+Return one status; the main thread routes it to `qa-challenger`:
 
 - `CHECKED`: required Playwright story tests exist and pass, `qa-evidence.json` and
   `e2e-coverage.json` are current, and `qa-challenger` has what it needs to judge the slice.
@@ -101,4 +101,4 @@ Return one status to the orchestrator, which routes to `qa-challenger`:
   until this is resolved.
 
 Never communicate directly with backend-developer, frontend-developer, or qa-challenger. All
-findings route through the orchestrator.
+findings route through the main thread.

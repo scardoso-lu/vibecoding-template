@@ -107,7 +107,7 @@ if ! hook_json_is_coordination_tier "$AGENT"; then
   if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \
      && printf '%s' "$CMD" | grep -Eiq '(^|[[:space:]"'"'"'./\\])(CLAUDE\.md|AGENTS\.md|\.claude|\.codex|scripts)([[:space:]"'"'"'/\\]|$)' \
      && ! printf '%s' "$CMD" | grep -Eiq "$HOOK_JSON_REFERENCE_PATH_TEXT_REGEX"; then
-    deny "A '$AGENT' subagent may not inspect agent infrastructure through shell commands. Stop and return ESCALATE so the orchestrator can provide targeted context."
+    deny "A '$AGENT' subagent may not inspect agent infrastructure through shell commands. Stop and return ESCALATE so the main thread can provide targeted context."
   fi
 fi
 

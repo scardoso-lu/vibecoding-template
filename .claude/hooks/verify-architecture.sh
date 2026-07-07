@@ -3,7 +3,7 @@
 #
 # The architecture planning prompt gate is model-judged; a slice.md `Rules:` slug with no matching
 # `## <slug>` block in memory/rules.md is a mechanical fact, not a judgment call, and previously was
-# only ever caught by guard-harness.sh's Stop hook - which can fire *after* the orchestrator has
+# only ever caught by guard-harness.sh's Stop hook - which can fire *after* the main thread has
 # already routed backend-developer/frontend-developer on the same turn, so an implementer without
 # MCP access could hit a slug it cannot resolve. This runs the same check right after
 # software-architect returns, before technical-challenger or any implementer ever sees the slice.

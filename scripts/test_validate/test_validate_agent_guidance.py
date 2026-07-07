@@ -35,8 +35,6 @@ def test_clean_guidance_has_no_stale_term_findings(tmp_path: Path) -> None:
     for rel in [
         "AGENTS.md",
         "CLAUDE.md",
-        ".claude/agents/orchestrator.md",
-        ".codex/agents/orchestrator.toml",
         ".claude/agents/product-owner.md",
         ".codex/agents/product-owner.toml",
         ".claude/agents/software-architect.md",

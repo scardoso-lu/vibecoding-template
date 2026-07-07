@@ -24,10 +24,10 @@ deny() {
 }
 
 # The software-architect owns guideline discovery; every other role must ask for context via the
-# orchestrator, which routes back through the software-architect.
+# main thread, which routes back through the software-architect.
 case "$AGENT" in
-  backend-developer|frontend-developer|qa-checker|qa-challenger|product-owner|business-challenger|technical-challenger|orchestrator)
-    deny "Only the software-architect may call the guidelines MCP server. Stop and request targeted context through the orchestrator (see the MCP budget rules in AGENTS.md) - do not resolve slugs or browse MCP from a '$AGENT' subagent." ;;
+  backend-developer|frontend-developer|qa-checker|qa-challenger|product-owner|business-challenger|technical-challenger)
+    deny "Only the software-architect may call the guidelines MCP server. Stop and request targeted context through the main thread (see the MCP budget rules in AGENTS.md) - do not resolve slugs or browse MCP from a '$AGENT' subagent." ;;
 esac
 
 # MCP budget: broad context dumps are banned for normal feature work regardless of caller.

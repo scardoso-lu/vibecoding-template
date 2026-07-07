@@ -28,7 +28,7 @@ work?"
 1. Yes - read $HANDOFF, follow its '## References' section (linked memory/PRD/**/prd.md,
    memory/ADR/**/adr.md, memory/feature/**/slice.md, and memory/rules.md slugs), and implement
    the '## Missing / Not Completed' items in the '## Next steps' order. Route product/feature
-   work through the orchestrator per the operating rules. When everything is done, update
+   work through the agent system directly per the operating rules. When everything is done, update
    $HANDOFF (or delete it if nothing remains).
 2. No - leave $HANDOFF untouched and proceed with the user's new request.
 3. Something else - ask the user what they want instead of guessing between options 1 and 2.

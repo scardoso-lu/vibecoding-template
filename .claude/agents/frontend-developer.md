@@ -23,16 +23,16 @@ slice.md unless the handoff lists them, and do not scan broad directories unless
 them.
 
 Respect `Do Not Touch`. If the implementation appears to require touching protected files,
-behaviors, or contracts, stop and ask the orchestrator for updated slice boundaries.
+behaviors, or contracts, stop and ask the main thread for updated slice boundaries.
 
 ## No Best-Effort Guessing
 
 If you would need to guess, infer architecture rules from general knowledge, or continue
-best-effort because the memory is vague, stop and ask the orchestrator for targeted context. Name
+best-effort because the memory is vague, stop and ask the main thread for targeted context. Name
 the missing decision, why it blocks safe implementation, and the likely guideline slug if known:
 
 ```md
-Need orchestrator context:
+Need context:
 - Missing decision:
 - Blocks:
 - Suggested guideline slug:
@@ -119,10 +119,10 @@ concerns separated.
 ## Rules
 
 - Follow only the component, data-fetching, mutation, state, accessibility, security, permission, and testing rules summarized in memory for this slice.
-- If a rule category appears relevant but is absent from memory, stop and request orchestrator context instead of applying general knowledge.
+- If a rule category appears relevant but is absent from memory, stop and request context from the main thread instead of applying general knowledge.
 - Commit messages may cite only guideline slugs already present in memory. Do not discover, expand, or add fresh slugs yourself.
 - If you disagree with a guideline summary, state the deviation explicitly in the PR description.
-- Report completed work to the orchestrator. Do not route directly to backend-developer or qa-checker.
+- Report completed work to the main thread. Do not route directly to backend-developer or qa-checker.
 - Fix any test or type errors until the whole suite is green.
 - Add or update tests for the code you change.
 - Your tests should cover the happy path, error states, and edge cases.

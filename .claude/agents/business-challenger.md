@@ -1,7 +1,7 @@
 ---
 name: business-challenger
 description: Read-only product challenge for PRDs: problem clarity, target users, use cases, scope, outcomes, MVP requirements, and product risk. Scores a business acceptance gate.
-model: opus
+model: sonnet
 tools:
   - Read
   - Glob

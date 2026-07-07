@@ -13,5 +13,5 @@ The product-owner and software-architect read `template-routing.md` first, then 
 
 ## Workflow rules
 
-See `.claude/agents/product-owner.md` and `.claude/agents/software-architect.md` for Plan Mode steps and Minimal Slice Mode eligibility; `.claude/agents/business-challenger.md` and `.claude/agents/technical-challenger.md` for the challenge gates; and `.claude/agents/orchestrator.md` for the product/architecture/challenge loop and routing rules.
+See `.claude/agents/product-owner.md` and `.claude/agents/software-architect.md` for Plan Mode steps and Minimal Slice Mode eligibility; `.claude/agents/business-challenger.md` and `.claude/agents/technical-challenger.md` for the challenge gates; and CLAUDE.md's `## Orchestration (Main Thread)` section for the product/architecture/challenge loop and routing rules.
 

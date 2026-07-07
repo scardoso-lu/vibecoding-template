@@ -93,37 +93,32 @@ case "$AGENT" in
       *)
         deny "software-architect writes only memory/ADR/**, memory/feature/**, memory/rules.md, and agent-evidence records. PRDs belong to the product-owner and implementation code to the developers; '$FP' is out of scope." ;;
     esac ;;
-  orchestrator)
-    case "$FP" in
-      */memory/*|memory/*|*/backend/*|backend/*|*/frontend/*|frontend/*)
-        deny "orchestrator coordinates and routes only: never edit PRDs, ADRs, slices, memory/rules.md, or implementation code ('$FP'). Emit a handoff for the owning agent instead." ;;
-    esac ;;
   backend-developer)
     case "$FP" in
       */frontend/*|frontend/*)
-        deny "backend-developer implements backend code; frontend/** belongs to frontend-developer. Report to the orchestrator instead of writing '$FP'." ;;
+        deny "backend-developer implements backend code; frontend/** belongs to frontend-developer. Report to the main thread instead of writing '$FP'." ;;
       */memory/PRD/*|memory/PRD/*|*/memory/ADR/*|memory/ADR/*|*/memory/rules.md|memory/rules.md)
-        deny "planning memory (PRDs, ADRs, memory/rules.md) is written by product-owner/software-architect, not implementers. Request a plan update through the orchestrator instead of editing '$FP'." ;;
+        deny "planning memory (PRDs, ADRs, memory/rules.md) is written by product-owner/software-architect, not implementers. Request a plan update through the main thread instead of editing '$FP'." ;;
     esac ;;
   frontend-developer)
     case "$FP" in
       */backend/*|backend/*)
-        deny "frontend-developer implements frontend code; backend/** belongs to backend-developer. Report to the orchestrator instead of writing '$FP'." ;;
+        deny "frontend-developer implements frontend code; backend/** belongs to backend-developer. Report to the main thread instead of writing '$FP'." ;;
       */memory/PRD/*|memory/PRD/*|*/memory/ADR/*|memory/ADR/*|*/memory/rules.md|memory/rules.md)
-        deny "planning memory (PRDs, ADRs, memory/rules.md) is written by product-owner/software-architect, not implementers. Request a plan update through the orchestrator instead of editing '$FP'." ;;
+        deny "planning memory (PRDs, ADRs, memory/rules.md) is written by product-owner/software-architect, not implementers. Request a plan update through the main thread instead of editing '$FP'." ;;
     esac ;;
 esac
 
 # Role scope: qa-checker may write only deterministic Playwright E2E specs/helpers and the
 # terminal slice verdict. Application code, unit tests, config, and non-E2E fixes route through
-# the orchestrator. qa-challenger is read-only (covered by the challenger case above) - it never
-# writes slice.md itself; the orchestrator relays its confirmed verdict to qa-checker to persist.
+# the main thread. qa-challenger is read-only (covered by the challenger case above) - it never
+# writes slice.md itself; the main thread relays its confirmed verdict to qa-checker to persist.
 if [ "$AGENT" = "qa-checker" ]; then
   case "$FP" in
     */frontend/e2e/*|frontend/e2e/*|*/memory/feature/*/slice.md|memory/feature/*/slice.md|*/memory/feature/*/qa-evidence.json|memory/feature/*/qa-evidence.json|*/memory/feature/*/e2e-coverage.json|memory/feature/*/e2e-coverage.json|*/agent-evidence/*/agent-evidence.json|agent-evidence/*/agent-evidence.json)
       : ;;  # allowed
     *)
-      deny "qa-checker may write only frontend/e2e/** Playwright specs/helpers, agent-evidence/prompt-N/agent-evidence.json, memory feature QA evidence (qa-evidence.json, e2e-coverage.json), or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the orchestrator instead of editing '$FP'." ;;
+      deny "qa-checker may write only frontend/e2e/** Playwright specs/helpers, agent-evidence/prompt-N/agent-evidence.json, memory feature QA evidence (qa-evidence.json, e2e-coverage.json), or the slice.md verdict. Route app code, unit-test, config, and non-E2E fixes through the main thread instead of editing '$FP'." ;;
   esac
 fi
 

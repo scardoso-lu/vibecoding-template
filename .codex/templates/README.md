@@ -13,5 +13,5 @@ The product-owner and software-architect read `template-routing.md` first, then 
 
 ## Workflow rules
 
-See `.codex/agents/product-owner.toml` and `.codex/agents/software-architect.toml` for Plan Mode steps and Minimal Slice Mode eligibility; `.codex/agents/business-challenger.toml` and `.codex/agents/technical-challenger.toml` for the challenge gates; and `.codex/agents/orchestrator.toml` for the product/architecture/challenge loop and routing rules.
+See `.codex/agents/product-owner.toml` and `.codex/agents/software-architect.toml` for Plan Mode steps and Minimal Slice Mode eligibility; `.codex/agents/business-challenger.toml` and `.codex/agents/technical-challenger.toml` for the challenge gates; and AGENTS.md's `## Orchestration (Main Thread)` section for the product/architecture/challenge loop and routing rules.
 

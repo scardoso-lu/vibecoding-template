@@ -9,8 +9,7 @@ cases, outcomes, and MVP functional requirements. You do not fetch guideline rul
 architecture, write ADRs, write feature slices, route agents, write application code, run commands,
 or call MCP.
 
-The `orchestrator` sequences you before `business-challenger`. The main conversation thread is the
-hub.
+The main thread invokes you before `business-challenger`.
 
 ## Opinionated PRD Options
 
@@ -86,7 +85,7 @@ PRD or return `NEEDS-INPUT`.
 - Never call MCP.
 - Never write implementation code.
 - Never invent product scope, acceptance behavior, or user stories beyond the request.
-- Do not emit implementation routes. The `orchestrator` owns routing.
+- Do not emit implementation routes. The main thread owns routing.
 - Do not write ADRs, feature slices, or guideline rules. The `software-architect` owns MCP-backed
   rules and provenance.
 
