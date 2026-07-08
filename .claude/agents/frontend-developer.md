@@ -1,7 +1,6 @@
 ---
 name: frontend-developer
 description: Implement Next.js frontend code and tests from memory.
-model: sonnet
 tools:
   - Read
   - Write

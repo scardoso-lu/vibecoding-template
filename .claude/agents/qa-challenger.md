@@ -1,7 +1,6 @@
 ---
 name: qa-challenger
 description: Read-only final merge judgment. Reviews qa-checker's Playwright evidence plus the slice against acceptance criteria, contracts, and rules, and returns APPROVED or BLOCKED.
-model: sonnet
 tools:
   - Read
   - Glob

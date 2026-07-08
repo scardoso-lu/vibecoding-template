@@ -1,7 +1,6 @@
 ---
 name: product-owner
 description: Offer opinionated PRD directions, write complete PRDs, define users/use cases/outcomes/requirements, and ask missing product questions. Product planning only; no MCP, routing, ADRs, slices, or implementation.
-model: sonnet
 tools:
   - Read
   - Write
