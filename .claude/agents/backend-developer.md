@@ -1,7 +1,6 @@
 ---
 name: backend-developer
 description: Implement FastAPI backend code and tests from memory.
-model: sonnet
 tools:
   - Read
   - Write

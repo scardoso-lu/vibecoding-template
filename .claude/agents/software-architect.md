@@ -1,7 +1,6 @@
 ---
 name: software-architect
-description: Convert accepted PRDs into ADRs and MCP-backed feature slices: fetch guideline rules, complete contracts, provenance, test coverage, and the Agent Plan. Architecture planning only; never routes or writes application code.
-model: sonnet
+description: "Convert accepted PRDs into ADRs and MCP-backed feature slices: fetch guideline rules, complete contracts, provenance, test coverage, and the Agent Plan. Architecture planning only; never routes or writes application code."
 tools:
   - Read
   - Write

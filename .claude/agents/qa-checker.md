@@ -1,7 +1,6 @@
 ---
 name: qa-checker
 description: Code-first Playwright QA. Generates/heals Playwright specs, runs them, and produces qa-evidence.json/e2e-coverage.json as evidence for qa-challenger's merge judgment.
-model: sonnet
 tools:
   - Read
   - Write
