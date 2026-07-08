@@ -55,6 +55,55 @@ else:
   fi
 }
 
+hook_json_get_many() {
+  # usage: eval "$(hook_json_get_many "$INPUT" CMD=tool_input.command AGENT=agent_type)"
+  # Extracts every VAR=json.dotted.path pair from ONE JSON parse (one interpreter spawn
+  # instead of one per field - hook_json_get spawns a Python per call, which adds up on
+  # hot PreToolUse paths) and emits shell-safe VAR='value' assignments. Missing paths
+  # become ''. Values are shlex-quoted, so multiline command text is eval-safe.
+  local input="$1"
+  shift
+  local py
+  py="$(hook_json_python)"
+
+  if [ -z "$py" ]; then
+    # No Python: fall back to one hook_json_get per field (jq path), same results.
+    local pair
+    for pair in "$@"; do
+      printf '%s=%q\n' "${pair%%=*}" "$(hook_json_get "$input" "${pair#*=}")"
+    done
+    return
+  fi
+
+  HOOK_JSON_INPUT="$input" HOOK_JSON_SPECS="$*" "$py" -c '
+import json
+import os
+import shlex
+
+try:
+    data = json.loads(os.environ.get("HOOK_JSON_INPUT", "") or "{}")
+except Exception:
+    data = {}
+
+for spec in os.environ["HOOK_JSON_SPECS"].split():
+    name, _, path = spec.partition("=")
+    value = data
+    for part in path.split("."):
+        if isinstance(value, dict) and part in value:
+            value = value[part]
+        else:
+            value = ""
+            break
+    if value is None:
+        value = ""
+    if isinstance(value, bool):
+        value = "true" if value else "false"
+    if not isinstance(value, str):
+        value = str(value)
+    print(f"{name}={shlex.quote(value)}")
+'
+}
+
 hook_json_normalize_path() {
   # Windows tool_input.file_path values use backslash separators (e.g.
   # C:\Users\...\slice.md). Every path glob in these hooks is written with forward
@@ -96,6 +145,19 @@ hook_json_is_coordination_tier() {
   # and can't independently drift (they used to each hardcode this case pattern separately).
   case "$1" in
     ""|product-owner|software-architect|business-challenger|technical-challenger)
+      return 0 ;;
+    *)
+      return 1 ;;
+  esac
+}
+
+hook_json_is_builtin_utility_agent() {
+  # Built-in utility subagents (Explore, Plan, general-purpose, and the CLI helper agents) are
+  # spawned by the main thread and act on its behalf, so for infrastructure READS they count as
+  # the main thread (rule 4). They are NOT workflow roles: guard-edits.sh separately denies them
+  # memory/** writes so planning artifacts stay with their owning agents.
+  case "$1" in
+    Explore|Plan|general-purpose|claude|claude-code-guide|statusline-setup)
       return 0 ;;
     *)
       return 1 ;;

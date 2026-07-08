@@ -10,19 +10,30 @@ hook_json_can_parse || exit 0
 
 INPUT="${HOOK_INPUT_JSON:-}"
 [ -n "$INPUT" ] || INPUT="$(cat)"
-AGENT="$(hook_json_get "$INPUT" "agent_type")"
+eval "$(hook_json_get_many "$INPUT" AGENT=agent_type TOOL=tool_name FP=tool_input.file_path DIR=tool_input.path)"
 
 hook_json_is_coordination_tier "$AGENT" && exit 0
-
-PATH_VALUE="$(hook_json_get "$INPUT" "tool_input.file_path")"
-[ -n "$PATH_VALUE" ] || PATH_VALUE="$(hook_json_get "$INPUT" "tool_input.path")"
-[ -n "$PATH_VALUE" ] || exit 0
-PATH_VALUE="$(hook_json_normalize_path "$PATH_VALUE")"
+# Built-in utility subagents (Explore, Plan, general-purpose, ...) are spawned by the main
+# thread and read on its behalf; guard-edits.sh separately keeps them out of memory/** writes.
+hook_json_is_builtin_utility_agent "$AGENT" && exit 0
 
 deny() {
   hook_json_pretool_deny "$1"
   exit 0
 }
+
+PATH_VALUE="$FP"
+[ -n "$PATH_VALUE" ] || PATH_VALUE="$DIR"
+if [ -z "$PATH_VALUE" ]; then
+  # Grep/Glob default to the repo root when no path is given - a scope that includes the very
+  # agent infrastructure this guard exists to protect. Don't let "no path" mean "every path".
+  case "$TOOL" in
+    Grep|Glob)
+      deny "A '$AGENT' subagent may not run a pathless $TOOL - the default scope is the repo root, which includes agent infrastructure (.claude/, .codex/, scripts/, CLAUDE.md, AGENTS.md). Pass an explicit path inside your slice scope, or return ESCALATE for targeted context." ;;
+  esac
+  exit 0
+fi
+PATH_VALUE="$(hook_json_normalize_path "$PATH_VALUE")"
 
 # Templates and skills are reference material, not agent infrastructure: they carry no hook/
 # settings/prompt logic, so every implementer/QA subagent may read them (e.g. QA's own prompt

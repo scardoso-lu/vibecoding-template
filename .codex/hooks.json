@@ -221,9 +221,9 @@
             "statusMessage": "Formatting changed files"
           },
           {
-            "type": "prompt",
-            "prompt": "Coordination gate for vibecoding-template. If this turn involved Plan-Loop or Execution routing decisions (invoking product-owner/business-challenger/software-architect/technical-challenger, or invoking implementer/QA agents), review them against AGENTS.md's Orchestration section. Block if the main thread mixed Coordinate and Route steps incoherently, wrote or revised PRDs/ADRs/slices/rules/code itself instead of delegating to the owning agent, routed implementation before both challenge gates reached at least 90 percent in the same round, kept looping past the 3-round cap instead of asking the user, omitted the round count or both acceptance percentages when routing, invoked implementer/QA agents without Do Not Touch scope and a Stop condition, ignored the conditional routing table (e.g. routed frontend work for a backend-only change), or sequenced features against their Depends on graph. If this turn did not involve coordination/routing work, return no output immediately. Return no output when acceptable. If blocking, return JSON: {\"decision\":\"block\",\"reason\":\"<specific coordination problem and required fix>\"}.",
-            "timeout": 120
+            "type": "command",
+            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-coordination.sh",
+            "statusMessage": "Checking coordination handoffs"
           },
           {
             "type": "command",

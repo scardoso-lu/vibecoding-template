@@ -10,9 +10,16 @@
 #
 # This hook gives the round count a real, hook-owned source of truth: a small per-PRD-purpose
 # counter file (not memory, not something the main thread writes or can see) that this script
-# alone increments, each time the main thread's own "## Coordinate Handoff" declares a
-# business-challenge or technical-challenge step. It hard-blocks if the main thread's declared
-# "Round: N of 3" doesn't match what the hook itself has tracked, or exceeds the cap.
+# alone increments, once per occurrence of each challenge step the main thread's own
+# "## Coordinate Handoff" declares. The Nth business-challenge (or technical-challenge) for a
+# purpose IS round N of that step, whatever the handoff claims - so it hard-blocks when the
+# declared "Round: N of 3" lags the hook's own occurrence count (the "stuck at Round 1 forever"
+# loop an earlier version of this hook could not see - it only stored the max declared round,
+# which a repeated under-declaration never moves), when the hook's own count exceeds 3
+# regardless of the declaration, or when the declaration itself exceeds the cap. A declaration
+# AHEAD of the count is trusted upward, not blocked: the counter lives in the temp dir, so a
+# cleaned temp dir or container restart must degrade to the old fail-open behavior instead of
+# false-blocking a legitimate later round.
 #
 # Assumes transcript_path in the Stop event points at the main session transcript (same assumption
 # verify-challenge.sh and context-usage-watch.sh make for their own subagent transcripts). Fails
@@ -112,14 +119,28 @@ def main() -> int:
     key = hashlib.sha1(purpose.encode("utf-8")).hexdigest()[:16]
     state_path = os.path.join(tempfile.gettempdir(), f"vibecoding-round-state-{key}.json")
 
-    max_seen = 0
+    counts = {}
     try:
         with open(state_path, "r", encoding="utf-8") as fh:
             state = json.load(fh)
-        max_seen = int(state.get("max_round_seen", 0))
+        raw = state.get("counts", {})
+        if isinstance(raw, dict):
+            counts = {k: int(v) for k, v in raw.items()}
     except (OSError, ValueError, TypeError):
-        max_seen = 0
+        counts = {}
 
+    # This declaration IS the next occurrence of this step for this purpose - the hooks own
+    # count, independent of what the handoff claims.
+    count = counts.get(step, 0) + 1
+
+    if count > 3:
+        print(
+            f"This is occurrence {count} of the {step} step for purpose \"{purpose}\" "
+            f"(declared Round: {declared_round} of 3) - the 3-round cap is exhausted "
+            "regardless of the declared number; stop and ask the user instead of "
+            "continuing the loop."
+        )
+        return 1
     if declared_round > 3:
         print(
             f"Coordinate Handoff declares Round: {declared_round} of 3 for purpose "
@@ -127,17 +148,22 @@ def main() -> int:
             "continuing the loop."
         )
         return 1
-    if declared_round < max_seen:
+    if declared_round < count:
         print(
             f"Coordinate Handoff declares Round: {declared_round} of 3 for purpose "
-            f"\"{purpose}\", but round {max_seen} was already reached earlier in this "
-            "loop - the round count regressed or was miscounted."
+            f"\"{purpose}\", but this is already occurrence {count} of the {step} step "
+            "in this loop - the round count regressed or was miscounted; recount before "
+            "continuing (the cap is 3 real rounds, not 3 declared ones)."
         )
         return 1
 
+    # Declared ahead of the count means the counter state was lost (temp dir cleaned,
+    # container restart) - trust the declaration upward rather than false-block.
+    counts[step] = max(count, declared_round)
+
     try:
         with open(state_path, "w", encoding="utf-8") as fh:
-            json.dump({"max_round_seen": max(max_seen, declared_round)}, fh)
+            json.dump({"counts": counts}, fh)
     except OSError:
         pass
     return 0
