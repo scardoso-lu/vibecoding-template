@@ -49,8 +49,13 @@ fi
 # real limitation - but it still catches the command line that invokes it.)
 # .env.example is the tracked, secret-free template (same carve-out as guard-edits.sh) - strip
 # it out before checking so reading it stays allowed; a real .env/.env.<name> read still denies.
+# The `.env` filename is matched at a path boundary ([[:space:]/\\]), NOT with a required leading
+# space: this project keeps its real secrets at backend/.env and frontend/.env (see .gitignore),
+# and a space-only boundary let every directory-prefixed path (backend/.env, ./.env, ~/.env,
+# /abs/.env) slip through unblocked. grep/sed/awk/nl are included alongside cat/head/... because
+# they dump file contents into the transcript just the same.
 CMD_ENV_CHECK="$(printf '%s' "$CMD_NOQUOTE" | sed 's/\.env\.example//g')"
-if printf '%s' "$CMD_ENV_CHECK" | grep -Eiq '(^|[[:space:];|&])(cat|type|more|less|head|tail|Get-Content)([[:space:]][^|;&]*)?[[:space:]]\.env(\.[A-Za-z0-9_.-]+)?([[:space:]]|$)'; then
+if printf '%s' "$CMD_ENV_CHECK" | grep -Eiq '(^|[[:space:];|&])(cat|type|more|less|head|tail|nl|grep|egrep|fgrep|rg|sed|awk|gawk|Get-Content|gc)([[:space:]][^|;&]*)?[[:space:]/\\]\.env(\.[A-Za-z0-9_.-]+)?([[:space:]]|$)'; then
   deny "reading a secrets file (.env / .env.*) via shell is blocked - never dump env-file contents into the transcript. Read only the specific key you need from .env.example or documentation, or ask the user."
 fi
 if printf '%s' "$CMD_NOQUOTE" | grep -Eq '(^|[[:space:];|&])(env|printenv)([[:space:]]*($|[|;&]))' \
