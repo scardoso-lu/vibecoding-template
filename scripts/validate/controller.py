@@ -22,6 +22,7 @@ from scripts.validate.services import (
     hook_registration,
     ownership,
     playwright_stories,
+    verification,
 )
 
 # check name -> validator(root) -> list[Finding]
@@ -41,6 +42,7 @@ VALIDATORS: dict[str, Callable[[Path], list[Finding]]] = {
     "frontend": app_contracts.validate_frontend_contract,
     "qa": playwright_stories.validate_qa_contract,
     "qa-evidence": harness_quality.validate_qa_evidence,
+    "verification": verification.validate_verification,
     "tooling": harness_quality.validate_tooling,
     "ownership": ownership.validate_ownership,
 }

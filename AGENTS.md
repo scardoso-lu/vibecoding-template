@@ -277,7 +277,11 @@ block in `memory/rules.md` must cite `Source: get_guideline("<slug>")`, and the 
 sequences features by their `Depends on:` graph.
 
 Full slices must include `Status`, `Request`, `Slice Boundary`, `Dependencies`, `Do Not Touch`,
-`Implementation Plan`, `Acceptance Criteria`, `QA Handoff`, and provenance. User-facing slices also
+`Implementation Plan`, `Acceptance Criteria`, `Verification`, `QA Handoff`, and provenance.
+`## Verification` is a machine-parsed contract: one `- Run: <command> | covers: AC-###` row per
+verification command, whose `covers:` union spans every acceptance criterion and whose commands
+name the mapped test files; `- Run: none [skip-verify: <reason>]` is the only escape - explicit
+and grep-able, never an implicit path where the check silently doesn't fire. User-facing slices also
 need `E2E Test Stories`, with each row mapped to one Playwright `test(...)`. Acceptance criteria must
 use stable `AC-###` IDs, `Test Coverage` must map every criterion to backend/frontend-unit/E2E/harness
 tests, and user-facing slices must include `e2e-coverage.json` mapping initial-prompt user stories
@@ -306,6 +310,14 @@ Agent interpretation evidence must be machine-readable
 `agent-evidence/prompt-N/agent-evidence.json`; stale hashes, missing prompt numbers, missing
 `x_request_id` propagation, or hand-written hashes are rejected by
 `python scripts/validate/cli.py agent-evidence --root .`.
+The gate runner executes every slice's `## Verification` `Run:` rows and stamps
+`qa-evidence.json` with a `code_state` digest of the app code;
+`python scripts/validate/cli.py verification --root .` (run by the qa-checker stop gate and the
+harness Stop hook) blocks a declared command that never ran, exited non-zero, or whose evidence
+is stale relative to the current code. The developer stop gate is fail-closed on the toolchain:
+once a stack manifest exists, a missing linter, type-checker, test runner, or `validate-tools`
+is a blocking finding, not a silent skip (hook JSON parsing stays fail-open by design - the two
+stances are distinct and must not be unified).
 
 ## MCP Budget
 

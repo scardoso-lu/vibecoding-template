@@ -63,11 +63,22 @@ Only when any row above is `not-started`/`deferred`: name what's blocking it (us
 dependency - see CLAUDE.md rule 6) and when to revisit (a named prerequisite reaching QA, or the
 next MVP checkpoint). Omit this section entirely when nothing is staged.
 
-## Tests
-- Backend:
-- Frontend:
-- Scripted E2E:
-- Deterministic gate: `python scripts/validate/cli.py gate --root . --slice memory/feature/<feature-slice>/slice.md`
+## Verification
+- Run: <command that verifies the covered criteria> | covers: AC-001, AC-002
+- Run: none [skip-verify: <reason>] | covers: AC-003
+
+Machine-parsed contract, enforced by `python scripts/validate/cli.py verification`. One
+`- Run:` row per verification command; the `covers:` union must span every AC-### above.
+Each non-skip command must name the test file(s) its covered criteria map to in
+`## Test Coverage`/`## E2E Test Stories` (full path, a path suffix, or the filename -
+e.g. `test/test_<feature>.py`, `<feature>.spec.ts`), so a vacuous command cannot satisfy
+the row. The deterministic gate
+(`python scripts/validate/cli.py gate --root . --slice memory/feature/<feature-slice>/slice.md`)
+executes every non-skip row and records it in `qa-evidence.json`; QA cannot pass while a
+declared command is missing from that evidence, exited non-zero, or the evidence is stale
+(its `code_state` digest no longer matches the app code). `[skip-verify: <reason>]` is
+the only escape - explicit and grep-able, for criteria with no runnable surface yet
+(docs-only, or staged per CLAUDE.md rule 6).
 
 ## Provenance
 | Decision | Slug |

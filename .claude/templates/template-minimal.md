@@ -16,6 +16,12 @@
 ## Acceptance Criteria
 - [ ] <observable behavior>
 
+## Verification
+- Run: none [skip-verify: <why no runnable check applies, e.g. docs-only>]
+
+If the change does have a runnable check, name it instead:
+`- Run: <command>`. The skip token is the only exemption and must carry a reason.
+
 ## QA Handoff
 - Review focus:
 - Blocking risks:

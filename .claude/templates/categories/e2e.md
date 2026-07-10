@@ -27,6 +27,11 @@ started/enforced.
 - CLI generation/debug procedure: `.claude/skills/playwright-cli/references/spec-driven-testing.md`
 ```
 
+The focused command must also appear as a `## Verification` `- Run:` row (and as the QA
+Handoff `Focused Playwright command:`), covering the story's AC-### ids - the gate runner
+executes Run rows into `qa-evidence.json`, and the verification validator blocks a
+focused command the gate never ran.
+
 ```ts
 // Story: e2e-001 covers US-001
 test("filters informatics products and shows priced grid", async ({ page }) => {

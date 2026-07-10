@@ -18,8 +18,8 @@ every clone inherits them.
 | architecture planning prompt gate | `SubagentStop` | `software-architect\|technical-challenger` | Model-checks the architecture phase: accepted PRDs become ADRs under `memory/ADR/<purpose>/adr.md`, slices link `PRD:`/`ADR:`/`Rules:`, rules stay in global `memory/rules.md`, and Agent Plan handoffs include larger component context. |
 | QA judgment prompt gate | `SubagentStop` | `qa-challenger` | Model-checks qa-challenger's final judgment: clear slice verdict, required Playwright story coverage/output, deterministic gate evidence, linked PRD/ADR/rules context, and routable `BLOCKED` findings instead of app fixes. |
 | `auto-format.sh` | `PostToolUse` | `Edit\|Write\|MultiEdit` | Formats the file Claude just wrote (`ruff` for `.py`, locally-installed `prettier` for JS/TS/JSON/CSS/YAML). No-op when the tool isn't installed; never triggers a network install. |
-| `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs stack-local validators, static checks, and available tests/coverage before a developer returns. |
-| `verify-qa.sh` | `SubagentStop` | `qa-checker` | Deterministic QA artifact gate: runs QA, agent evidence, Playwright story, test coverage, E2E coverage, and QA evidence validators before qa-checker returns. |
+| `verify-subagent.sh` | `SubagentStop` | `backend-developer\|frontend-developer` | Deterministic gate: runs stack-local validators, static checks, and tests/coverage before a developer returns. **Fail-closed on the toolchain**: once `backend/pyproject.toml` or `frontend/package.json` exists, a missing ruff/mypy/uv+pytest/validate-tools/pnpm/tsc is a blocking finding, not a silent skip. |
+| `verify-qa.sh` | `SubagentStop` | `qa-checker` | Deterministic QA artifact gate: runs QA, agent evidence, Playwright story, test coverage, E2E coverage, QA evidence, and slice `## Verification` validators (every declared `Run:` command executed by the gate, passed, and fresh against the current `code_state` digest) before qa-checker returns. |
 | `verify-challenge.sh` | `SubagentStop` | `business-challenger\|technical-challenger` | Deterministic scoring gate: reads the challenger's own transcript, recomputes accepted/total from its `### Persona Votes` table, and hard-blocks if that doesn't match the stated `- Acceptance: N%` line or a vote is missing/malformed. An LLM's self-reported percentage is a claim, not evidence. |
 | `verify-architecture.sh` | `SubagentStop` | `software-architect` | Deterministic gate: runs `scripts/validate/cli.py memory` right after the architect returns, so a slice.md `Rules:` slug with no matching, fully-authored block in `memory/rules.md` is caught immediately - before technical-challenger or an MCP-less implementer subagent ever sees it - instead of only at the top-level `Stop` hook, which can fire too late in the same turn. |
 | `verify-round-cap.sh` | `Stop` | - | Deterministic round-cap gate: reads the main session transcript for the main thread's own `## Coordinate Handoff` block, and for every `business-challenge`/`technical-challenge` step, checks the declared `Round: N of 3` against a small hook-owned counter file (not memory, not writable by the main thread) keyed by the PRD purpose. Hard-blocks if the round exceeds the cap or regresses/is miscounted relative to what the hook itself has tracked. |
@@ -48,8 +48,11 @@ to stdout and exit 0; otherwise they exit 0 with no output and the normal permis
 flow applies. (Exiting with code **2** and writing the reason to stderr is an
 equivalent way to block.) The guards parse hook JSON through `hook-json.sh`, which prefers
 Python and falls back to a verified working `jq`. If neither parser is available, they
-**fail open** (exit 0, no decision), so a broken toolchain can never brick a session -
-they enforce, they never trap.
+**fail open** (exit 0, no decision), so a broken hook toolchain can never brick a session -
+they enforce, they never trap. That fail-open stance covers the parser/launcher tier only:
+the *project* toolchain tier of `verify-subagent.sh` deliberately fails **closed** (a missing
+test runner on a started stack blocks the developer's return). The two stances are distinct
+on purpose - do not unify them.
 
 ## Agent-scoped enforcement
 
@@ -199,13 +202,18 @@ happens":
   finishes, it runs the full deterministic set - `ruff`/`mypy` (or `tsc --noEmit`), `validate-tools
   `validate-tools project-layout .`, and the test suite (`pytest` / `pnpm test:coverage`) - and, on failure, returns
   `{"decision":"block","reason":"..."}` so the subagent keeps working and fixes the errors before it can
-  hand back. It is **fail-safe** (no manifest or tool -> allow, so it's a no-op on the scaffold) and
+  hand back. It is a no-op on the scaffold (no manifest -> nothing to check), but once a stack
+manifest exists its toolchain tier is **fail-closed** - a missing linter/type-checker/test
+runner/`validate-tools` is itself a blocking finding - and it stays
   **loop-safe** (honors `stop_hook_active`, and Claude Code caps consecutive Stop-blocks at 8).
 
 - **`verify-qa.sh` (`SubagentStop`, matcher `qa-checker`)** runs the mechanical QA validators
   before qa-checker can return: QA contract, agent prompt interpretation evidence, Playwright
-  story shape, acceptance/test coverage, initial-prompt E2E coverage, and machine-readable QA
-  evidence. qa-challenger keeps judgment; this hook owns artifact mechanics.
+  story shape, acceptance/test coverage, initial-prompt E2E coverage, machine-readable QA
+  evidence, and the slice `## Verification` contract - every declared `- Run:` command must
+  appear in `qa-evidence.json` with exit code 0 and the evidence's `code_state` digest must
+  still match the app code, so declared-but-never-run, failed, and stale verification all
+  block. qa-challenger keeps judgment; this hook owns artifact mechanics.
 
 - **`verify-architecture.sh` (`SubagentStop`, matcher `software-architect`)** runs
   `scripts/validate/cli.py memory` right after the architect returns: every slug a slice's
@@ -278,10 +286,10 @@ code it is a no-op that just reports "scaffold only". To trade the guarantee for
 startup, switch it to async per the SessionStart hook docs.
 
 If `validate-tools` is still missing after the install attempt (or `uv` itself isn't present),
-this hook prints an explicit, multi-line `WARNING` block instead of a single log line - a missing
-`validate-tools` silently downgrades `verify-subagent.sh`'s compliance gate to ruff/mypy/pytest
-only (`have validate-tools || return 0` per check), and a one-line `WARN:` buried among routine
-install logs was too easy to miss. `SessionStart` stdout is added back into context (see
+this hook prints an explicit, multi-line `WARNING` block instead of a single log line - once a
+stack manifest exists, a missing `validate-tools` hard-blocks `verify-subagent.sh`'s gate
+(fail-closed toolchain policy), so surfacing it at session start beats discovering it only when
+a developer subagent tries to return. `SessionStart` stdout is added back into context (see
 `reinject-context.sh`), so this warning stays visible until `validate-tools` is actually installed.
 
 ## Testing a hook locally

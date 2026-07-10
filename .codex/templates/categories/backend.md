@@ -17,6 +17,8 @@ Include these sections in `slice.md` only when backend work is routed.
   - Errors:
   - Pagination/cache/auth notes:
 
-## Tests additions
-- Add backend unit/integration/API/migration cases under `## Tests` -> `Backend`.
+## Verification additions
+- Map backend unit/integration/API/migration cases in `## Test Coverage`, and name the
+  backend test command that runs them as a `## Verification` `- Run:` row covering their
+  `AC-###` ids (e.g. `- Run: cd backend && uv run pytest test/test_<feature>.py -q | covers: AC-001`).
 ```
