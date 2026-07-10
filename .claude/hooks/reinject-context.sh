@@ -28,8 +28,8 @@ cat <<'EOF'
 3. Deterministic work is a hook, not an agent step: formatting, lint, type-checks, validate-tools,
    and the test suite run automatically via .claude/hooks/ (PostToolUse, SubagentStart,
    SubagentStop, and Stop gates). Prompt hooks review developer handoffs, business PRDs, architect
-   ADR/slices, main-thread coordination, and QA judgment; command hooks own developer and QA
-   mechanical validators.
+   ADR/slices, and QA judgment; command hooks own developer and QA mechanical validators plus the
+   deterministic coordination and round-cap gates on Stop.
    QA owns code-first Playwright specs/output and final judgment; there is no tester or separate E2E agent.
 4. Implementer/QA subagents may not read AGENTS.md, CLAUDE.md, .codex/, .claude/, scripts/, hooks,
    settings, or agent templates directly. Only product-owner, software-architect,

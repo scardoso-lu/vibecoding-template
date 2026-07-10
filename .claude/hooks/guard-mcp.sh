@@ -15,18 +15,22 @@ hook_json_can_parse || exit 0
 
 INPUT="${HOOK_INPUT_JSON:-}"
 [ -n "$INPUT" ] || INPUT="$(cat)"
-AGENT="$(hook_json_get "$INPUT" "agent_type")"
-TOOL="$(hook_json_get "$INPUT" "tool_name")"
+eval "$(hook_json_get_many "$INPUT" AGENT=agent_type TOOL=tool_name)"
 
 deny() {
   hook_json_pretool_deny "$1"
   exit 0
 }
 
-# The software-architect owns guideline discovery; every other role must ask for context via the
-# main thread, which routes back through the software-architect.
+# The software-architect owns guideline discovery; every other subagent - workflow roles and
+# built-in utility agents alike - must ask for context via the main thread, which routes back
+# through the software-architect. Matching "anything that isn't the architect or the main
+# thread" (instead of naming the eight roles) means a new or built-in agent type can never
+# slip through unlisted.
 case "$AGENT" in
-  backend-developer|frontend-developer|qa-checker|qa-challenger|product-owner|business-challenger|technical-challenger)
+  ""|software-architect)
+    : ;;
+  *)
     deny "Only the software-architect may call the guidelines MCP server. Stop and request targeted context through the main thread (see the MCP budget rules in CLAUDE.md) - do not resolve slugs or browse MCP from a '$AGENT' subagent." ;;
 esac
 

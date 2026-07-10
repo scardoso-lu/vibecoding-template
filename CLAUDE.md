@@ -45,7 +45,10 @@ only from memory and MCP-backed rules.
    workflow scripts, settings, or cross-runtime support files.
    Implementer/QA subagents may read those files only when the main thread's handoff names the exact
    path. Any subagent may read `.claude/templates/**` and `.claude/skills/**` - reference material,
-   not agent infrastructure.
+   not agent infrastructure. Built-in utility
+   subagents (`Explore`, `Plan`, `general-purpose`, and similar helpers) run on the main thread's
+   behalf: they may read agent infrastructure like the main thread, but they never write
+   `memory/**` - planning artifacts stay with their owning workflow agents.
 
 5. Every access-control or trigger validation gets a real backend implementation, never a stub.
    Any authentication, authorization/RBAC, or trigger-condition check named in a PRD, ADR, or slice

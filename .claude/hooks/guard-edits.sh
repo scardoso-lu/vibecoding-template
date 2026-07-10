@@ -11,8 +11,7 @@ hook_json_can_parse || exit 0
 
 INPUT="${HOOK_INPUT_JSON:-}"
 [ -n "$INPUT" ] || INPUT="$(cat)"
-FP="$(hook_json_get "$INPUT" "tool_input.file_path")"
-AGENT="$(hook_json_get "$INPUT" "agent_type")"
+eval "$(hook_json_get_many "$INPUT" FP=tool_input.file_path AGENT=agent_type)"
 [ -z "$FP" ] && exit 0
 FP="$(hook_json_normalize_path "$FP")"
 
@@ -75,6 +74,17 @@ case "$AGENT" in
   business-challenger|technical-challenger|qa-challenger)
     deny "A '$AGENT' subagent is read-only: never edit PRDs, memory, rules, code, or configuration. Return findings in the challenge verdict instead of writing '$FP'." ;;
 esac
+
+# Built-in utility subagents (Explore, Plan, general-purpose, ...) may read agent
+# infrastructure on the main thread's behalf, but planning memory is written only by the
+# owning workflow agents - routing a memory write through a general-purpose helper would
+# bypass the owning agent and every gate attached to it.
+if hook_json_is_builtin_utility_agent "$AGENT"; then
+  case "$FP" in
+    */memory/*|memory/*)
+      deny "A built-in '$AGENT' subagent may not write memory planning artifacts. PRDs belong to product-owner, ADRs/slices/rules to software-architect, and QA evidence/verdicts to qa-checker; route '$FP' through the owning agent." ;;
+  esac
+fi
 
 # Role write scopes from the agent contracts (CLAUDE.md + .claude/agents/*.md). The main thread
 # (empty agent_type) is unaffected.

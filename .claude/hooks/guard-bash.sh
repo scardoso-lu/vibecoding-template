@@ -23,8 +23,7 @@ hook_json_can_parse || exit 0
 
 INPUT="${HOOK_INPUT_JSON:-}"
 [ -n "$INPUT" ] || INPUT="$(cat)"
-CMD="$(hook_json_get "$INPUT" "tool_input.command")"
-AGENT="$(hook_json_get "$INPUT" "agent_type")"
+eval "$(hook_json_get_many "$INPUT" CMD=tool_input.command AGENT=agent_type)"
 [ -z "$CMD" ] && exit 0
 
 deny() {
@@ -100,8 +99,9 @@ if printf '%s' "$CMD" | grep -Eq 'git[[:space:]]+push' \
 fi
 
 # Implementer/QA subagents may not read agent infrastructure through shell commands
-# either. Main thread has no agent_type; the coordination tier is allowed.
-if ! hook_json_is_coordination_tier "$AGENT"; then
+# either. Main thread has no agent_type; the coordination tier and built-in utility
+# subagents (which run on the main thread's behalf) are allowed.
+if ! hook_json_is_coordination_tier "$AGENT" && ! hook_json_is_builtin_utility_agent "$AGENT"; then
   # Same templates/skills carve-out as guard-infra-read.sh: reference material, not
   # agent infrastructure (HOOK_JSON_REFERENCE_PATH_TEXT_REGEX names the same four directories).
   if printf '%s' "$CMD" | grep -Eiq '(^|[[:space:];|&])(cat|less|more|head|tail|grep|rg|find|ls|dir|Get-Content|Select-String|Get-ChildItem)([[:space:]]|$)' \

@@ -49,7 +49,12 @@ try:
 except OSError:
     lines = []
 
-text = ""
+# Prefer the newest assistant message that actually contains the Persona Votes table: a
+# challenger may follow its verdict with a short closing message, and judging only the very
+# last text would false-block a valid verdict as "missing a table". When NO message contains
+# the table, fall back to the newest non-empty text so the missing-table finding still blocks.
+verdict = ""
+fallback = ""
 for line in reversed(lines):
     line = line.strip()
     if not line:
@@ -73,10 +78,17 @@ for line in reversed(lines):
             if isinstance(block, dict) and block.get("type") == "text"
         ]
         text = "\n".join(part for part in parts if part)
-    if text.strip():
+    else:
+        text = ""
+    if not text.strip():
+        continue
+    if not fallback:
+        fallback = text
+    if "Persona Votes" in text:
+        verdict = text
         break
 
-print(text)
+print(verdict or fallback)
 ' 2>/dev/null)"
 
 [ -n "$VERDICT_TEXT" ] || exit 0
