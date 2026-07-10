@@ -32,7 +32,12 @@ while IFS= read -r -d '' entry; do
   path="${entry:3}"
   [ -n "$path" ] || continue
   [ -f "$path" ] || continue
-  printf '{"tool_input":{"file_path":"%s"}}' "$ROOT/$path" | bash "$AUTO_FORMAT" >/dev/null 2>&1 || true
+  # Clear HOOK_INPUT_JSON for the child: this Stop hook runs with HOOK_INPUT_JSON already set to
+  # the Stop event (no tool_input.file_path), and auto-format.sh prefers that env var over stdin
+  # (INPUT="${HOOK_INPUT_JSON:-}" before its `cat` fallback). Inheriting it makes every inner call
+  # a silent no-op — auto-format would parse the Stop event, find no file_path, and exit. Emptying
+  # it forces auto-format.sh to read the file path we pipe in.
+  printf '{"tool_input":{"file_path":"%s"}}' "$ROOT/$path" | HOOK_INPUT_JSON= bash "$AUTO_FORMAT" >/dev/null 2>&1 || true
 done < <(git status --porcelain -z 2>/dev/null)
 
 exit 0
