@@ -17,7 +17,12 @@ HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HOOK_DIR/hook-json.sh" 2>/dev/null || true
 
 if command -v hook_json_can_parse >/dev/null 2>&1 && hook_json_can_parse; then
-  INPUT_PEEK="$(cat)"
+  # The launcher (run-hook.py) delivers the event via HOOK_INPUT_JSON and leaves the child's
+  # stdin at EOF, so read the env var first (the same pattern every other input-consuming hook
+  # uses) and only fall back to stdin when it is unset. Reading stdin alone made this agent_type
+  # skip dead under the launcher — INPUT_PEEK was always empty, so the subagent check never fired.
+  INPUT_PEEK="${HOOK_INPUT_JSON:-}"
+  [ -n "$INPUT_PEEK" ] || INPUT_PEEK="$(cat)"
   AGENT_PEEK="$(hook_json_get "$INPUT_PEEK" "agent_type")"
   [ -z "$AGENT_PEEK" ] || exit 0
 fi
