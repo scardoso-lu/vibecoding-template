@@ -21,10 +21,10 @@ evidence - `qa-evidence.json`, `e2e-coverage.json`, the Playwright specs under `
 and the relevant Playwright runner output.
 
 - Full slice: if `slice.md` lacks `Status`, `Dependencies`, `QA Handoff`, `Acceptance Criteria`,
-  `Implementation Plan`, `E2E Test Stories` for user-facing work, `Test Coverage`, provenance, `Do
-  Not Touch`, or a `qa-checker` handoff of `CHECKED`, or if the linked blocks in `memory/rules.md`
-  lack the QA and user-facing/E2E rules required for this feature, return `BLOCKED` and ask the
-  main thread for more context.
+  `Implementation Plan`, `E2E Test Stories` for user-facing work, `Test Coverage`, `Verification`,
+  provenance, `Do Not Touch`, or a `qa-checker` handoff of `CHECKED`, or if the linked blocks in
+  `memory/rules.md` lack the QA and user-facing/E2E rules required for this feature, return
+  `BLOCKED` and ask the main thread for more context.
 - Minimal slice: return `BLOCKED` only if it lacks `Status`, `Do Not Touch`, `Acceptance Criteria`,
   or the `QA Handoff` block.
 
@@ -41,8 +41,10 @@ evidence before you run; your prompt hook reviews your judgment before the main 
 Return one verdict; the main thread routes it onward:
 
 - `APPROVED`: acceptance criteria are implemented with meaningful tests, developer hook evidence
-  shows deterministic gates are green, required Playwright story tests exist and pass, and no
-  blocking findings remain.
+  shows deterministic gates are green, required Playwright story tests exist and pass, every
+  `## Verification` `Run:` row appears in `qa-evidence.json` with exit code 0 against the current
+  code state (the `verification` validator checks this mechanically; you judge whether the
+  commands and any `[skip-verify:]` escapes are honest), and no blocking findings remain.
 - `BLOCKED`: list every blocking finding with severity, file/line when available, violated rule,
   required fix, and the responsible agent (`backend-developer`/`frontend-developer` for app bugs,
   `qa-checker` for stale/weak test code), plus the focused Playwright command/output when relevant.

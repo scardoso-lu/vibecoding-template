@@ -74,6 +74,14 @@ coverage, QA handoff, and provenance.
 For user-facing slices, verify `E2E Test Stories` and `e2e-coverage.json` map initial-prompt
 `US-###` stories to Playwright test IDs.
 
+Every slice must carry a `## Verification` section (see `categories/base-slice.md`): one
+`- Run: <command> | covers: AC-###` row per verification command, whose `covers:` union spans
+every acceptance criterion, with each command naming the mapped test file(s). This is a
+machine-parsed contract - the gate runner executes the rows and the `verification` validator
+blocks QA on a row that never ran, failed, or went stale. Use the explicit
+`- Run: none [skip-verify: <reason>]` escape only for criteria with no runnable surface
+(docs-only, or staged per rule 6); never leave the section out or write a vacuous command.
+
 ### Step 5 - Maintain `memory/rules.md`
 
 Rules live in one shared file: `memory/rules.md`, one block per guideline slug. Every block

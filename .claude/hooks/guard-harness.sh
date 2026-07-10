@@ -51,6 +51,7 @@ else
     run_validator "test-coverage" python scripts/validate/cli.py test-coverage --root .
     run_validator "e2e-coverage" python scripts/validate/cli.py e2e-coverage --root .
     run_validator "qa-evidence" python scripts/validate/cli.py qa-evidence --root .
+    run_validator "verification" python scripts/validate/cli.py verification --root .
   fi
 
   if matches_any '^(memory/|agent-evidence/|frontend/e2e/)'; then

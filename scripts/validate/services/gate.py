@@ -1,4 +1,12 @@
-"""Gate service: run the deterministic evidence commands and write qa-evidence.json."""
+"""Gate service: run the deterministic evidence commands and write qa-evidence.json.
+
+Besides the repo-shape commands (compose, backend coverage, frontend
+test/build/e2e), the gate executes every non-skip `- Run:` row declared in the
+slice's ## Verification section and records it in runs[] verbatim, and stamps the
+evidence with the app-code state digest (see repository.app_code_state) so the
+verification validator can prove the declared commands ran, passed, and ran
+against the code that is actually shipping.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +14,9 @@ import json
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
+
+from scripts.validate.repository import app_code_state
+from scripts.validate.services.verification import parse_verification_rows
 
 
 def iso_now() -> str:
@@ -105,6 +116,14 @@ def run_gate(root: Path, slice_arg: Path, coverage_threshold: float = 80.0) -> i
                 ("npx pnpm@10.16.0 --dir frontend e2e", ".", "e2e.txt"),
             ]
         )
+    # Slice-declared verification commands (## Verification `- Run:` rows) run
+    # while any compose stack is still up, so focused Playwright rows can reach it.
+    slice_text = slice_path.read_text(encoding="utf-8")
+    for index, row in enumerate(parse_verification_rows(slice_text), start=1):
+        if row.skip or row.malformed or not row.command:
+            continue
+        commands.append((row.command, ".", f"verify-{index}.txt"))
+
     if (root / "docker-compose.yml").exists():
         commands.append(
             ("docker compose down --remove-orphans", ".", "docker-compose-down.txt")
@@ -150,9 +169,12 @@ def run_gate(root: Path, slice_arg: Path, coverage_threshold: float = 80.0) -> i
         "runs": runs,
         "unit_coverage": unit_coverage,
         "e2e_coverage_path": e2e_coverage_path,
+        # Computed after every run finished, so the digest reflects any file the
+        # commands themselves produced; the verification validator recomputes it
+        # and blocks stale evidence.
+        "code_state": app_code_state(root),
     }
     (slice_dir / "qa-evidence.json").write_text(
         json.dumps(evidence, indent=2) + "\n", encoding="utf-8"
     )
     return 1 if any(run["exit_code"] != 0 for run in runs) else 0
-

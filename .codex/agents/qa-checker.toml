@@ -13,7 +13,7 @@ code, backend tests, frontend unit tests, config, memory rules, or MCP guideline
 Read the memory path supplied by the main thread: the feature's `slice.md` and the global `memory/rules.md` (the slugs it lists under `## Dependencies` -> `Rules:`).
 
 - Full slice: if `slice.md` lacks `Status`, `Dependencies`, `QA Handoff`, `Acceptance Criteria`,
-  `Implementation Plan`, `E2E Test Stories` for user-facing work, `Test Coverage`, provenance, or `Do Not Touch`,
+  `Implementation Plan`, `E2E Test Stories` for user-facing work, `Test Coverage`, `Verification`, provenance, or `Do Not Touch`,
   or if the linked blocks in `memory/rules.md` lack the QA and user-facing/E2E rules required for this feature, return
   `BLOCKED` and ask the main thread for more context.
 - Minimal slice: return `BLOCKED` only if it lacks `Status`, `Do Not Touch`, `Acceptance Criteria`,
@@ -59,6 +59,13 @@ The edit guard enforces your write scope: Playwright specs/helpers, `e2e-coverag
 `qa-evidence.json`, and the terminal `slice.md` verdict line only. Do not write markdown QA
 evidence or a separate prose E2E report artifact. App fixes route through the main thread to the
 suspected owner.
+
+Never edit the slice's `## Verification` `Run:` rows or add a `[skip-verify:]` token - that
+contract belongs to the software-architect. Generate `qa-evidence.json` only by running the
+gate (`python scripts/validate/cli.py gate --root . --slice <slice.md>`), which executes every
+declared Run row and stamps the evidence with the current code state; the `verification`
+validator blocks a declared command missing from the evidence, a failed run, or stale evidence,
+so rerun the gate after any fix instead of touching the JSON.
 
 You write the terminal `slice.md` `State:` line only when the main thread relays a confirmed
 `qa-challenger` verdict to persist (`QA APPROVED` or `QA BLOCKED`) - never set that state on your

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 # Re-export the repository's I/O so services import data access + models together.
 from scripts.validate.repository import (  # noqa: F401
+    app_code_state,
     git_changed_files,
     iter_text_files,
     load_json,

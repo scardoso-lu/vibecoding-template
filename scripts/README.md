@@ -56,6 +56,7 @@ There are no per-check wrapper files; every check is a subcommand of `cli.py`.
 | Validate acceptance-criteria test mapping | `python scripts/validate/cli.py test-coverage --root .` |
 | Validate initial-prompt E2E coverage mapping | `python scripts/validate/cli.py e2e-coverage --root .` |
 | Validate deterministic QA evidence | `python scripts/validate/cli.py qa-evidence --root .` |
+| Validate the slice `## Verification` contract (declared `Run:` rows executed, passed, fresh) | `python scripts/validate/cli.py verification --root .` |
 | Validate hook/tool command shapes | `python scripts/validate/cli.py tooling --root .` |
 | Validate changed-file ownership and Do Not Touch | `python scripts/validate/cli.py ownership --root . --agent <agent> --slice <slice.md>` |
 | Execute deterministic gate and write QA evidence | `python scripts/validate/cli.py gate --root . --slice memory/feature/<slice>/slice.md` |
@@ -69,6 +70,13 @@ committing workflow changes.
 When `docker-compose.yml` exists, the deterministic gate records `docker compose up --build --wait`
 and cleanup evidence. The QA evidence validator rejects full slices that do not show a successful
 compose startup run.
+
+The gate also executes every non-skip `- Run:` row from the slice's `## Verification` section
+(while any compose stack is still up) and stamps the evidence with a `code_state` digest of the
+app code (HEAD + dirty/untracked files under `backend/`, `frontend/`, and root compose files).
+The `verification` validator then blocks a declared command that never ran, exited non-zero, or
+whose evidence no longer matches the working tree; `[skip-verify: <reason>]` rows are the only,
+grep-able exemption.
 
 Run the validator test suite with:
 
