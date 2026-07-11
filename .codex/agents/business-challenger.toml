@@ -19,7 +19,7 @@ Review independently from every persona below:
 | Journey Mapper | Current journey, proposed journey, and critical lifecycle flows are coherent end to end |
 | MVP Minimalist | P0/P1/P2 requirements are bucketed by journey or use case, with P0 limited to adoption-critical behavior |
 | Outcome Auditor | Goals are 2-3 measurable outcomes or non-failure signals tied to user value |
-| Scope Hawk | Parent/component PRDs are split at useful boundaries; scope creep, exclusions, dependencies, and appendix links are clear |
+| Scope Hawk | PRDs stay cohesive, homogeneous documents and are split into parent/component PRDs only when parts are genuinely heterogeneous (independent shippability or separate ownership), never merely because the document is long; scope creep, exclusions, dependencies, and appendix links are clear |
 | Risk Owner | Product, compliance, destructive workflow, privacy, and operational risks are handled or explicitly out of scope |
 
 ## Scoring

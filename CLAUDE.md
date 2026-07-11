@@ -92,16 +92,27 @@ missing information, the main thread asks the user and holds planning in plan mo
 
 Routing is conditional. Backend-only work skips frontend. Frontend-only work skips backend.
 Docs/config/copy/minimal changes can route straight to `qa-challenger` review (no Playwright work
-for `qa-checker` to do). Foundation work is one
-cross-cutting monorepo slice when it touches repo layout, root manifests, bootstrap scripts,
-workspace config, or both app roots.
+for `qa-checker` to do). Foundation work (repo layout, root manifests, bootstrap scripts, workspace
+config) belongs in the same pack as the feature that needs it by default; pull it into its own
+cross-cutting monorepo pack only when it is genuinely shared infrastructure serving multiple
+already-planned, unrelated features (e.g. first-time repo bootstrap before any feature exists) - not
+merely because a feature needs new folders or files.
 
-Split large products into coherent PRDs, then into component ADRs, then into business feature
-slices. Big components may have parent PRDs/ADRs plus smaller component PRDs/ADRs. Feature slices
-must link their parent PRD and ADR so implementer/QA agents can read or grep the bigger context when
-needed. Slice by business feature, not by layer. Write one `slice.md` per business feature (never
-split a single feature into scaffold, endpoint, CRUD, page, and test slices). When features depend on
-each other, keep them separate and link the ordering through each slice's `## Dependencies`.
+Avoid over-splitting. Build each PRD, ADR, and feature slice as one cohesive, homogeneous pack of
+work - everything belonging to the same business feature or journey stays together, sized the way a
+competent full-stack developer would ship it in one sitting. Only break a pack apart when its parts
+are genuinely heterogeneous: independently shippable components with different owners or rollout
+timing, or a hard sequencing dependency where one part must reach QA before the next can even be
+designed. A document getting long, or running out of headings, is not heterogeneity - it is just
+detail, and stays in the same pack. Slice by business feature, not by layer or by construction step:
+the project structure, folders, and files a feature needs are part of that feature's own pack, not a
+separate "foundation"/"scaffold" slice - write one `slice.md` per business feature that bundles
+whatever structure, backend behavior, frontend behavior, and tests it needs (never split a single
+feature into structure, scaffold, endpoint, CRUD, page, and test slices - those are one homogeneous
+pack). Packs that do get split for a genuine reason must link their parent PRD and ADR so
+implementer/QA agents can read or grep the bigger context when needed. When features truly depend on
+each other, keep them separate and link the ordering through each slice's `## Dependencies`;
+otherwise keep them in one cohesive pack.
 
 ## Orchestration (Main Thread)
 
@@ -254,8 +265,10 @@ complete product artifact, not a feature slice. It must cover:
 - Non-goals, product risks, dependencies, open questions, and appendix links.
 
 When the request is broad, the product-owner first returns 2-3 opinionated PRD direction options and
-waits for the user's selection before writing full PRDs. Large product areas should split into a
-parent PRD plus smaller component PRDs, linked through `## Components` and `## Dependencies`.
+waits for the user's selection before writing full PRDs. A large product area splits into a parent
+PRD plus smaller component PRDs only when those components are genuinely heterogeneous -
+independently shippable or separately owned - linked through `## Components` and `## Dependencies`;
+otherwise keep it as one cohesive PRD, even if it has several sections.
 
 The software-architect writes ADRs under `memory/ADR/<purpose>/adr.md` from
 accepted PRDs, then derives memory:

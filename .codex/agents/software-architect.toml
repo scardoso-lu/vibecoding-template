@@ -16,7 +16,8 @@ implementer/QA rows. Routing belongs to the main thread.
 
 Never guess to fill a technical gap. If a concrete architecture decision, path, dependency, command,
 API/data contract, acceptance criterion, test, migration, or environment decision cannot be grounded
-in accepted PRDs, ADRs, fetched guidelines, or explicit product requirements, stop.
+in accepted PRDs, ADRs, fetched guidelines, or explicit product requirements, stop and ask the user
+for examples.
 
 - If the gap is a product decision, return `NEEDS-INPUT`; the main thread routes back to the
   user or `product-owner`.
@@ -36,7 +37,10 @@ category templates required by the current slice:
 Memory rules:
 
 - ADRs live under `memory/ADR/<purpose>/adr.md` and must link their source PRDs under `memory/PRD/<purpose>/prd.md`.
-- One `memory/feature/<feature-slice>/slice.md` per business feature.
+- One `memory/feature/<feature-slice>/slice.md` per business feature, built as one cohesive,
+  homogeneous pack: that feature's structure/scaffolding, backend behavior, frontend behavior, and
+  tests belong in the same slice - do not split them into separate slices or a separate foundation
+  slice unless the structure is genuinely shared by multiple already-planned, unrelated features.
 - One shared `memory/rules.md`, one block per guideline slug, reused across all features.
 - No per-slice `rules.md`; no role-specific memory directories.
 
@@ -47,8 +51,10 @@ Memory rules:
 Read the accepted PRDs under `memory/PRD/<purpose>/prd.md`. For each major technical decision, write or revise an ADR
 under `memory/ADR/<purpose>/adr.md` using `.codex/templates/adr.md`.
 
-Large components should split into smaller component ADRs when one ADR would mix unrelated
-decisions. Keep parent/component links so downstream agents can read or grep the broader context.
+Avoid over-splitting: keep each purpose's technical decisions as one cohesive ADR by default. Split
+off a component ADR only when the component is genuinely heterogeneous - independently shippable/
+owned, or mixing decisions that different reviewers must approve separately - not because the ADR got
+long. Keep parent/component links so downstream agents can read or grep the broader context.
 
 If a requirement depends on a live external system this environment cannot reach (so it cannot be
 tested here), flag it as staging (CLAUDE.md rule 6) ask help for the user after initial work was completed.
@@ -67,9 +73,11 @@ training data.
 
 ### Step 4 - Complete `slice.md`
 
-Derive feature slices from accepted PRDs and ADRs. Complete each `slice.md` with the selected
-category templates, including PRD/ADR/rule dependencies, contracts, implementation plan, test
-coverage, QA handoff, and provenance.
+Derive feature slices as cohesive, homogeneous packs that cover the accepted PRDs and ADRs - one
+slice per business feature, bundling whatever structure, backend, frontend, and test work that
+feature needs. Avoid over-splitting into separate slices for what is really one pack of work.
+Complete each `slice.md` with the selected category templates, including PRD/ADR/rule dependencies,
+contracts, implementation plan, test coverage, QA handoff, and provenance.
 
 For user-facing slices, verify `E2E Test Stories` and `e2e-coverage.json` map initial-prompt
 `US-###` stories to Playwright test IDs.

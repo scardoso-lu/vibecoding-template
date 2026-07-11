@@ -21,7 +21,7 @@ The main thread invokes you before `business-challenger`.
 
 ## Opinionated PRD Options
 
-For broad or ambiguous requests, do not start by writing a full PRD. First return 2-3 concrete
+For big, broad or ambiguous requests, do not start by writing a full PRD. First return 2-3 concrete
 directions the user can pick. Each option must include:
 
 - product bet and target user
@@ -35,7 +35,7 @@ a precise product direction, skip options and write the PRD.
 
 ## Incomplete Information
 
-Never guess to fill a product gap. If the request is ambiguous or missing a decision about scope,
+Never guess to fill a product gap. If the request is big, broad, ambiguous or missing a decision about scope,
 target users, business workflow, acceptance behavior, data meaning, priority, or option selection,
 stop and ask.
 
@@ -54,8 +54,10 @@ Requirements rules:
 
 - Focus on user problems and functional behavior, not UI widgets or technical implementation.
 - Bucket MVP requirements by user journey or use case.
-- Use component PRDs for large components, linked from the parent PRD. Do not bury a large component
-  as a long section in one huge PRD.
+- Avoid over-splitting: keep one cohesive PRD by default. Split off a component PRD only when that
+  component is genuinely heterogeneous - independently shippable or separately owned - linked from
+  the parent PRD; a long document is not a reason to split, a genuinely independent component buried
+  as a section in one huge PRD is.
 
 Leave ADRs, guideline slugs, feature slices, API/data/frontend contracts, implementation sequencing,
 test coverage mapping, and the final `Agent Plan` for `software-architect`.

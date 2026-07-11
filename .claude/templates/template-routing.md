@@ -18,12 +18,16 @@ the current slice. Do not load every template by default.
 
 Rules:
 - PRDs are complete product artifacts under `memory/PRD/<purpose>/prd.md`, not feature
-  slices. Write parent PRDs and component PRDs when a product area is too large for one readable
-  document.
+  slices. Avoid over-splitting: keep one cohesive PRD; write parent/component PRDs only when a
+  component is genuinely heterogeneous - independently shippable or separately owned - not merely
+  because the document is long.
 - ADRs are architecture artifacts under `memory/ADR/<purpose>/adr.md`. They translate
-  accepted PRDs into technical decisions before feature slices are derived.
-- Write one `slice.md` per business feature under `memory/feature/<feature-slice>/`. Split the
-  request into features and link them through each slice's `## Dependencies`.
+  accepted PRDs into technical decisions before feature slices are derived, kept as one cohesive ADR
+  per purpose unless decisions are genuinely heterogeneous.
+- Write one `slice.md` per business feature under `memory/feature/<feature-slice>/` as one cohesive,
+  homogeneous pack, bundling that feature's structure/scaffolding, backend, frontend, and tests into
+  the same slice. Split the request into business features (not construction steps) and link them
+  through each slice's `## Dependencies`.
 - Keep rules global and unsliced: write every rule in the single `memory/rules.md`, one
   block per guideline slug, and link the slugs a feature needs from that feature's `## Dependencies`
   -> `Rules:` line. Do not split rules by category and do not write a per-slice `rules.md`.
