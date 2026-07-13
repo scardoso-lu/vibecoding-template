@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import re
 from pathlib import Path
@@ -6,8 +6,13 @@ from typing import Sequence
 
 from scripts.validate.models import Finding, line_number, read_text
 
+
 def _existing_dirs(root: Path, rel_paths: Sequence[str]) -> list[Finding]:
-    return [Finding(rel, "missing required project directory") for rel in rel_paths if not (root / rel).is_dir()]
+    return [
+        Finding(rel, "missing required project directory")
+        for rel in rel_paths
+        if not (root / rel).is_dir()
+    ]
 
 
 def _file_contains(path: Path, patterns: Sequence[str]) -> bool:
@@ -48,10 +53,17 @@ def validate_project_layout(root: Path) -> list[Finding]:
             "backend/uv.lock",
         ]:
             if not (root / rel).exists():
-                findings.append(Finding(rel, "missing expected stack-local backend artifact"))
+                findings.append(
+                    Finding(rel, "missing expected stack-local backend artifact")
+                )
         dockerfile_test = root / "backend/Dockerfile.test"
         if dockerfile_test.exists() and "COPY test" not in read_text(dockerfile_test):
-            findings.append(Finding("backend/Dockerfile.test", "backend test image must copy test/ before running pytest"))
+            findings.append(
+                Finding(
+                    "backend/Dockerfile.test",
+                    "backend test image must copy test/ before running pytest",
+                )
+            )
     if frontend_app:
         if (frontend_root / "app").exists() and (frontend_root / "src/app").exists():
             findings.append(
@@ -76,17 +88,32 @@ def validate_project_layout(root: Path) -> list[Finding]:
             "frontend/pnpm-workspace.yaml",
         ]:
             if not (root / rel).exists():
-                findings.append(Finding(rel, "missing expected stack-local frontend artifact"))
+                findings.append(
+                    Finding(rel, "missing expected stack-local frontend artifact")
+                )
         dockerfile = root / "frontend/Dockerfile"
         if dockerfile.exists() and not _file_contains(
             dockerfile,
-            [".npmrc", "package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml", "pnpm install"],
+            [
+                ".npmrc",
+                "package.json",
+                "pnpm-lock.yaml",
+                "pnpm-workspace.yaml",
+                "pnpm install",
+            ],
         ):
-            findings.append(Finding("frontend/Dockerfile", "frontend image must copy stack-local pnpm files before install"))
+            findings.append(
+                Finding(
+                    "frontend/Dockerfile",
+                    "frontend image must copy stack-local pnpm files before install",
+                )
+            )
         env_example = root / "frontend/.env.example"
         if compose.exists() and env_example.exists():
             env_text = read_text(env_example)
-            if re.search(r"=\s*https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(?:/|$)", env_text):
+            if re.search(
+                r"=\s*https?://(?:localhost|127\.0\.0\.1)(?::\d+)?(?:/|$)", env_text
+            ):
                 findings.append(
                     Finding(
                         "frontend/.env.example",
@@ -95,15 +122,29 @@ def validate_project_layout(root: Path) -> list[Finding]:
                 )
     for rel in ["pnpm-lock.yaml", "pnpm-workspace.yaml"]:
         if (root / rel).exists():
-            findings.append(Finding(rel, "stack artifact must live under frontend/, not repo root"))
+            findings.append(
+                Finding(rel, "stack artifact must live under frontend/, not repo root")
+            )
     if backend_root.exists() and frontend_app and not compose.exists():
-        findings.append(Finding("docker-compose.yml", "fullstack app needs a compose runtime path"))
+        findings.append(
+            Finding("docker-compose.yml", "fullstack app needs a compose runtime path")
+        )
     if compose.exists():
         text = read_text(compose)
         if backend_root.exists() and "./backend/.env" not in text:
-            findings.append(Finding("docker-compose.yml", "backend service must use stack-local env file ./backend/.env"))
+            findings.append(
+                Finding(
+                    "docker-compose.yml",
+                    "backend service must use stack-local env file ./backend/.env",
+                )
+            )
         if frontend_app and "./frontend/.env" not in text:
-            findings.append(Finding("docker-compose.yml", "frontend service must use stack-local env file ./frontend/.env"))
+            findings.append(
+                Finding(
+                    "docker-compose.yml",
+                    "frontend service must use stack-local env file ./frontend/.env",
+                )
+            )
     return findings
 
 
@@ -123,32 +164,67 @@ def validate_database_policy(root: Path) -> list[Finding]:
         if not path.exists():
             continue
         text = read_text(path)
-        if "sqlite:///" in text and "TEST" not in text.upper() and "E2E" not in text.upper():
-            findings.append(Finding(rel, "runtime database config must not default to SQLite"))
+        if (
+            "sqlite:///" in text
+            and "TEST" not in text.upper()
+            and "E2E" not in text.upper()
+        ):
+            findings.append(
+                Finding(rel, "runtime database config must not default to SQLite")
+            )
     env_example = root / "backend/.env.example"
     if env_example.exists():
         text = read_text(env_example)
         if "DATABASE_URL=" not in text:
-            findings.append(Finding("backend/.env.example", "DATABASE_URL must be documented"))
+            findings.append(
+                Finding("backend/.env.example", "DATABASE_URL must be documented")
+            )
         elif "sqlite:///" in text:
-            findings.append(Finding("backend/.env.example", "default documented DATABASE_URL must not use SQLite"))
+            findings.append(
+                Finding(
+                    "backend/.env.example",
+                    "default documented DATABASE_URL must not use SQLite",
+                )
+            )
         elif "postgresql" not in text:
-            findings.append(Finding("backend/.env.example", "default documented DATABASE_URL should target PostgreSQL"))
+            findings.append(
+                Finding(
+                    "backend/.env.example",
+                    "default documented DATABASE_URL should target PostgreSQL",
+                )
+            )
     else:
-        findings.append(Finding("backend/.env.example", "missing backend database env example"))
+        findings.append(
+            Finding("backend/.env.example", "missing backend database env example")
+        )
     compose = root / "docker-compose.yml"
     if compose.exists():
         text = read_text(compose).lower()
         if "postgres" not in text:
-            findings.append(Finding("docker-compose.yml", "compose must define the guideline database service"))
+            findings.append(
+                Finding(
+                    "docker-compose.yml",
+                    "compose must define the guideline database service",
+                )
+            )
         if "depends_on" not in text:
-            findings.append(Finding("docker-compose.yml", "app service must depend on the database service"))
+            findings.append(
+                Finding(
+                    "docker-compose.yml",
+                    "app service must depend on the database service",
+                )
+            )
     return findings
 
+
 def _function_body(text: str, name: str) -> str | None:
-    match = re.search(rf"^def\s+{re.escape(name)}\s*\([^)]*\)\s*->?\s*[^:]*:\s*$", text, re.MULTILINE)
+    match = re.search(
+        rf"^def\s+{re.escape(name)}\s*\([^)]*\)\s*->?\s*[^:]*:\s*$", text, re.MULTILINE
+    )
     if not match:
-        match = re.search(rf"^def\s+{re.escape(name)}\s*\([^)]*\)\s*:\s*$", text, re.MULTILINE)
+        match = re.search(
+            rf"^def\s+{re.escape(name)}\s*\([^)]*\)\s*:\s*$", text, re.MULTILINE
+        )
     if not match:
         return None
     rest = text[match.end() :]
@@ -169,18 +245,31 @@ def validate_migrations(root: Path) -> list[Finding]:
             if body is None:
                 findings.append(Finding(rel, f"migration missing {function}()"))
                 continue
-            stripped = [line.strip() for line in body.splitlines() if line.strip() and not line.strip().startswith("#")]
+            stripped = [
+                line.strip()
+                for line in body.splitlines()
+                if line.strip() and not line.strip().startswith("#")
+            ]
             if not stripped or stripped == ["pass"]:
-                findings.append(Finding(rel, f"migration {function}() must not be empty"))
+                findings.append(
+                    Finding(rel, f"migration {function}() must not be empty")
+                )
         if "initial" in migration.name.lower() or "0001" in migration.name:
             if "op.create_table" not in text:
-                findings.append(Finding(rel, "initial migration must create schema tables"))
+                findings.append(
+                    Finding(rel, "initial migration must create schema tables")
+                )
     return findings
+
+
 def _python_settings_keys(path: Path) -> set[str]:
     if not path.exists():
         return set()
     text = read_text(path)
-    return {match.group(1) for match in re.finditer(r"^\s*([A-Z][A-Z0-9_]+)\s*:", text, re.MULTILINE)}
+    return {
+        match.group(1)
+        for match in re.finditer(r"^\s*([A-Z][A-Z0-9_]+)\s*:", text, re.MULTILINE)
+    }
 
 
 def validate_backend_contract(root: Path) -> list[Finding]:
@@ -207,12 +296,18 @@ def validate_backend_contract(root: Path) -> list[Finding]:
     settings_keys = _python_settings_keys(settings_path)
     if settings_keys:
         if not env_example.exists():
-            findings.append(Finding("backend/.env.example", "missing env example for backend settings"))
+            findings.append(
+                Finding(
+                    "backend/.env.example", "missing env example for backend settings"
+                )
+            )
         else:
             env_text = read_text(env_example)
             for key in sorted(settings_keys):
                 if not re.search(rf"^{re.escape(key)}=", env_text, re.MULTILINE):
-                    findings.append(Finding("backend/.env.example", f"missing setting key {key}"))
+                    findings.append(
+                        Finding("backend/.env.example", f"missing setting key {key}")
+                    )
 
     routes_dir = root / "backend/src/presentation/routes"
     tests_dir = root / "backend/test"
@@ -220,8 +315,15 @@ def validate_backend_contract(root: Path) -> list[Finding]:
         for route in sorted(routes_dir.glob("*.py")):
             if route.name == "__init__.py":
                 continue
-            expected = tests_dir / f"test_routes_{route.stem}.py"
-            if not expected.exists():
+            matches = (
+                list(tests_dir.glob(f"**/test_*{route.stem}*.py"))
+                if tests_dir.exists()
+                else []
+            )
+            if not matches:
+                expected = (
+                    tests_dir / "integration" / "routes" / f"test_{route.stem}.py"
+                )
                 findings.append(
                     Finding(
                         expected.relative_to(root).as_posix(),
@@ -231,8 +333,18 @@ def validate_backend_contract(root: Path) -> list[Finding]:
 
     entity_dir = root / "backend/src/domain/entities"
     migration_dir = root / "backend/alembic/versions"
-    if entity_dir.exists() and any(entity_dir.glob("*.py")) and not any(migration_dir.glob("*.py")):
-        findings.append(Finding("backend/alembic/versions", "domain entities exist but no Alembic migration files were found"))
+    entity_files = (
+        [p for p in entity_dir.glob("*.py") if p.name != "__init__.py"]
+        if entity_dir.exists()
+        else []
+    )
+    if entity_files and not any(migration_dir.glob("*.py")):
+        findings.append(
+            Finding(
+                "backend/alembic/versions",
+                "domain entities exist but no Alembic migration files were found",
+            )
+        )
 
     write_use_cases = root / "backend/src/application/use_cases"
     mutating_prefixes = ("create_", "update_", "delete_", "archive_")
@@ -258,14 +370,22 @@ def validate_frontend_contract(root: Path) -> list[Finding]:
         return findings
     frontend_app = _has_frontend_app(root)
 
-    if frontend_app and (frontend_root / "app").exists() and (frontend_root / "src/app").exists():
+    if (
+        frontend_app
+        and (frontend_root / "app").exists()
+        and (frontend_root / "src/app").exists()
+    ):
         findings.append(
             Finding(
                 "frontend/app",
                 "duplicate Next App Router roots; use frontend/src/app and remove frontend/app",
             )
         )
-    if frontend_app and (frontend_root / "pages").exists() and (frontend_root / "src/app").exists():
+    if (
+        frontend_app
+        and (frontend_root / "pages").exists()
+        and (frontend_root / "src/app").exists()
+    ):
         findings.append(
             Finding(
                 "frontend/pages",
@@ -289,9 +409,15 @@ def validate_frontend_contract(root: Path) -> list[Finding]:
 
     e2e_root = root / "frontend/e2e"
     selector_patterns = [
-        (re.compile(r"\bwaitForTimeout\s*\("), "do not use sleeps; rely on Playwright auto-waiting assertions"),
+        (
+            re.compile(r"\bwaitForTimeout\s*\("),
+            "do not use sleeps; rely on Playwright auto-waiting assertions",
+        ),
         (re.compile(r"nth-child\s*\("), "do not use nth-child selectors in E2E tests"),
-        (re.compile(r"\.locator\(\s*['\"](?:\.|#)"), "prefer role/label/text locators over CSS selectors"),
+        (
+            re.compile(r"\.locator\(\s*['\"](?:\.|#)"),
+            "prefer role/label/text locators over CSS selectors",
+        ),
     ]
     if e2e_root.exists():
         for spec in sorted(e2e_root.rglob("*.ts")):
@@ -299,7 +425,9 @@ def validate_frontend_contract(root: Path) -> list[Finding]:
             rel = spec.relative_to(root).as_posix()
             for pattern, message in selector_patterns:
                 for match in pattern.finditer(text):
-                    findings.append(Finding(rel, message, line_number(text, match.start())))
+                    findings.append(
+                        Finding(rel, message, line_number(text, match.start()))
+                    )
 
     actions_dir = root / "frontend/src/actions"
     action_tests_dir = actions_dir / "__tests__"
@@ -333,7 +461,10 @@ def validate_frontend_contract(root: Path) -> list[Finding]:
     if app_root.exists():
         for page in sorted(app_root.rglob("page.tsx")):
             route_dir = page.parent
-            if not any((route_dir / name).exists() for name in ("loading.tsx", "error.tsx", "not-found.tsx")):
+            if not any(
+                (route_dir / name).exists()
+                for name in ("loading.tsx", "error.tsx", "not-found.tsx")
+            ):
                 findings.append(
                     Finding(
                         route_dir.relative_to(root).as_posix(),
@@ -341,4 +472,3 @@ def validate_frontend_contract(root: Path) -> list[Finding]:
                     )
                 )
     return findings
-
