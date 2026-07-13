@@ -37,7 +37,11 @@ while IFS= read -r -d '' entry; do
   # (INPUT="${HOOK_INPUT_JSON:-}" before its `cat` fallback). Inheriting it makes every inner call
   # a silent no-op — auto-format would parse the Stop event, find no file_path, and exit. Emptying
   # it forces auto-format.sh to read the file path we pipe in.
-  printf '{"tool_input":{"file_path":"%s"}}' "$ROOT/$path" | HOOK_INPUT_JSON= bash "$AUTO_FORMAT" >/dev/null 2>&1 || true
+  # $ROOT (from CLAUDE_PROJECT_DIR) is a native backslash path on Windows; embedding it raw makes
+  # the printf below invalid JSON, so hook_json_get's json.loads throws, the caught exception falls
+  # back to the empty default, and auto-format.sh silently no-ops on every Bash-written file.
+  file_path="$(printf '%s' "$ROOT/$path" | tr '\\' '/')"
+  printf '{"tool_input":{"file_path":"%s"}}' "$file_path" | HOOK_INPUT_JSON= bash "$AUTO_FORMAT" >/dev/null 2>&1 || true
 done < <(git status --porcelain -z 2>/dev/null)
 
 exit 0
