@@ -6,7 +6,7 @@
       "mcp__fullstack-guidelines__get_guideline",
       "mcp__fullstack-guidelines__search_guidelines",
       "Bash(validate-tools *)",
-      "Bash(python .claude/hooks/run-hook.py *)"
+      "Bash(python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" *)"
     ]
   },
   "hooks": {
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/log-prompt.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/log-prompt.sh"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/session-start.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/session-start.sh"
           }
         ]
       },
@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/resume-handoff.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/resume-handoff.sh"
           }
         ]
       },
@@ -43,7 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/reinject-context.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/reinject-context.sh"
           }
         ]
       }
@@ -53,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/track-compact.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/track-compact.sh"
           }
         ]
       }
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-bash.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/guard-bash.sh"
           }
         ]
       },
@@ -74,7 +74,7 @@
           {
             "type": "command",
             "if": "Bash(git commit *)",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-commit.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/guard-commit.sh"
           }
         ]
       },
@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-edits.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/guard-edits.sh"
           }
         ]
       },
@@ -92,7 +92,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-infra-read.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/guard-infra-read.sh"
           }
         ]
       },
@@ -101,7 +101,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-mcp.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/guard-mcp.sh"
           }
         ]
       }
@@ -112,7 +112,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/auto-format.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/auto-format.sh"
           }
         ]
       },
@@ -120,7 +120,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/context-usage-watch.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/context-usage-watch.sh"
           }
         ]
       }
@@ -158,7 +158,7 @@
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-architecture.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/verify-architecture.sh"
           }
         ]
       },
@@ -167,7 +167,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-challenge.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/verify-challenge.sh"
           }
         ]
       },
@@ -176,7 +176,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-qa.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/verify-qa.sh"
           }
         ]
       },
@@ -195,7 +195,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-subagent.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/verify-subagent.sh"
           }
         ]
       }
@@ -206,7 +206,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/notify-attention.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/notify-attention.sh"
           }
         ]
       }
@@ -216,23 +216,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/format-changed.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/format-changed.sh"
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-coordination.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/verify-coordination.sh"
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/verify-round-cap.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/verify-round-cap.sh"
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/guard-harness.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/guard-harness.sh"
           },
           {
             "type": "command",
-            "command": "python .claude/hooks/run-hook.py .claude/hooks/notify-stop.sh"
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-hook.py\" .claude/hooks/notify-stop.sh"
           }
         ]
       }

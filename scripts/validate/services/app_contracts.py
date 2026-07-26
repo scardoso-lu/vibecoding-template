@@ -353,7 +353,14 @@ def validate_backend_contract(root: Path) -> list[Finding]:
             if not use_case.name.startswith(mutating_prefixes):
                 continue
             text = read_text(use_case)
-            if "AuditWriter" not in text or "._audit.emit(" not in text:
+            uses_audit_writer = "AuditWriter" in text and "._audit.emit(" in text
+            # A use case that subclasses WriteUseCase and overrides `_audit_fields` is
+            # equally compliant: WriteUseCase.execute() unconditionally emits the audit
+            # event via the repo after `_write()`, so the subclass cannot skip it.
+            uses_write_use_case_base = (
+                "WriteUseCase" in text and "_audit_fields" in text
+            )
+            if not uses_audit_writer and not uses_write_use_case_base:
                 findings.append(
                     Finding(
                         use_case.relative_to(root).as_posix(),

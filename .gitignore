@@ -252,3 +252,4 @@ coverage/
 # Playwright
 playwright-report/
 test-results/
+frontend/e2e/storage/

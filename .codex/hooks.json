@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/log-prompt.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/log-prompt.sh",
             "statusMessage": "Logging prompt"
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/session-start.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/session-start.sh",
             "statusMessage": "Preparing project toolchain"
           }
         ]
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/resume-handoff.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/resume-handoff.sh",
             "statusMessage": "Checking for a session handoff"
           }
         ]
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/reinject-context.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/reinject-context.sh",
             "statusMessage": "Restoring project context"
           }
         ]
@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/track-compact.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/track-compact.sh",
             "statusMessage": "Recording compaction"
           }
         ]
@@ -60,12 +60,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-bash.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/guard-bash.sh",
             "statusMessage": "Checking shell command"
           },
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-commit.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/guard-commit.sh",
             "statusMessage": "Checking staged commit contents"
           }
         ]
@@ -75,7 +75,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-edits.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/guard-edits.sh",
             "statusMessage": "Checking edit scope"
           }
         ]
@@ -85,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-infra-read.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/guard-infra-read.sh",
             "statusMessage": "Checking read scope"
           }
         ]
@@ -95,7 +95,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-mcp.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/guard-mcp.sh",
             "statusMessage": "Checking MCP access"
           }
         ]
@@ -107,7 +107,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/auto-format.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/auto-format.sh",
             "statusMessage": "Formatting changed files"
           }
         ]
@@ -116,7 +116,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/context-usage-watch.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/context-usage-watch.sh",
             "statusMessage": "Checking context usage"
           }
         ]
@@ -155,7 +155,7 @@
           },
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-architecture.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/verify-architecture.sh",
             "statusMessage": "Running architecture gate"
           }
         ]
@@ -165,7 +165,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-challenge.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/verify-challenge.sh",
             "statusMessage": "Checking challenge scoring"
           }
         ]
@@ -175,7 +175,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-qa.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/verify-qa.sh",
             "statusMessage": "Running QA gate"
           }
         ]
@@ -195,7 +195,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-subagent.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/verify-subagent.sh",
             "statusMessage": "Running developer gate"
           }
         ]
@@ -207,7 +207,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/notify-attention.sh"
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/notify-attention.sh"
           }
         ]
       }
@@ -217,27 +217,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/format-changed.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/format-changed.sh",
             "statusMessage": "Formatting changed files"
           },
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-coordination.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/verify-coordination.sh",
             "statusMessage": "Checking coordination handoffs"
           },
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/verify-round-cap.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/verify-round-cap.sh",
             "statusMessage": "Checking round-cap state"
           },
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/guard-harness.sh",
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/guard-harness.sh",
             "statusMessage": "Running workflow validators"
           },
           {
             "type": "command",
-            "command": "python .codex/hooks/run-hook.py .codex/hooks/notify-stop.sh"
+            "command": "python \"$CODEX_PROJECT_DIR/.codex/hooks/run-hook.py\" .codex/hooks/notify-stop.sh"
           }
         ]
       }
